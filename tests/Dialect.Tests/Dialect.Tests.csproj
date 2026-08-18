@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\Dialect.SqlServer\Dialect.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\Dialect.PostgreSql\Dialect.PostgreSql.csproj" />
     <ProjectReference Include="..\..\src\Dialect.MySql\Dialect.MySql.csproj" />
+    <ProjectReference Include="..\..\src\Dialect.Cli\Dialect.Cli.csproj" />
   </ItemGroup>
 
 </Project>

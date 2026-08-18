@@ -3,6 +3,7 @@ namespace Dialect.Core.DI;
 using Dialect.Core.AST;
 using Dialect.Core.Dialects;
 using Dialect.Core.Compilation;
+using Dialect.Core.QueryTranslation;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -109,6 +110,69 @@ public static class ServiceCollectionExtensions
 
         // Register the custom dialect
         services.AddSingleton(dialect);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the SQL translation service (ISqlTranslator) with default configuration.
+    /// Automatically registers ISqlProviderDetector and parser adapters for all dialects.
+    /// </summary>
+    public static IServiceCollection AddSqlTranslation(
+        this IServiceCollection services)
+    {
+        if (services == null)
+            throw new ArgumentNullException(nameof(services));
+
+        // Register the provider detector for connection string analysis
+        services.AddSingleton<ISqlProviderDetector, DefaultSqlProviderDetector>();
+
+        // Register parser adapters for each supported SQL dialect
+        var parserAdapters = new Dictionary<SqlProvider, SqlParserAdapter>
+        {
+            { SqlProvider.SqlServer, new SqlServerParserAdapter() },
+            { SqlProvider.PostgreSql, new PostgreSqlParserAdapter() },
+            { SqlProvider.MySql, new MySqlParserAdapter() }
+        };
+        services.AddSingleton<IReadOnlyDictionary<SqlProvider, SqlParserAdapter>>(parserAdapters);
+
+        // Register the SQL translator
+        services.AddSingleton<ISqlTranslator, DefaultSqlTranslator>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the SQL translation service with a default target dialect.
+    /// Enables single-argument Translate(sql) calls that automatically target the specified dialect.
+    /// </summary>
+    public static IServiceCollection AddSqlTranslation(
+        this IServiceCollection services,
+        ISqlDialect defaultTargetDialect)
+    {
+        if (services == null)
+            throw new ArgumentNullException(nameof(services));
+        if (defaultTargetDialect == null)
+            throw new ArgumentNullException(nameof(defaultTargetDialect));
+
+        // Register the provider detector
+        services.AddSingleton<ISqlProviderDetector, DefaultSqlProviderDetector>();
+
+        // Register parser adapters
+        var parserAdapters = new Dictionary<SqlProvider, SqlParserAdapter>
+        {
+            { SqlProvider.SqlServer, new SqlServerParserAdapter() },
+            { SqlProvider.PostgreSql, new PostgreSqlParserAdapter() },
+            { SqlProvider.MySql, new MySqlParserAdapter() }
+        };
+        services.AddSingleton<IReadOnlyDictionary<SqlProvider, SqlParserAdapter>>(parserAdapters);
+
+        // Register translator with default target dialect
+        services.AddSingleton<ISqlTranslator>(sp =>
+            new DefaultSqlTranslator(
+                sp.GetRequiredService<ISqlProviderDetector>(),
+                sp.GetRequiredService<IReadOnlyDictionary<SqlProvider, SqlParserAdapter>>(),
+                defaultTargetDialect));
 
         return services;
     }
