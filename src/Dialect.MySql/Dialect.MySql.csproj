@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Dialect.Core\Dialect.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+  </ItemGroup>
+
 </Project>

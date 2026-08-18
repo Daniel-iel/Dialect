@@ -39,7 +39,8 @@ ScaffoldingReadMe.txt
 # dotenv environment variables file
 .env
 
-# Others
+.vs
+.vscode# Others
 ~$*
 *~
 CodeCoverage/

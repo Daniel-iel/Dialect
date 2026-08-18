@@ -39,7 +39,7 @@ public class MySqlVersionDetector : VersionDetector
             return new VersionCapabilities(
                 SupportsWindowFunctions: false,      // Added in 8.0
                 SupportsCTEs: false,                 // Added in 8.0
-                SupportsUpsert: true,
+                SupportsUpsert: true,                // INSERT ... ON DUPLICATE KEY UPDATE
                 SupportsJsonFunctions: true,
                 SupportsFullTextSearch: true,
                 SupportsPartitioning: true,
