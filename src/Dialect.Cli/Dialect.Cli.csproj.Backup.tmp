@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <!-- Core Dialect library -->
+    <ProjectReference Include="..\Dialect.Core\Dialect.csproj" />
 
     <!-- Dependency Injection -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
@@ -23,10 +24,6 @@
 
     <!-- CLI argument parsing - stable version -->
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Dialect\Dialect.csproj" />
   </ItemGroup>
 
 </Project>

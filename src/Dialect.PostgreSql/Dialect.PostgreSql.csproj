@@ -11,11 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dialect.Core\Dialect.Core.csproj" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <ProjectReference Include="..\Dialect\Dialect.csproj" />
   </ItemGroup>
 
 </Project>

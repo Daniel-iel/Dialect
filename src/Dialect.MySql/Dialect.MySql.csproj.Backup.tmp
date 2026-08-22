@@ -6,16 +6,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Dialect.SqlServer</AssemblyName>
-    <RootNamespace>Dialect.SqlServer</RootNamespace>
+    <AssemblyName>Dialect.MySql</AssemblyName>
+    <RootNamespace>Dialect.MySql</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
+    <ProjectReference Include="..\Dialect.Core\Dialect.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dialect\Dialect.csproj" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
   </ItemGroup>
 
 </Project>

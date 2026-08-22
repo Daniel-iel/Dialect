@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Dialect.Core\Dialect.csproj" />
     <ProjectReference Include="../../src/Dialect.SqlServer/Dialect.SqlServer.csproj" />
     <ProjectReference Include="../../src/Dialect.PostgreSql/Dialect.PostgreSql.csproj" />
     <ProjectReference Include="../../src/Dialect.MySql/Dialect.MySql.csproj" />
