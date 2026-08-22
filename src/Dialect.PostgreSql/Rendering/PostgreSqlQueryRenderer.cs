@@ -452,7 +452,7 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         return sb.ToString();
     }
 
-    private string QuoteIdentifier(string identifier, ISqlDialect dialect)
+    private static string QuoteIdentifier(string identifier, ISqlDialect dialect)
     {
         if (string.IsNullOrEmpty(identifier))
             return identifier;

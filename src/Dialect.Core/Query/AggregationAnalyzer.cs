@@ -25,7 +25,7 @@ public class AggregationAnalyzer
         );
     }
 
-    private string[] ExtractGroupByColumns(string clause)
+    private static string[] ExtractGroupByColumns(string clause)
     {
         if (string.IsNullOrEmpty(clause)) return Array.Empty<string>();
 
@@ -51,7 +51,7 @@ public class AggregationAnalyzer
         }).ToArray();
     }
 
-    private string DetermineFunctionType(string function)
+    private static string DetermineFunctionType(string function)
     {
         if (function.StartsWith("sum")) return "SUM";
         if (function.StartsWith("count")) return "COUNT";
@@ -62,7 +62,7 @@ public class AggregationAnalyzer
         return "UNKNOWN";
     }
 
-    private string ExtractColumnFromFunction(string function)
+    private static string ExtractColumnFromFunction(string function)
     {
         var start = function.IndexOf('(');
         var end = function.LastIndexOf(')');
@@ -75,14 +75,14 @@ public class AggregationAnalyzer
         return string.Empty;
     }
 
-    private bool CanUseIndex(string[] columns)
+    private static bool CanUseIndex(string[] columns)
     {
         // Can use index if GROUP BY matches index prefix
         // e.g., if index on (col1, col2), can use for GROUP BY col1, col2
         return columns.Length > 0;
     }
 
-    private bool IsOptimalGroupBy(string[] columns, AggregateFunction[] aggregates)
+    private static bool IsOptimalGroupBy(string[] columns, AggregateFunction[] aggregates)
     {
         // Optimal if:
         // 1. Grouping columns are indexed
@@ -96,7 +96,7 @@ public class AggregationAnalyzer
         return reasonableColumns && reasonableAggregates && noExpensiveAggs;
     }
 
-    private string GenerateRecommendation(string[] columns, AggregateFunction[] aggregates, bool canUseIndex)
+    private static string GenerateRecommendation(string[] columns, AggregateFunction[] aggregates, bool canUseIndex)
     {
         if (!canUseIndex)
             return "Consider indexing GROUP BY columns for faster grouping.";

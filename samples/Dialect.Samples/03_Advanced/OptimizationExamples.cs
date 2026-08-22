@@ -26,7 +26,7 @@ public class OptimizationExamples : ExampleBase
         JoinAnalysis();
     }
 
-    private void QueryParsing()
+    private static void QueryParsing()
     {
         OutputFormatter.PrintSubHeader("Example 1: Query Parsing and Analysis");
         
@@ -44,7 +44,7 @@ public class OptimizationExamples : ExampleBase
         Console.WriteLine($"    - Has GROUP BY: {analysis.GroupByClauses.Length > 0}");
     }
 
-    private void PredicateAnalysis()
+    private static void PredicateAnalysis()
     {
         OutputFormatter.PrintSubHeader("Example 2: Predicate Analysis");
         
@@ -66,7 +66,7 @@ public class OptimizationExamples : ExampleBase
         Console.WriteLine($"    - Indexed columns recommended: UserId, OrderDate");
     }
 
-    private void JoinAnalysis()
+    private static void JoinAnalysis()
     {
         OutputFormatter.PrintSubHeader("Example 3: JOIN Analysis");
         

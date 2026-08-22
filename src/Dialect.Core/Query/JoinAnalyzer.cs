@@ -28,7 +28,7 @@ public class JoinAnalyzer
         );
     }
 
-    private string DetermineJoinType(string clause)
+    private static string DetermineJoinType(string clause)
     {
         if (clause.Contains("inner join")) return "INNER_JOIN";
         if (clause.Contains("left join") || clause.Contains("left outer join")) return "LEFT_JOIN";
@@ -38,7 +38,7 @@ public class JoinAnalyzer
         return "UNKNOWN_JOIN";
     }
 
-    private (string leftTable, string rightTable) ExtractTableNames(string clause)
+    private static (string leftTable, string rightTable) ExtractTableNames(string clause)
     {
         var words = clause.Split(new[] { ' ', '\t', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         
@@ -72,7 +72,7 @@ public class JoinAnalyzer
         return (column, condition);
     }
 
-    private string ExtractColumnFromCondition(string condition)
+    private static string ExtractColumnFromCondition(string condition)
     {
         var parts = condition.Split('=');
         if (parts.Length >= 1)
@@ -80,7 +80,7 @@ public class JoinAnalyzer
         return string.Empty;
     }
 
-    private bool IsOptimalJoin(string joinType, string joinCondition)
+    private static bool IsOptimalJoin(string joinType, string joinCondition)
     {
         // Optimal if: using indexed columns and INNER/LEFT JOIN
         bool typeOk = joinType == "INNER_JOIN" || joinType == "LEFT_JOIN";
@@ -89,7 +89,7 @@ public class JoinAnalyzer
         return typeOk && conditionOk;
     }
 
-    private string GenerateRecommendation(string joinType, bool isOptimal)
+    private static string GenerateRecommendation(string joinType, bool isOptimal)
     {
         if (isOptimal)
             return "Join is well-optimized. Ensure join columns are indexed.";

@@ -25,7 +25,7 @@ public class IndexAdvisorExamples : ExampleBase
         CompositeIndexes();
     }
 
-    private void WhereColumnIndexes()
+    private static void WhereColumnIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 1: Indexes for WHERE Clauses");
         
@@ -61,7 +61,7 @@ public class IndexAdvisorExamples : ExampleBase
         Console.WriteLine($"       - Would enable index-only scans");
     }
 
-    private void JoinColumnIndexes()
+    private static void JoinColumnIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 2: Indexes for JOIN Columns");
         
@@ -77,7 +77,7 @@ public class IndexAdvisorExamples : ExampleBase
         Console.WriteLine($"       - Enables index-only scans");
     }
 
-    private void CompositeIndexes()
+    private static void CompositeIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 3: Covering Indexes");
         

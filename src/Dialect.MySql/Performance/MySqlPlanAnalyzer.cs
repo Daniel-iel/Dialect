@@ -58,7 +58,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         }
     }
     
-    private ExecutionPlanNode ParseNode(JsonElement nodeElement)
+    private static ExecutionPlanNode ParseNode(JsonElement nodeElement)
     {
         var operationType = "Unknown";
         var objectName = "";
@@ -139,7 +139,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         );
     }
     
-    private decimal CalculateNodeCost(ExecutionPlanNode node)
+    private static decimal CalculateNodeCost(ExecutionPlanNode node)
     {
         decimal cost = 0;
         var queue = new Queue<ExecutionPlanNode>();
@@ -160,7 +160,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         return cost;
     }
     
-    private Dictionary<string, object> ExtractMetadata(JsonElement root)
+    private static Dictionary<string, object> ExtractMetadata(JsonElement root)
     {
         var metadata = new Dictionary<string, object>();
         
@@ -172,7 +172,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         return metadata;
     }
     
-    private QueryExecutionPlan CreateFallbackPlan(string queryText)
+    private static QueryExecutionPlan CreateFallbackPlan(string queryText)
     {
         return new QueryExecutionPlan(
             RootNode: new ExecutionPlanNode(

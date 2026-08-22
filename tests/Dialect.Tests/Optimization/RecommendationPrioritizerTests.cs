@@ -8,7 +8,7 @@ public class RecommendationPrioritizerTests
 {
     private readonly RecommendationPrioritizer _prioritizer = new();
     
-    private OptimizationRecommendation CreateRecommendation(
+    private static OptimizationRecommendation CreateRecommendation(
         string id,
         decimal roiScore,
         int priority,

@@ -171,7 +171,7 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         return $"{columnName} {type}{identity}{nullable}{defaultClause}".Trim();
     }
 
-    private string GetDataTypeSql(DataType type, ISqlDialect dialect)
+    private static string GetDataTypeSql(DataType type, ISqlDialect dialect)
     {
         return type switch
         {
@@ -203,13 +203,13 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         };
     }
 
-    private string QuoteIdentifier(string identifier)
+    private static string QuoteIdentifier(string identifier)
     {
         // PostgreSQL uses " for identifier quoting
         return $"\"{identifier}\"";
     }
 
-    private string FormatValue(object? value)
+    private static string FormatValue(object? value)
     {
         if (value == null)
             return "NULL";

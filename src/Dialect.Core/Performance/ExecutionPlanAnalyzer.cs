@@ -94,7 +94,7 @@ public abstract class ExecutionPlanAnalyzer
         return recommendations;
     }
     
-    private void ExtractMissingIndexesRecursive(
+    private static void ExtractMissingIndexesRecursive(
         ExecutionPlanNode node,
         List<string> recommendations)
     {

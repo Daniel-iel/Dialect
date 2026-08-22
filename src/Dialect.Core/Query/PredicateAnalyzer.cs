@@ -29,7 +29,7 @@ public class PredicateAnalyzer
         );
     }
 
-    private string DetermineOperatorType(string predicate)
+    private static string DetermineOperatorType(string predicate)
     {
         if (predicate.Contains(" = ")) return "EQUALITY";
         if (predicate.Contains(" <> ") || predicate.Contains(" != ")) return "INEQUALITY";
@@ -43,7 +43,7 @@ public class PredicateAnalyzer
         return "UNKNOWN";
     }
 
-    private bool IsIndexable(string operatorType)
+    private static bool IsIndexable(string operatorType)
     {
         return operatorType switch
         {
@@ -59,7 +59,7 @@ public class PredicateAnalyzer
         };
     }
 
-    private decimal EstimateSelectivity(string operatorType)
+    private static decimal EstimateSelectivity(string operatorType)
     {
         // Selectivity: percentage of rows matching predicate
         // Higher = fewer rows (more selective)
@@ -77,7 +77,7 @@ public class PredicateAnalyzer
         };
     }
 
-    private (string column, string value) ExtractColumnAndValue(string predicate)
+    private static (string column, string value) ExtractColumnAndValue(string predicate)
     {
         var parts = predicate.Split(new[] { "=", "<", ">", " like ", " between ", " in " },
             StringSplitOptions.RemoveEmptyEntries);
@@ -92,7 +92,7 @@ public class PredicateAnalyzer
         return (string.Empty, string.Empty);
     }
 
-    private int CalculateIndexPriority(bool isIndexable, decimal selectivity)
+    private static int CalculateIndexPriority(bool isIndexable, decimal selectivity)
     {
         if (!isIndexable) return 0;
         

@@ -9,7 +9,7 @@ public class SqlServerOptimizerTests
 {
     private readonly SqlServerOptimizer _optimizer = new();
     
-    private QueryExecutionPlan CreateExecutionPlan(
+    private static QueryExecutionPlan CreateExecutionPlan(
         string operationType = "TableScan",
         long rowsProduced = 1000,
         long rowsExamined = 1000,
@@ -36,7 +36,7 @@ public class SqlServerOptimizerTests
         );
     }
     
-    private PerformanceMetrics CreateMetrics(
+    private static PerformanceMetrics CreateMetrics(
         int tableScanCount = 1,
         bool hasTableScan = true,
         long totalRowsExamined = 1000,

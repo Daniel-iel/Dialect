@@ -65,7 +65,7 @@ public abstract class IndexCandidateAdvisor
     /// <summary>
     /// Generate unique key for deduplication
     /// </summary>
-    private string GenerateCandidateKey(IndexCandidate candidate)
+    private static string GenerateCandidateKey(IndexCandidate candidate)
     {
         var columnsKey = string.Join("_", candidate.Columns);
         return $"{candidate.TableName}_{columnsKey}_{candidate.IndexType}";

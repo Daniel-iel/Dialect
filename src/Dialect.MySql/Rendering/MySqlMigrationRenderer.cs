@@ -170,7 +170,7 @@ public sealed class MySqlMigrationRenderer : IMigrationRenderer
         return $"{columnName} {type}{autoIncrement}{nullable}{defaultClause}".Trim();
     }
 
-    private string GetDataTypeSql(DataType type, ISqlDialect dialect)
+    private static string GetDataTypeSql(DataType type, ISqlDialect dialect)
     {
         return type switch
         {
@@ -202,13 +202,13 @@ public sealed class MySqlMigrationRenderer : IMigrationRenderer
         };
     }
 
-    private string QuoteIdentifier(string identifier)
+    private static string QuoteIdentifier(string identifier)
     {
         // MySQL uses ` for identifier quoting
         return $"`{identifier}`";
     }
 
-    private string FormatValue(object? value)
+    private static string FormatValue(object? value)
     {
         if (value == null)
             return "NULL";

@@ -96,7 +96,7 @@ public class RecommendationPrioritizer
     /// <summary>
     /// Calculates a composite score considering ROI, priority, and implementation cost
     /// </summary>
-    private decimal CalculateCombinedScore(OptimizationRecommendation recommendation)
+    private static decimal CalculateCombinedScore(OptimizationRecommendation recommendation)
     {
         // Normalize factors to 0-1 range
         var roiScore = Math.Min(1.0m, recommendation.RoiScore / 5); // Cap at 5

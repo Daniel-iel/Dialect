@@ -61,7 +61,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         }
     }
     
-    private QueryExecutionPlan CreateFallbackPlan(string queryText)
+    private static QueryExecutionPlan CreateFallbackPlan(string queryText)
     {
         return new QueryExecutionPlan(
             RootNode: new ExecutionPlanNode(
@@ -126,7 +126,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         );
     }
     
-    private string? GetObjectName(JsonElement nodeElement)
+    private static string? GetObjectName(JsonElement nodeElement)
     {
         if (nodeElement.TryGetProperty("Object", out var objProp) &&
             objProp.TryGetProperty("Table", out var tableProp))
@@ -143,7 +143,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         return null;
     }
     
-    private string? GetPredicate(JsonElement nodeElement)
+    private static string? GetPredicate(JsonElement nodeElement)
     {
         if (nodeElement.TryGetProperty("Predicate", out var predProp))
         {
@@ -158,7 +158,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         return null;
     }
     
-    private Dictionary<string, object> ExtractMetadata(JsonElement root)
+    private static Dictionary<string, object> ExtractMetadata(JsonElement root)
     {
         var metadata = new Dictionary<string, object>();
         

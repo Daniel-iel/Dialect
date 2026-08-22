@@ -211,7 +211,7 @@ public abstract class OptimizationEngine
         return ExtractTableNameFromNode(plan.RootNode) ?? "Unknown";
     }
     
-    private string? ExtractTableNameFromNode(ExecutionPlanNode node)
+    private static string? ExtractTableNameFromNode(ExecutionPlanNode node)
     {
         if (!string.IsNullOrWhiteSpace(node.ObjectName))
             return node.ObjectName;
@@ -233,7 +233,7 @@ public abstract class OptimizationEngine
         return tables.ToList();
     }
     
-    private void CollectTableNames(ExecutionPlanNode node, HashSet<string> tables)
+    private static void CollectTableNames(ExecutionPlanNode node, HashSet<string> tables)
     {
         if (!string.IsNullOrWhiteSpace(node.ObjectName))
             tables.Add(node.ObjectName);

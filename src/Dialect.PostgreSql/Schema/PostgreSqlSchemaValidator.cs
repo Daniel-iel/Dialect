@@ -100,7 +100,7 @@ public class PostgreSqlSchemaValidator : SchemaValidator
         };
     }
 
-    private ValidationResult ValidateMigrationName(string name)
+    private static ValidationResult ValidateMigrationName(string name)
     {
         if (ReservedKeywords.Contains(name))
             return ValidationResult.WithWarnings(

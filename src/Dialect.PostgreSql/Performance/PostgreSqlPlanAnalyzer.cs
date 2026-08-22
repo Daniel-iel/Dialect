@@ -70,7 +70,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         }
     }
     
-    private ExecutionPlanNode ParseNode(JsonElement nodeElement)
+    private static ExecutionPlanNode ParseNode(JsonElement nodeElement)
     {
         var nodeType = nodeElement.TryGetProperty("Node Type", out var typeProp)
             ? typeProp.GetString() ?? "Unknown"
@@ -128,7 +128,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         );
     }
     
-    private decimal GetNodeCost(JsonElement nodeElement)
+    private static decimal GetNodeCost(JsonElement nodeElement)
     {
         if (nodeElement.TryGetProperty("Total Cost", out var costProp))
         {
@@ -137,7 +137,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         return 0m;
     }
     
-    private long GetNodeRows(JsonElement nodeElement)
+    private static long GetNodeRows(JsonElement nodeElement)
     {
         // Prefer actual rows from ANALYZE, fall back to plan rows
         if (nodeElement.TryGetProperty("Actual Rows", out var actualRowsProp))
@@ -153,7 +153,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         return 0L;
     }
     
-    private QueryExecutionPlan CreateFallbackPlan(string queryText)
+    private static QueryExecutionPlan CreateFallbackPlan(string queryText)
     {
         return new QueryExecutionPlan(
             RootNode: new ExecutionPlanNode(

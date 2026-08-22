@@ -46,13 +46,13 @@ public class SqlServerQueryParser : QueryParser
         return parsed;
     }
 
-    private string ExtractSelectClause(string sql)
+    private static string ExtractSelectClause(string sql)
     {
         var match = Regex.Match(sql, @"SELECT\s+(.*?)\s+FROM", RegexOptions.IgnoreCase);
         return match.Success ? match.Groups[1].Value : string.Empty;
     }
 
-    private string[] ExtractColumns(string clause)
+    private static string[] ExtractColumns(string clause)
     {
         if (string.IsNullOrEmpty(clause)) return Array.Empty<string>();
         
@@ -62,14 +62,14 @@ public class SqlServerQueryParser : QueryParser
             .ToArray();
     }
 
-    private string ExtractFromClause(string sql)
+    private static string ExtractFromClause(string sql)
     {
         var match = Regex.Match(sql, @"FROM\s+(.*?)(?:WHERE|JOIN|GROUP BY|ORDER BY|$)", 
             RegexOptions.IgnoreCase);
         return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
     }
 
-    private string[] ExtractTables(string fromClause)
+    private static string[] ExtractTables(string fromClause)
     {
         if (string.IsNullOrEmpty(fromClause)) return Array.Empty<string>();
         
@@ -98,7 +98,7 @@ public class SqlServerQueryParser : QueryParser
             .ToArray();
     }
 
-    private ParsedClause[] ExtractJoinClauses(string sql)
+    private static ParsedClause[] ExtractJoinClauses(string sql)
     {
         var matches = Regex.Matches(sql, 
             @"(?:INNER|LEFT|RIGHT|FULL|CROSS)\s+(?:OUTER\s+)?JOIN\s+([^\s]+)\s+(?:ON|USING)\s+([^\s]+)", 
@@ -119,7 +119,7 @@ public class SqlServerQueryParser : QueryParser
         return joins.ToArray();
     }
 
-    private ParsedClause[] ExtractGroupByClauses(string sql)
+    private static ParsedClause[] ExtractGroupByClauses(string sql)
     {
         var match = Regex.Match(sql, @"GROUP BY\s+(.*?)(?:HAVING|ORDER BY|$)", RegexOptions.IgnoreCase);
         if (!match.Success) return Array.Empty<ParsedClause>();
@@ -138,7 +138,7 @@ public class SqlServerQueryParser : QueryParser
         };
     }
 
-    private ParsedClause[] ExtractOrderByClauses(string sql)
+    private static ParsedClause[] ExtractOrderByClauses(string sql)
     {
         var match = Regex.Match(sql, @"ORDER BY\s+(.*?)$", RegexOptions.IgnoreCase);
         if (!match.Success) return Array.Empty<ParsedClause>();
@@ -158,7 +158,7 @@ public class SqlServerQueryParser : QueryParser
         };
     }
 
-    private string[] ExtractColumnsFromPredicate(string predicate)
+    private static string[] ExtractColumnsFromPredicate(string predicate)
     {
         var matches = Regex.Matches(predicate, @"[\w]+\.[\w]+|[\w]+");
         return matches.Cast<Match>()

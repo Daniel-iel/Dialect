@@ -22,7 +22,7 @@ public class SchemaValidationExamples : ExampleBase
         ConstraintValidation();
     }
 
-    private void NamingConventionValidation()
+    private static void NamingConventionValidation()
     {
         OutputFormatter.PrintSubHeader("Example 1: Naming Convention Validation");
         
@@ -40,7 +40,7 @@ public class SchemaValidationExamples : ExampleBase
         Console.WriteLine("      - CreatedAt (✓ Valid)");
     }
 
-    private void DataTypeValidation()
+    private static void DataTypeValidation()
     {
         OutputFormatter.PrintSubHeader("Example 2: Data Type Validation");
         
@@ -56,7 +56,7 @@ public class SchemaValidationExamples : ExampleBase
         Console.WriteLine("    ✓ All monetary columns properly typed");
     }
 
-    private void ConstraintValidation()
+    private static void ConstraintValidation()
     {
         OutputFormatter.PrintSubHeader("Example 3: Constraint Validation");
         
