@@ -35,13 +35,17 @@ public class OptimizationExamples : ExampleBase
         var parser = new SqlServerQueryParser();
         var analysis = parser.Parse(sql);
         
-        Console.WriteLine($"  Query: {sql}");
-        Console.WriteLine($"\n  Analysis Results:");
-        Console.WriteLine($"    - Has WHERE clause: {analysis.WhereClauses.Length > 0}");
-        Console.WriteLine($"    - Has JOIN: {analysis.JoinClauses.Length > 0}");
-        Console.WriteLine($"    - Number of JOINs: {analysis.JoinClauses.Length}");
-        Console.WriteLine($"    - Has ORDER BY: {analysis.OrderByClauses.Length > 0}");
-        Console.WriteLine($"    - Has GROUP BY: {analysis.GroupByClauses.Length > 0}");
+        var queryAnalysisText = @$"
+  Query: {sql}
+
+  Analysis Results:
+    - Has WHERE clause: {analysis.WhereClauses.Length > 0}
+    - Has JOIN: {analysis.JoinClauses.Length > 0}
+    - Number of JOINs: {analysis.JoinClauses.Length}
+    - Has ORDER BY: {analysis.OrderByClauses.Length > 0}
+    - Has GROUP BY: {analysis.GroupByClauses.Length > 0}";
+        
+        Console.WriteLine(queryAnalysisText);
     }
 
     private static void PredicateAnalysis()
@@ -57,13 +61,17 @@ public class OptimizationExamples : ExampleBase
         var predicate2 = analyzer.Analyze("Total > 100");
         var predicate3 = analyzer.Analyze("OrderDate >= '2024-01-01'");
         
-        Console.WriteLine($"  Query: {sql}");
-        Console.WriteLine($"\n  Predicate Analysis:");
-        Console.WriteLine($"    - Total predicates: 3");
-        Console.WriteLine($"    - Predicate 1: {predicate1.Column} ({predicate1.OperatorType}) - Selectivity: {predicate1.Selectivity:P1}, Indexable: {predicate1.IsIndexable}");
-        Console.WriteLine($"    - Predicate 2: {predicate2.Column} ({predicate2.OperatorType}) - Selectivity: {predicate2.Selectivity:P1}, Indexable: {predicate2.IsIndexable}");
-        Console.WriteLine($"    - Predicate 3: {predicate3.Column} ({predicate3.OperatorType}) - Selectivity: {predicate3.Selectivity:P1}, Indexable: {predicate3.IsIndexable}");
-        Console.WriteLine($"    - Indexed columns recommended: UserId, OrderDate");
+        var predicateAnalysisText = @$"
+  Query: {sql}
+
+  Predicate Analysis:
+    - Total predicates: 3
+    - Predicate 1: {predicate1.Column} ({predicate1.OperatorType}) - Selectivity: {predicate1.Selectivity:P1}, Indexable: {predicate1.IsIndexable}
+    - Predicate 2: {predicate2.Column} ({predicate2.OperatorType}) - Selectivity: {predicate2.Selectivity:P1}, Indexable: {predicate2.IsIndexable}
+    - Predicate 3: {predicate3.Column} ({predicate3.OperatorType}) - Selectivity: {predicate3.Selectivity:P1}, Indexable: {predicate3.IsIndexable}
+    - Indexed columns recommended: UserId, OrderDate";
+        
+        Console.WriteLine(predicateAnalysisText);
     }
 
     private static void JoinAnalysis()
@@ -79,12 +87,16 @@ public class OptimizationExamples : ExampleBase
         var join2 = analyzer.Analyze("Orders o JOIN OrderItems oi ON o.OrderId = oi.OrderId");
         var join3 = analyzer.Analyze("OrderItems oi JOIN Products p ON oi.ProductId = p.ProductId");
         
-        Console.WriteLine($"  Query: {sql}");
-        Console.WriteLine($"\n  JOIN Analysis:");
-        Console.WriteLine($"    - Total joins: 3");
-        Console.WriteLine($"    - Join 1: {join1.JoinType} between {join1.LeftTable} and {join1.RightTable} - Optimal: {join1.IsOptimal}");
-        Console.WriteLine($"    - Join 2: {join2.JoinType} between {join2.LeftTable} and {join2.RightTable} - Optimal: {join2.IsOptimal}");
-        Console.WriteLine($"    - Join 3: {join3.JoinType} between {join3.LeftTable} and {join3.RightTable} - Optimal: {join3.IsOptimal}");
-        Console.WriteLine($"    - Recommendation: Consider materializing intermediate results in CTEs for complex joins");
+        var joinAnalysisText = @$"
+  Query: {sql}
+
+  JOIN Analysis:
+    - Total joins: 3
+    - Join 1: {join1.JoinType} between {join1.LeftTable} and {join1.RightTable} - Optimal: {join1.IsOptimal}
+    - Join 2: {join2.JoinType} between {join2.LeftTable} and {join2.RightTable} - Optimal: {join2.IsOptimal}
+    - Join 3: {join3.JoinType} between {join3.LeftTable} and {join3.RightTable} - Optimal: {join3.IsOptimal}
+    - Recommendation: Consider materializing intermediate results in CTEs for complex joins";
+        
+        Console.WriteLine(joinAnalysisText);
     }
 }

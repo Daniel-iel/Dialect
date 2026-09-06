@@ -711,14 +711,12 @@ If you find Dialect helpful, consider supporting the project:
 
 #### 📚 Documentação
 
-- [spec.md](spec.md) — Especificação técnica detalhada (Português)
-- [specv2.md](specv2.md) — Especificação atualizada (Português)
 - [GitHub Discussions](https://github.com/Daniel-iel/Dialect/discussions) — Dúvidas em Português
 
 #### 📦 Instalação
 
 ```bash
-dotnet add package Dialect.Core
+dotnet add package Dialect
 dotnet add package Dialect.SqlServer
 dotnet add package Dialect.PostgreSql
 dotnet add package Dialect.MySql

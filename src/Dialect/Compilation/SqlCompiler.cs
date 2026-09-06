@@ -2,6 +2,7 @@ namespace Dialect.Core.Compilation;
 
 using Dialect.Core.AST;
 using Dialect.Core.Dialects;
+using Dialect.Core.DI;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -32,6 +33,46 @@ public static class SqlCompiler
     }
 
     /// <summary>
+    /// Compiles a SELECT statement to SQL using the configured default dialect.
+    /// Uses the default dialect configured via AddSqlFramework().
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this SelectStatement statement)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles a SELECT statement to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    /// <param name="statement">The SELECT statement to compile</param>
+    /// <param name="provider">The target SQL dialect provider (SqlServer, PostgreSql, MySql)</param>
+    /// <returns>Compiled SQL with parameters</returns>
+    /// <exception cref="ArgumentException">Thrown if the provider is not registered</exception>
+    public static CompiledQuery Compile(this SelectStatement statement, SqlProvider provider)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
     /// Compiles an INSERT statement to SQL.
     /// </summary>
     public static CompiledQuery Compile(this InsertStatement statement, ISqlDialect dialect)
@@ -45,6 +86,41 @@ public static class SqlCompiler
         
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
+    }
+
+    /// <summary>
+    /// Compiles an INSERT statement to SQL using the configured default dialect.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this InsertStatement statement)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles an INSERT statement to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    public static CompiledQuery Compile(this InsertStatement statement, SqlProvider provider)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return statement.Compile(dialect);
     }
 
     /// <summary>
@@ -64,6 +140,41 @@ public static class SqlCompiler
     }
 
     /// <summary>
+    /// Compiles an UPDATE statement to SQL using the configured default dialect.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this UpdateStatement statement)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles an UPDATE statement to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    public static CompiledQuery Compile(this UpdateStatement statement, SqlProvider provider)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
     /// Compiles a DELETE statement to SQL.
     /// </summary>
     public static CompiledQuery Compile(this DeleteStatement statement, ISqlDialect dialect)
@@ -80,6 +191,41 @@ public static class SqlCompiler
     }
 
     /// <summary>
+    /// Compiles a DELETE statement to SQL using the configured default dialect.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this DeleteStatement statement)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles a DELETE statement to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    public static CompiledQuery Compile(this DeleteStatement statement, SqlProvider provider)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
     /// Compiles a routine call to SQL.
     /// </summary>
     public static CompiledQuery Compile(this RoutineCall routine, ISqlDialect dialect)
@@ -93,6 +239,41 @@ public static class SqlCompiler
         
         var renderer = dialect.CreateRoutineRenderer();
         return renderer.Render(routine, dialect);
+    }
+
+    /// <summary>
+    /// Compiles a routine call to SQL using the configured default dialect.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this RoutineCall routine)
+    {
+        if (routine == null)
+            throw new ArgumentNullException(nameof(routine));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return routine.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles a routine call to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    public static CompiledQuery Compile(this RoutineCall routine, SqlProvider provider)
+    {
+        if (routine == null)
+            throw new ArgumentNullException(nameof(routine));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return routine.Compile(dialect);
     }
 
     /// <summary>
@@ -113,6 +294,41 @@ public static class SqlCompiler
         
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
+    }
+
+    /// <summary>
+    /// Compiles an UPSERT statement to SQL using the configured default dialect.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this UpsertStatement statement)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles an UPSERT statement to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    public static CompiledQuery Compile(this UpsertStatement statement, SqlProvider provider)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return statement.Compile(dialect);
     }
 
     /// <summary>

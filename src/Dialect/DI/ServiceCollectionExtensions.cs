@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the SQL framework for a specific built-in dialect (SQL Server, PostgreSQL, MySQL).
+    /// Also registers the dialect in SqlDialectRegistry as the default and makes it available for .Compile(SqlProvider) overloads.
     /// </summary>
     public static IServiceCollection AddSqlFramework(
         this IServiceCollection services,
@@ -35,12 +36,21 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(dialect);
 
+        // Register the dialect in the registry as default and by provider
+        var registry = SqlDialectRegistry.Instance;
+        registry.SetDefault(dialect);
+        registry.RegisterDialect(provider, dialect);
+
+        // Register ISqlDialectProvider for DI
+        services.AddSingleton<ISqlDialectProvider, DefaultSqlDialectProvider>();
+
         return services;
     }
 
     /// <summary>
     /// Registers the SQL framework with a custom dialect implementation.
     /// Useful for third-party dialects that are not part of the core package.
+    /// Also registers the dialect in SqlDialectRegistry as the default.
     /// </summary>
     public static IServiceCollection AddSqlFramework(
         this IServiceCollection services,
@@ -57,11 +67,19 @@ public static class ServiceCollectionExtensions
         // Register the custom dialect
         services.AddSingleton(dialect);
 
+        // Register the dialect in the registry as default
+        var registry = SqlDialectRegistry.Instance;
+        registry.SetDefault(dialect);
+
+        // Register ISqlDialectProvider for DI
+        services.AddSingleton<ISqlDialectProvider, DefaultSqlDialectProvider>();
+
         return services;
     }
 
     /// <summary>
     /// Registers the SQL framework with advanced cache configuration.
+    /// Also registers the dialect in SqlDialectRegistry as the default and makes it available for .Compile(SqlProvider) overloads.
     /// </summary>
     public static IServiceCollection AddSqlFramework(
         this IServiceCollection services,
@@ -87,11 +105,20 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(dialect);
 
+        // Register the dialect in the registry as default and by provider
+        var registry = SqlDialectRegistry.Instance;
+        registry.SetDefault(dialect);
+        registry.RegisterDialect(provider, dialect);
+
+        // Register ISqlDialectProvider for DI
+        services.AddSingleton<ISqlDialectProvider, DefaultSqlDialectProvider>();
+
         return services;
     }
 
     /// <summary>
     /// Registers the SQL framework with a custom dialect and advanced cache configuration.
+    /// Also registers the dialect in SqlDialectRegistry as the default.
     /// </summary>
     public static IServiceCollection AddSqlFramework(
         this IServiceCollection services,
@@ -110,6 +137,13 @@ public static class ServiceCollectionExtensions
 
         // Register the custom dialect
         services.AddSingleton(dialect);
+
+        // Register the dialect in the registry as default
+        var registry = SqlDialectRegistry.Instance;
+        registry.SetDefault(dialect);
+
+        // Register ISqlDialectProvider for DI
+        services.AddSingleton<ISqlDialectProvider, DefaultSqlDialectProvider>();
 
         return services;
     }

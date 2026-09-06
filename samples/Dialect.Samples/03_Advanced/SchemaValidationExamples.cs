@@ -26,55 +26,64 @@ public class SchemaValidationExamples : ExampleBase
     {
         OutputFormatter.PrintSubHeader("Example 1: Naming Convention Validation");
         
-        Console.WriteLine("  Validation Rules:");
-        Console.WriteLine("    ✓ Table names: PascalCase or lowercase with underscores");
-        Console.WriteLine("    ✓ Column names: PascalCase or snake_case");
-        Console.WriteLine("    ✓ Primary key: {TableName}Id or id");
-        Console.WriteLine("    ✓ Foreign key: {ReferencedTable}Id");
+        var namingValidationText = @"
+  Validation Rules:
+    ✓ Table names: PascalCase or lowercase with underscores
+    ✓ Column names: PascalCase or snake_case
+    ✓ Primary key: {TableName}Id or id
+    ✓ Foreign key: {ReferencedTable}Id
+
+  Example Schema:
+    Table: Users (✓ Valid)
+      - UserId (✓ Valid PK)
+      - Username (✓ Valid)
+      - Email (✓ Valid)
+      - CreatedAt (✓ Valid)";
         
-        Console.WriteLine("\n  Example Schema:");
-        Console.WriteLine("    Table: Users (✓ Valid)");
-        Console.WriteLine("      - UserId (✓ Valid PK)");
-        Console.WriteLine("      - Username (✓ Valid)");
-        Console.WriteLine("      - Email (✓ Valid)");
-        Console.WriteLine("      - CreatedAt (✓ Valid)");
+        Console.WriteLine(namingValidationText);
     }
 
     private static void DataTypeValidation()
     {
         OutputFormatter.PrintSubHeader("Example 2: Data Type Validation");
         
-        Console.WriteLine("  Validation Rules:");
-        Console.WriteLine("    ✓ DECIMAL(10,2) for monetary values");
-        Console.WriteLine("    ✓ VARCHAR/NVARCHAR for strings with length limit");
-        Console.WriteLine("    ✓ INT or BIGINT for identifiers");
-        Console.WriteLine("    ✓ TIMESTAMP/DATETIME for dates");
+        var dataTypeValidationText = @"
+  Validation Rules:
+    ✓ DECIMAL(10,2) for monetary values
+    ✓ VARCHAR/NVARCHAR for strings with length limit
+    ✓ INT or BIGINT for identifiers
+    ✓ TIMESTAMP/DATETIME for dates
+
+  Issues Found:
+    ⚠ Column 'Price' uses DECIMAL(10,2) ✓ Correct
+    ⚠ Column 'Total' uses DECIMAL(10,2) ✓ Correct
+    ✓ All monetary columns properly typed";
         
-        Console.WriteLine("\n  Issues Found:");
-        Console.WriteLine("    ⚠ Column 'Price' uses DECIMAL(10,2) ✓ Correct");
-        Console.WriteLine("    ⚠ Column 'Total' uses DECIMAL(10,2) ✓ Correct");
-        Console.WriteLine("    ✓ All monetary columns properly typed");
+        Console.WriteLine(dataTypeValidationText);
     }
 
     private static void ConstraintValidation()
     {
         OutputFormatter.PrintSubHeader("Example 3: Constraint Validation");
         
-        Console.WriteLine("  Validation Rules:");
-        Console.WriteLine("    ✓ Primary keys: All tables must have");
-        Console.WriteLine("    ✓ Foreign keys: Referential integrity");
-        Console.WriteLine("    ✓ Not null: Critical columns");
-        Console.WriteLine("    ✓ Unique: Natural keys (Email, Username)");
+        var constraintValidationText = @"
+  Validation Rules:
+    ✓ Primary keys: All tables must have
+    ✓ Foreign keys: Referential integrity
+    ✓ Not null: Critical columns
+    ✓ Unique: Natural keys (Email, Username)
+
+  Schema Constraints:
+    Table: Users
+      ✓ PK: UserId
+      ✓ UNIQUE: Email
+      ✓ NOT NULL: Username, Email
+
+    Table: Orders
+      ✓ PK: OrderId
+      ✓ FK: UserId -> Users(UserId)
+      ✓ NOT NULL: UserId, Total";
         
-        Console.WriteLine("\n  Schema Constraints:");
-        Console.WriteLine("    Table: Users");
-        Console.WriteLine("      ✓ PK: UserId");
-        Console.WriteLine("      ✓ UNIQUE: Email");
-        Console.WriteLine("      ✓ NOT NULL: Username, Email");
-        
-        Console.WriteLine("\n    Table: Orders");
-        Console.WriteLine("      ✓ PK: OrderId");
-        Console.WriteLine("      ✓ FK: UserId -> Users(UserId)");
-        Console.WriteLine("      ✓ NOT NULL: UserId, Total");
+        Console.WriteLine(constraintValidationText);
     }
 }

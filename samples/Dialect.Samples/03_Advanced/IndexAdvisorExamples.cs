@@ -50,15 +50,19 @@ public class IndexAdvisorExamples : ExampleBase
             OptimizationTips: new[] { "Add index on frequently filtered columns", "Consider composite index for multi-column predicates" }
         );
         
-        Console.WriteLine($"  Query: {sql}");
-        Console.WriteLine($"  Performance Metrics: Rows Scanned={metrics.TotalRowsExamined}, Returned={metrics.TotalRowsProduced}, Cost={metrics.TotalCost}");
-        Console.WriteLine($"\n  Index Recommendations:");
-        Console.WriteLine($"    1. Single-column index on Email (HIGH PRIORITY)");
-        Console.WriteLine($"       - Estimated selectivity: 99.99%");
-        Console.WriteLine($"       - Expected performance improvement: 100-1000x");
-        Console.WriteLine($"    2. Composite index on (Email, Username) (MEDIUM PRIORITY)");
-        Console.WriteLine($"       - Covers both filtering columns");
-        Console.WriteLine($"       - Would enable index-only scans");
+        var whereIndexText = @$"
+  Query: {sql}
+  Performance Metrics: Rows Scanned={metrics.TotalRowsExamined}, Returned={metrics.TotalRowsProduced}, Cost={metrics.TotalCost}
+
+  Index Recommendations:
+    1. Single-column index on Email (HIGH PRIORITY)
+       - Estimated selectivity: 99.99%
+       - Expected performance improvement: 100-1000x
+    2. Composite index on (Email, Username) (MEDIUM PRIORITY)
+       - Covers both filtering columns
+       - Would enable index-only scans";
+        
+        Console.WriteLine(whereIndexText);
     }
 
     private static void JoinColumnIndexes()
@@ -67,14 +71,18 @@ public class IndexAdvisorExamples : ExampleBase
         
         var sql = "SELECT * FROM Orders o JOIN Users u ON o.UserId = u.UserId WHERE o.Total > 500";
         
-        Console.WriteLine($"  Query: {sql}");
-        Console.WriteLine($"\n  Index Recommendations:");
-        Console.WriteLine($"    1. Foreign key index on Orders.UserId (CRITICAL)");
-        Console.WriteLine($"       - Used for JOIN operation");
-        Console.WriteLine($"       - Prevents nested loop joins");
-        Console.WriteLine($"    2. Index on Orders(UserId, Total) (HIGH PRIORITY)");
-        Console.WriteLine($"       - Composite index covers both JOIN and WHERE");
-        Console.WriteLine($"       - Enables index-only scans");
+        var joinIndexText = @$"
+  Query: {sql}
+
+  Index Recommendations:
+    1. Foreign key index on Orders.UserId (CRITICAL)
+       - Used for JOIN operation
+       - Prevents nested loop joins
+    2. Index on Orders(UserId, Total) (HIGH PRIORITY)
+       - Composite index covers both JOIN and WHERE
+       - Enables index-only scans";
+        
+        Console.WriteLine(joinIndexText);
     }
 
     private static void CompositeIndexes()
@@ -83,12 +91,16 @@ public class IndexAdvisorExamples : ExampleBase
         
         var sql = "SELECT OrderId, UserId, Total FROM Orders WHERE UserId = 1 ORDER BY OrderDate";
         
-        Console.WriteLine($"  Query: {sql}");
-        Console.WriteLine($"\n  Index Recommendation:");
-        Console.WriteLine($"    Composite index on Orders(UserId, OrderDate, Total, OrderId)");
-        Console.WriteLine($"       - Filters by UserId");
-        Console.WriteLine($"       - Orders by OrderDate");
-        Console.WriteLine($"       - Includes all selected columns (covering index)");
-        Console.WriteLine($"       - Result: Complete index-only scan, zero table lookups");
+        var compositeIndexText = @$"
+  Query: {sql}
+
+  Index Recommendation:
+    Composite index on Orders(UserId, OrderDate, Total, OrderId)
+       - Filters by UserId
+       - Orders by OrderDate
+       - Includes all selected columns (covering index)
+       - Result: Complete index-only scan, zero table lookups";
+        
+        Console.WriteLine(compositeIndexText);
     }
 }

@@ -1,7 +1,10 @@
+using Dialect.Core.AST;
+using Dialect.Core.DI;
 using Dialect.Samples._01_Basic;
 using Dialect.Samples._02_Intermediate;
 using Dialect.Samples._03_Advanced;
 using Dialect.Samples.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Dialect Samples - Interactive console application demonstrating all framework features.
@@ -25,6 +28,13 @@ class Program
 
     static void Main(string[] args)
     {
+        // Initialize SQL Framework with default dialect (PostgreSQL)
+        // This registers the default dialect in SqlDialectRegistry
+        // which will be used by all .Compile() calls throughout the application
+        var services = new ServiceCollection();
+        services.AddSqlFramework(SqlProvider.PostgreSql);
+        var serviceProvider = services.BuildServiceProvider();
+
         DisplayWelcome();
 
         while (true)
@@ -58,14 +68,20 @@ class Program
         SafeClear();
         OutputFormatter.PrintSectionHeader("🚀 DIALECT FRAMEWORK - COMPREHENSIVE SAMPLES 🚀");
 
-        Console.WriteLine("\nWelcome to the Dialect FluentBuilder SQL Framework samples!");
-        Console.WriteLine("This application demonstrates all major framework features with live examples.");
-        Console.WriteLine("\nSupported Databases:");
-        Console.WriteLine("  • SQL Server 2022");
-        Console.WriteLine("  • PostgreSQL 15");
-        Console.WriteLine("  • MySQL 8.0");
-        Console.WriteLine("\n(Make sure Docker containers are running: docker-compose up -d)");
-        Console.WriteLine("\nPress any key to continue...");
+        const string? welcomeText = @"
+Welcome to the Dialect FluentBuilder SQL Framework samples!
+This application demonstrates all major framework features with live examples.
+
+Supported Databases:
+  • SQL Server 2022
+  • PostgreSQL 15
+  • MySQL 8.0
+
+(Make sure Docker containers are running: docker-compose up -d)
+
+Press any key to continue...";
+
+        Console.WriteLine(welcomeText);
         Console.ReadKey();
         SafeClear();
     }
@@ -74,28 +90,30 @@ class Program
     {
         OutputFormatter.PrintSectionHeader("SELECT AN EXAMPLE CATEGORY");
 
-        Console.WriteLine("\n📚 BASIC EXAMPLES (DML Fundamentals)");
-        Console.WriteLine("  1. SELECT - Basic Queries");
-        Console.WriteLine("  2. INSERT - Data Insertion");
-        Console.WriteLine("  3. UPDATE - Data Modification");
-        Console.WriteLine("  4. DELETE - Data Removal");
-        Console.WriteLine("  5. UPSERT - Insert or Update (Dialect Comparison)");
+        const string? menuText = @"
+📚 BASIC EXAMPLES (DML Fundamentals)
+  1. SELECT - Basic Queries
+  2. INSERT - Data Insertion
+  3. UPDATE - Data Modification
+  4. DELETE - Data Removal
+  5. UPSERT - Insert or Update (Dialect Comparison)
 
-        Console.WriteLine("\n🔄 INTERMEDIATE EXAMPLES (Query Composition)");
-        Console.WriteLine("  6. JOINs - Inner, Left, Right, Full, Cross");
-        Console.WriteLine("  7. CTEs - Common Table Expressions");
-        Console.WriteLine("  8. Window Functions - ROW_NUMBER, RANK, LAG, LEAD");
-        Console.WriteLine("  9. Grouping & Aggregation - GROUP BY, HAVING");
+🔄 INTERMEDIATE EXAMPLES (Query Composition)
+  6. JOINs - Inner, Left, Right, Full, Cross
+  7. CTEs - Common Table Expressions
+  8. Window Functions - ROW_NUMBER, RANK, LAG, LEAD
+  9. Grouping & Aggregation - GROUP BY, HAVING
 
-        Console.WriteLine("\n⚙️  ADVANCED EXAMPLES (Performance & Analysis)");
-        Console.WriteLine("  10. Query Optimization - Analysis & Parsing");
-        Console.WriteLine("  11. Index Advisor - Performance Tuning");
-        Console.WriteLine("  12. Schema Validation - Data Integrity");
+⚙️  ADVANCED EXAMPLES (Performance & Analysis)
+  10. Query Optimization - Analysis & Parsing
+  11. Index Advisor - Performance Tuning
+  12. Schema Validation - Data Integrity
 
-        Console.WriteLine("\n💡 UTILITIES");
-        Console.WriteLine("  99. Docker Setup Guide");
-        Console.WriteLine("  0. Exit");
+💡 UTILITIES
+  99. Docker Setup Guide
+  0. Exit";
 
+        Console.WriteLine(menuText);
         Console.Write("\nEnter choice (1-12, 99, or 0): ");
     }
 
@@ -164,55 +182,75 @@ class Program
         Console.Clear();
         OutputFormatter.PrintSectionHeader("🐳 DOCKER SETUP GUIDE");
 
-        Console.WriteLine("\n🚀 QUICK START");
-        Console.WriteLine("1. Install Docker Desktop (https://www.docker.com/products/docker-desktop)");
-        Console.WriteLine("2. Navigate to project root directory");
-        Console.WriteLine("3. Run the following command:");
-        Console.WriteLine("\n   docker-compose up -d\n");
+        const string? quickStartText = @"
+🚀 QUICK START
+1. Install Docker Desktop (https://www.docker.com/products/docker-desktop)
+2. Navigate to project root directory
+3. Run the following command:
 
-        Console.WriteLine("📊 VERIFY CONTAINERS ARE RUNNING");
-        Console.WriteLine("Run: docker-compose ps\n");
-        Console.WriteLine("You should see 3 containers with STATUS 'Up':");
-        Console.WriteLine("  • dialect-sqlserver   (Port 1433)");
-        Console.WriteLine("  • dialect-postgresql  (Port 5432)");
-        Console.WriteLine("  • dialect-mysql       (Port 3306)\n");
+   docker-compose up -d";
 
-        Console.WriteLine("✅ HEALTH CHECKS");
-        Console.WriteLine("Containers include automatic health checks. Run:");
-        Console.WriteLine("  docker-compose ps  (check STATUS column)\n");
+        const string? verifyContainersText = @"
+📊 VERIFY CONTAINERS ARE RUNNING
+Run: docker-compose ps
 
-        Console.WriteLine("🔧 CONNECTION STRINGS");
-        Console.WriteLine("SQL Server:   Server=localhost,1433; User=sa; Password=P@ssw0rd!");
-        Console.WriteLine("PostgreSQL:   Host=localhost:5432; User=postgres; Password=postgres");
-        Console.WriteLine("MySQL:        Host=localhost:3306; User=root; Password=root\n");
+You should see 3 containers with STATUS 'Up':
+  • dialect-sqlserver   (Port 1433)
+  • dialect-postgresql  (Port 5432)
+  • dialect-mysql       (Port 3306)";
 
-        Console.WriteLine("🛑 STOP CONTAINERS");
-        Console.WriteLine("  docker-compose down\n");
+        const string? healthChecksText = @"
+✅ HEALTH CHECKS
+Containers include automatic health checks. Run:
+  docker-compose ps  (check STATUS column)";
 
-        Console.WriteLine("🗑️  REMOVE DATA & RESET");
-        Console.WriteLine("  docker-compose down -v\n");
+        const string? connectionStringsText = @"
+🔧 CONNECTION STRINGS
+SQL Server:   Server=localhost,1433; User=sa; Password=P@ssw0rd!
+PostgreSQL:   Host=localhost:5432; User=postgres; Password=postgres
+MySQL:        Host=localhost:3306; User=root; Password=root";
 
-        Console.WriteLine("📝 DATABASE SCHEMA");
-        Console.WriteLine("All databases contain identical schemas:");
-        Console.WriteLine("  • Users (UserId, Username, Email, CreatedAt)");
-        Console.WriteLine("  • Products (ProductId, Name, Price, StockQuantity)");
-        Console.WriteLine("  • Orders (OrderId, UserId, OrderDate, Total)");
-        Console.WriteLine("  • OrderItems (OrderItemId, OrderId, ProductId, Quantity, UnitPrice)\n");
+        const string? stopResetText = @"
+🛑 STOP CONTAINERS
+  docker-compose down
 
-        Console.WriteLine("💾 SAMPLE DATA");
-        Console.WriteLine("  • 4 Users (john_doe, jane_smith, bob_wilson, alice_johnson)");
-        Console.WriteLine("  • 5 Products (Laptop, Mouse, Keyboard, Monitor, Headphones)");
-        Console.WriteLine("  • 5 Orders with multiple order items\n");
+🗑️  REMOVE DATA & RESET
+  docker-compose down -v";
 
-        Console.WriteLine("📖 TROUBLESHOOTING");
-        Console.WriteLine("Q: Container won't start?");
-        Console.WriteLine("A: Check Docker is running, ports not in use, disk space available\n");
-        Console.WriteLine("Q: Connection refused?");
-        Console.WriteLine("A: Wait 30 seconds for health checks to complete, check docker-compose ps\n");
-        Console.WriteLine("Q: Data not loading?");
-        Console.WriteLine("A: Check /docker folder has .sql files, rerun: docker-compose down -v && docker-compose up -d\n");
+        const string? databaseSchemaText = @"
+📝 DATABASE SCHEMA
+All databases contain identical schemas:
+  • Users (UserId, Username, Email, CreatedAt)
+  • Products (ProductId, Name, Price, StockQuantity)
+  • Orders (OrderId, UserId, OrderDate, Total)
+  • OrderItems (OrderItemId, OrderId, ProductId, Quantity, UnitPrice)";
 
-        Console.WriteLine("Press any key to return to menu...");
+        const string? sampleDataText = @"
+💾 SAMPLE DATA
+  • 4 Users (john_doe, jane_smith, bob_wilson, alice_johnson)
+  • 5 Products (Laptop, Mouse, Keyboard, Monitor, Headphones)
+  • 5 Orders with multiple order items";
+
+        const string? troubleshootingText = @"
+📖 TROUBLESHOOTING
+Q: Container won't start?
+A: Check Docker is running, ports not in use, disk space available
+
+Q: Connection refused?
+A: Wait 30 seconds for health checks to complete, check docker-compose ps
+
+Q: Data not loading?
+A: Check /docker folder has .sql files, rerun: docker-compose down -v && docker-compose up -d
+
+Press any key to return to menu...";
+
+        string[] texts = { quickStartText, verifyContainersText, healthChecksText, connectionStringsText, stopResetText, databaseSchemaText, sampleDataText, troubleshootingText };
+
+        foreach (var text in texts)
+        {
+            Console.WriteLine(text);
+        }
+
         Console.ReadKey();
         Console.Clear();
 

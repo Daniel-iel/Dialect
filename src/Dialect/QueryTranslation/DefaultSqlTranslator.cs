@@ -3,6 +3,7 @@ namespace Dialect.Core.QueryTranslation;
 using Dialect.Core.AST;
 using Dialect.Core.Compilation;
 using Dialect.Core.Dialects;
+using Dialect.Core.DI;
 
 /// <summary>
 /// Default implementation of ISqlTranslator.
@@ -114,6 +115,73 @@ public sealed class DefaultSqlTranslator : ISqlTranslator
     }
 
     /// <summary>
+    /// Translates SQL with optional source and target SqlProvider enums.
+    /// Source is auto-detected if not specified; target uses default if not specified.
+    /// </summary>
+    public TranslationResult Translate(string sourceSql, SqlProvider? sourceProvider, SqlProvider? targetProvider)
+    {
+        if (string.IsNullOrWhiteSpace(sourceSql))
+        {
+            return new TranslationResult
+            {
+                ErrorMessage = "Source SQL cannot be empty."
+            };
+        }
+
+        // Resolve source provider
+        SqlProvider resolvedSource;
+        if (sourceProvider.HasValue)
+        {
+            resolvedSource = sourceProvider.Value;
+        }
+        else
+        {
+            var detectedSource = DetectSourceProvider(sourceSql);
+            if (detectedSource is null)
+            {
+                return new TranslationResult
+                {
+                    ErrorMessage = "Could not auto-detect source SQL provider. Specify provider explicitly."
+                };
+            }
+            resolvedSource = detectedSource.Value;
+        }
+
+        // Resolve target dialect
+        ISqlDialect targetDialect;
+        if (targetProvider.HasValue)
+        {
+            var dialect = SqlDialectRegistry.Instance.GetDialect(targetProvider.Value);
+            if (dialect is null)
+            {
+                return new TranslationResult
+                {
+                    DetectedSourceProvider = resolvedSource,
+                    ErrorMessage = $"No dialect registered for target provider: {targetProvider}. " +
+                                   $"Ensure AddSqlFramework({targetProvider}) has been called."
+                };
+            }
+            targetDialect = dialect;
+        }
+        else
+        {
+            var defaultDialect = SqlDialectRegistry.Instance.GetDefault();
+            if (defaultDialect is null)
+            {
+                return new TranslationResult
+                {
+                    DetectedSourceProvider = resolvedSource,
+                    ErrorMessage = "No default target dialect configured. " +
+                                   "Call AddSqlFramework() in your Program.cs or specify target provider explicitly."
+                };
+            }
+            targetDialect = defaultDialect;
+        }
+
+        return TranslateInternal(sourceSql, resolvedSource, targetDialect);
+    }
+
+    /// <summary>
     /// Internal translation logic orchestrating all phases.
     /// 1. Parse source SQL to AST using dialect-specific parser adapter
     /// 2. Detect untranslatable constructs
@@ -161,13 +229,11 @@ public sealed class DefaultSqlTranslator : ISqlTranslator
     }
 
     /// <summary>
-    /// Detects source SQL provider from the SQL content (not connection string).
-    /// Currently a stub; can be enhanced with SQL pattern analysis in future.
+    /// Detects source SQL provider from the SQL content using pattern analysis.
+    /// Uses SqlDialectDetector to identify TSQL, PostgreSQL, MySQL syntax patterns.
     /// </summary>
     private static SqlProvider? DetectSourceProvider(string sql)
     {
-        // Stub: In future, could use keyword analysis or other heuristics
-        // For now, requires connection string-based detection
-        return null;
+        return SqlDialectDetector.DetectDialectProvider(sql);
     }
 }
