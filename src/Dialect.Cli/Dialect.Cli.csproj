@@ -18,15 +18,25 @@
     <!-- Dependency Injection -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 
+    <!-- Logging abstraction -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+
     <!-- Roslyn for syntax analysis -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
 
     <!-- CLI argument parsing - stable version -->
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
+
+    <!-- Result pattern library -->
+    <PackageReference Include="ErrorOr" Version="1.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Dialect\Dialect.csproj" />
+    <ProjectReference Include="..\Dialect.SqlServer\Dialect.SqlServer.csproj" />
+    <ProjectReference Include="..\Dialect.PostgreSql\Dialect.PostgreSql.csproj" />
+    <ProjectReference Include="..\Dialect.MySql\Dialect.MySql.csproj" />
   </ItemGroup>
 
 </Project>

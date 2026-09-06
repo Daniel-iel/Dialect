@@ -2,6 +2,7 @@ namespace Dialect.Cli.SqlDiscovery;
 
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -11,6 +12,8 @@ using System.Text.RegularExpressions;
 /// </summary>
 public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
 {
+    private readonly ILogger<RoslynSqlDiscoveryService> _logger;
+
     /// <summary>
     /// SQL keywords used for heuristic detection.
     /// </summary>
@@ -20,6 +23,11 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
         "EXEC", "EXECUTE", "CALL", "WITH", "FROM", "WHERE", "JOIN", "ORDER BY",
         "GROUP BY", "HAVING", "UNION", "INTERSECT", "EXCEPT"
     ];
+
+    public RoslynSqlDiscoveryService(ILogger<RoslynSqlDiscoveryService> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
     /// <summary>
     /// Discovers SQL strings in C# source code.
@@ -42,7 +50,7 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
         catch (Exception ex)
         {
             // Log parse error but don't fail - return empty results
-            Console.Error.WriteLine($"Error parsing {filePath}: {ex.Message}");
+            _logger.LogError(ex, "Error parsing {FilePath}", filePath ?? "unknown");
             return [];
         }
     }

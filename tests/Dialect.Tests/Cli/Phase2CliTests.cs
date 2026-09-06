@@ -3,6 +3,8 @@ namespace Dialect.Tests.Cli;
 using Dialect.Cli.Models;
 using Dialect.Cli.SqlDiscovery;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 /// <summary>
@@ -11,10 +13,12 @@ using Xunit;
 public class RoslynSqlDiscoveryServiceTests
 {
     private readonly RoslynSqlDiscoveryService _discoveryService;
+    private readonly Mock<ILogger<RoslynSqlDiscoveryService>> _mockLogger;
 
     public RoslynSqlDiscoveryServiceTests()
     {
-        _discoveryService = new RoslynSqlDiscoveryService();
+        _mockLogger = new Mock<ILogger<RoslynSqlDiscoveryService>>();
+        _discoveryService = new RoslynSqlDiscoveryService(_mockLogger.Object);
     }
 
     [Fact]

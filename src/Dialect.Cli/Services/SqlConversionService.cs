@@ -3,6 +3,8 @@ namespace Dialect.Cli.Services;
 using Dialect.Cli.CodeGeneration;
 using Dialect.Cli.Models;
 using Dialect.Cli.SqlDiscovery;
+using ErrorOr;
+using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Linq;
 
@@ -14,143 +16,156 @@ public sealed class SqlConversionService
 {
     private readonly ISqlDiscoveryService _sqlDiscoveryService;
     private readonly IFluentCodeGenerator _codeGenerator;
+    private readonly ILogger<SqlConversionService> _logger;
 
     public SqlConversionService(
         ISqlDiscoveryService sqlDiscoveryService,
-        IFluentCodeGenerator codeGenerator)
+        IFluentCodeGenerator codeGenerator,
+        ILogger<SqlConversionService> logger)
     {
         _sqlDiscoveryService = sqlDiscoveryService ?? throw new ArgumentNullException(nameof(sqlDiscoveryService));
         _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
     /// Executes conversion for the specified scope (file, directory, project, or solution).
-    /// Returns a detailed ConversionReport with results.
+    /// Returns a Result containing a detailed ConversionReport.
     /// </summary>
-    public async Task<ConversionReport> ConvertAsync(ConversionOptions options)
+    public async Task<ErrorOr<ConversionReport>> ConvertAsync(ConversionOptions options)
     {
         if (options == null)
-            throw new ArgumentNullException(nameof(options));
+            return Error.Validation("options", "Conversion options cannot be null");
 
-        var results = new List<FileConversionResult>();
-        var totalFilesScanned = 0;
-        var totalSqlFound = 0;
-        var successfulConversions = 0;
-        var skippedConversions = 0;
-        var conversionErrors = 0;
-
-        // Get list of C# files to process based on scope
-        var filesToProcess = GetFilesToProcess(options.Scope);
-
-        foreach (var filePath in filesToProcess)
+        try
         {
-            try
+            var results = new List<FileConversionResult>();
+            var totalFilesScanned = 0;
+            var totalSqlFound = 0;
+            var successfulConversions = 0;
+            var skippedConversions = 0;
+            var conversionErrors = 0;
+
+            // Get list of C# files to process based on scope
+            var filesToProcess = GetFilesToProcess(options.Scope);
+
+            foreach (var filePath in filesToProcess)
             {
-                totalFilesScanned++;
-
-                if (options.Verbose)
-                    Console.WriteLine($"Processing: {filePath}");
-
-                // Read source file
-                var sourceCode = await System.IO.File.ReadAllTextAsync(filePath);
-
-                // Discover SQL strings in the file
-                var discoveredSqlStrings = _sqlDiscoveryService.DiscoverSqlStrings(sourceCode, filePath);
-
-                if (discoveredSqlStrings.Count == 0)
-                    continue;
-
-                totalSqlFound += discoveredSqlStrings.Count;
-
-                // Convert each SQL string to FluentBuilder code
-                var sqlResults = new List<SqlConversionResult>();
-                var modifiedSourceCode = sourceCode;
-                var fileSuccessful = 0;
-                var fileSkipped = 0;
-                var fileErrors = 0;
-
-                foreach (var sqlString in discoveredSqlStrings)
+                try
                 {
-                    var convertedCode = _codeGenerator.GenerateFluentCode(sqlString.SqlContent);
+                    totalFilesScanned++;
 
-                    if (convertedCode is not null)
-                    {
-                        sqlResults.Add(new SqlConversionResult
-                        {
-                            LineNumber = sqlString.LineNumber,
-                            OriginalSql = sqlString.SqlContent,
-                            ConvertedCode = convertedCode
-                        });
-                        fileSuccessful++;
-                        successfulConversions++;
-                    }
-                    else
-                    {
-                        var error = _codeGenerator.GetLastConversionError() ?? "Unknown error";
-                        sqlResults.Add(new SqlConversionResult
-                        {
-                            LineNumber = sqlString.LineNumber,
-                            OriginalSql = sqlString.SqlContent,
-                            FailureReason = error
-                        });
+                    if (options.Verbose)
+                        _logger.LogInformation("Processing: {FilePath}", filePath);
 
-                        if (error.Contains("not yet implemented", StringComparison.OrdinalIgnoreCase))
+                    // Read source file
+                    var sourceCode = await System.IO.File.ReadAllTextAsync(filePath);
+
+                    // Discover SQL strings in the file
+                    var discoveredSqlStrings = _sqlDiscoveryService.DiscoverSqlStrings(sourceCode, filePath);
+
+                    if (discoveredSqlStrings.Count == 0)
+                        continue;
+
+                    totalSqlFound += discoveredSqlStrings.Count;
+
+                    // Convert each SQL string to FluentBuilder code
+                    var sqlResults = new List<SqlConversionResult>();
+                    var modifiedSourceCode = sourceCode;
+                    var fileSuccessful = 0;
+                    var fileSkipped = 0;
+                    var fileErrors = 0;
+
+                    foreach (var sqlString in discoveredSqlStrings)
+                    {
+                        var convertedCode = _codeGenerator.GenerateFluentCode(sqlString.SqlContent);
+
+                        if (convertedCode is not null)
                         {
-                            fileSkipped++;
-                            skippedConversions++;
+                            sqlResults.Add(new SqlConversionResult
+                            {
+                                LineNumber = sqlString.LineNumber,
+                                OriginalSql = sqlString.SqlContent,
+                                ConvertedCode = convertedCode
+                            });
+                            fileSuccessful++;
+                            successfulConversions++;
                         }
                         else
                         {
-                            fileErrors++;
-                            conversionErrors++;
+                            var error = _codeGenerator.GetLastConversionError() ?? "Unknown error";
+                            sqlResults.Add(new SqlConversionResult
+                            {
+                                LineNumber = sqlString.LineNumber,
+                                OriginalSql = sqlString.SqlContent,
+                                FailureReason = error
+                            });
+
+                            if (error.Contains("not yet implemented", StringComparison.OrdinalIgnoreCase))
+                            {
+                                fileSkipped++;
+                                skippedConversions++;
+                            }
+                            else
+                            {
+                                fileErrors++;
+                                conversionErrors++;
+                            }
                         }
                     }
-                }
 
-                // Create file result
-                results.Add(new FileConversionResult
-                {
-                    FilePath = filePath,
-                    SqlStringsFound = discoveredSqlStrings.Count,
-                    SuccessfulConversions = fileSuccessful,
-                    SkippedConversions = fileSkipped,
-                    SqlResults = sqlResults
-                });
-
-                // Write modified file (if not dry-run)
-                if (!options.DryRun && fileSuccessful > 0)
-                {
-                    if (options.CreateBackups)
+                    // Create file result
+                    results.Add(new FileConversionResult
                     {
-                        var backupPath = filePath + ".bak";
-                        System.IO.File.Copy(filePath, backupPath, overwrite: true);
-                        if (options.Verbose)
-                            Console.WriteLine($"  Backup created: {backupPath}");
-                    }
+                        FilePath = filePath,
+                        SqlStringsFound = discoveredSqlStrings.Count,
+                        SuccessfulConversions = fileSuccessful,
+                        SkippedConversions = fileSkipped,
+                        SqlResults = sqlResults
+                    });
 
-                    // TODO: Apply conversions to source code and write file
-                    // For now, we just report what would be done
-                    if (options.Verbose)
-                        Console.WriteLine($"  Would apply {fileSuccessful} conversions");
+                    // Write modified file (if not dry-run)
+                    if (!options.DryRun && fileSuccessful > 0)
+                    {
+                        if (options.CreateBackups)
+                        {
+                            var backupPath = filePath + ".bak";
+                            System.IO.File.Copy(filePath, backupPath, overwrite: true);
+                            if (options.Verbose)
+                                _logger.LogInformation("Backup created: {BackupPath}", backupPath);
+                        }
+
+                        // TODO: Apply conversions to source code and write file
+                        // For now, we just report what would be done
+                        if (options.Verbose)
+                            _logger.LogInformation("Would apply {ConversionCount} conversions", fileSuccessful);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing {FilePath}", filePath);
+                    conversionErrors++;
                 }
             }
-            catch (Exception ex)
-            {
-                if (options.Verbose)
-                    Console.Error.WriteLine($"Error processing {filePath}: {ex.Message}");
-            }
-        }
 
-        return new ConversionReport
+            var report = new ConversionReport
+            {
+                TotalFilesScanned = totalFilesScanned,
+                FilesWithSqlFound = results.Count,
+                TotalSqlStringsFound = totalSqlFound,
+                SuccessfulConversions = successfulConversions,
+                SkippedConversions = skippedConversions,
+                ConversionErrors = conversionErrors,
+                FileResults = results
+            };
+
+            return report;
+        }
+        catch (Exception ex)
         {
-            TotalFilesScanned = totalFilesScanned,
-            FilesWithSqlFound = results.Count,
-            TotalSqlStringsFound = totalSqlFound,
-            SuccessfulConversions = successfulConversions,
-            SkippedConversions = skippedConversions,
-            ConversionErrors = conversionErrors,
-            FileResults = results
-        };
+            _logger.LogError(ex, "Fatal error during conversion");
+            return Error.Failure("conversion.fatal", $"Fatal error: {ex.Message}");
+        }
     }
 
     /// <summary>
