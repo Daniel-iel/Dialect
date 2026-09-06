@@ -12,7 +12,7 @@ using System.Threading;
 /// </summary>
 public sealed class SqlDialectRegistry
 {
-    private static readonly Lazy<SqlDialectRegistry> _instance = 
+    private static readonly Lazy<SqlDialectRegistry> _instance =
         new Lazy<SqlDialectRegistry>(() => new SqlDialectRegistry(), LazyThreadSafetyMode.ExecutionAndPublication);
 
     private ISqlDialect? _defaultDialect;

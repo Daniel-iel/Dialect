@@ -29,7 +29,7 @@ public class JoinExamples : ExampleBase
     private void InnerJoin()
     {
         OutputFormatter.PrintSubHeader("Example 1: INNER JOIN");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var joinCondition = new ComparisonNode(
@@ -37,7 +37,7 @@ public class JoinExamples : ExampleBase
                 ComparisonOperator.Equal,
                 new Column("u.UserId")
             );
-            
+
             return SqlBuilder.Select("o.OrderId", "u.Username", "o.Total")
                 .From("Orders o")
                 .InnerJoin("Users u", joinCondition)
@@ -52,7 +52,7 @@ public class JoinExamples : ExampleBase
     private void LeftJoin()
     {
         OutputFormatter.PrintSubHeader("Example 2: LEFT JOIN");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var joinCondition = new ComparisonNode(
@@ -60,7 +60,7 @@ public class JoinExamples : ExampleBase
                 ComparisonOperator.Equal,
                 new Column("o.UserId")
             );
-            
+
             return SqlBuilder.Select("u.Username", "o.OrderId", "o.Total")
                 .From("Users u")
                 .LeftJoin("Orders o", joinCondition)
@@ -76,7 +76,7 @@ public class JoinExamples : ExampleBase
     private void MultipleJoins()
     {
         OutputFormatter.PrintSubHeader("Example 3: Multiple JOINS");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var joinCondition1 = new ComparisonNode(
@@ -94,7 +94,7 @@ public class JoinExamples : ExampleBase
                 ComparisonOperator.Equal,
                 new Column("p.ProductId")
             );
-            
+
             return SqlBuilder.Select("o.OrderId", "u.Username", "p.Name", "oi.Quantity")
                 .From("Orders o")
                 .InnerJoin("Users u", joinCondition1)

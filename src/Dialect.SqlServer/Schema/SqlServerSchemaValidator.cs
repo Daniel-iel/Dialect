@@ -152,7 +152,7 @@ public class SqlServerSchemaValidator : SchemaValidator
     {
         // Extract precision from tuple if present
         var precisionValue = step.Column.Precision?.Precision;
-        
+
         var results = new List<ValidationResult>
         {
             ValidationRules.ValidateTableName(step.TableName, NamingConvention),

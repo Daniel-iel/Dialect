@@ -18,7 +18,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = "SELECT Id, Name FROM Users";
+        const string sql = "SELECT Id, Name FROM Users";
 
         // Act
         var parsed = parser.Parse(sql);
@@ -34,7 +34,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = "SELECT * FROM Users WHERE Id = 1";
+        const string sql = "SELECT * FROM Users WHERE Id = 1";
 
         // Act
         var parsed = parser.Parse(sql);
@@ -49,7 +49,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = "SELECT * FROM Users u INNER JOIN Orders o ON u.Id = o.UserId";
+        const string sql = "SELECT * FROM Users u INNER JOIN Orders o ON u.Id = o.UserId";
 
         // Act & Assert
         var action = () => parser.Parse(sql);
@@ -61,7 +61,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = "SELECT Department, COUNT(*) FROM Users GROUP BY Department";
+        const string sql = "SELECT Department, COUNT(*) FROM Users GROUP BY Department";
 
         // Act
         var parsed = parser.Parse(sql);
@@ -76,7 +76,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = "SELECT * FROM Users ORDER BY Name ASC, CreatedDate DESC";
+        const string sql = "SELECT * FROM Users ORDER BY Name ASC, CreatedDate DESC";
 
         // Act
         var parsed = parser.Parse(sql);
@@ -91,7 +91,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new PostgreSqlQueryParser();
-        var sql = "SELECT id, name FROM users";
+        const string sql = "SELECT id, name FROM users";
 
         // Act & Assert
         var action = () => parser.Parse(sql);
@@ -103,7 +103,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new MySqlQueryParser();
-        var sql = "SELECT `id`, `name` FROM `users` WHERE `status` = 'active'";
+        const string sql = "SELECT `id`, `name` FROM `users` WHERE `status` = 'active'";
 
         // Act & Assert
         var action = () => parser.Parse(sql);
@@ -198,7 +198,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = "SELECT * FROM (SELECT * FROM (SELECT * FROM Users))";
+        const string sql = "SELECT * FROM (SELECT * FROM (SELECT * FROM Users))";
 
         // Act
         var depth = typeof(QueryParser)
@@ -214,7 +214,7 @@ public class QueryParserTests
     {
         // Arrange
         var parser = new SqlServerQueryParser();
-        var sql = @"
+        const string sql = @"
             SELECT u.Id, u.Name
             FROM Users u
             ORDER BY u.Name DESC";
@@ -244,7 +244,7 @@ public class QueryParserTests
     public void AllDialectParsers_ParseSimpleQuery_ReturnValidParsedQuery(string dialectName)
     {
         // Arrange
-        var sql = "SELECT * FROM users WHERE id = 1";
+        const string sql = "SELECT * FROM users WHERE id = 1";
         QueryParser parser = dialectName switch
         {
             "PostgreSQL" => new PostgreSqlQueryParser(),

@@ -14,7 +14,7 @@ public class MySqlRewriteAdvisor : QueryRewriteBase
         IDictionary<string, object>? contextData = null)
     {
         var rewrites = new List<global::Dialect.Core.QueryRewrite.QueryRewrite>();
-        
+
         // CTE (MySQL 8.0+)
         if (CanBenefitFromCte(queryText))
         {
@@ -35,10 +35,10 @@ public class MySqlRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string>(),
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(cteRewrite);
         }
-        
+
         // IN to JOIN conversion
         if (queryText.Contains("IN (SELECT", StringComparison.OrdinalIgnoreCase))
         {
@@ -59,10 +59,10 @@ public class MySqlRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string> { "DISTINCT may add overhead" },
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(joinRewrite);
         }
-        
+
         // Window function for ranking
         if (queryText.Contains("ORDER BY", StringComparison.OrdinalIgnoreCase))
         {
@@ -83,10 +83,10 @@ public class MySqlRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string>(),
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(windowRewrite);
         }
-        
+
         // Batch insert optimization
         if (queryText.Contains("INSERT", StringComparison.OrdinalIgnoreCase))
         {
@@ -110,10 +110,10 @@ public class MySqlRewriteAdvisor : QueryRewriteBase
                     { "Note", "Check max_allowed_packet setting for large batches" }
                 }
             );
-            
+
             rewrites.Add(batchRewrite);
         }
-        
+
         return rewrites;
     }
 }

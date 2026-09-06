@@ -107,7 +107,7 @@ public class QueryAnalysisTests
     {
         // Arrange
         var analyzer = new JoinAnalyzer();
-        var clause = "INNER JOIN Orders ON Users.Id = Orders.UserId";
+        const string clause = "INNER JOIN Orders ON Users.Id = Orders.UserId";
 
         // Act
         var analysis = analyzer.Analyze(clause);
@@ -122,7 +122,7 @@ public class QueryAnalysisTests
     {
         // Arrange
         var analyzer = new JoinAnalyzer();
-        var clause = "FULL JOIN Orders ON Users.Id = Orders.UserId";
+        const string clause = "FULL JOIN Orders ON Users.Id = Orders.UserId";
 
         // Act
         var analysis = analyzer.Analyze(clause);
@@ -137,7 +137,7 @@ public class QueryAnalysisTests
     {
         // Arrange
         var analyzer = new JoinAnalyzer();
-        var clause = "CROSS JOIN Orders";
+        const string clause = "CROSS JOIN Orders";
 
         // Act
         var analysis = analyzer.Analyze(clause);
@@ -251,8 +251,8 @@ public class QueryAnalysisTests
         var joinAnalyzer = new JoinAnalyzer();
         var predicateAnalyzer = new PredicateAnalyzer();
 
-        var joinClause = "INNER JOIN Orders ON Users.Id = Orders.UserId";
-        var predicate = "Orders.Status = 'Complete'";
+        const string joinClause = "INNER JOIN Orders ON Users.Id = Orders.UserId";
+        const string predicate = "Orders.Status = 'Complete'";
 
         // Act
         var joinAnalysis = joinAnalyzer.Analyze(joinClause);

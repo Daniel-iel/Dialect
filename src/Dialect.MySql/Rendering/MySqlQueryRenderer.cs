@@ -95,21 +95,21 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
             foreach (var cte in statement.WithClauses)
             {
                 var cteName = QuoteIdentifier(cte.Name, dialect);
-                var columnSpec = cte.ColumnNames?.Count > 0 
-                    ? $"({string.Join(", ", cte.ColumnNames.Select(c => QuoteIdentifier(c, dialect)))})" 
+                var columnSpec = cte.ColumnNames?.Count > 0
+                    ? $"({string.Join(", ", cte.ColumnNames.Select(c => QuoteIdentifier(c, dialect)))})"
                     : "";
-                
+
                 // Render the CTE's SELECT statement
                 var cteRenderer = new MySqlQueryRenderer();
                 var cteParams = new Dictionary<string, object?>();
                 var cteSql = cteRenderer.RenderSelect(cte.Query, dialect, cteParams);
-                
+
                 // Merge CTE parameters into main parameters
                 foreach (var kvp in cteParams)
                 {
                     parameters[kvp.Key] = kvp.Value;
                 }
-                
+
                 cteParts.Add($"{cteName}{columnSpec} AS ({cteSql})");
             }
             sb.Append(string.Join(", ", cteParts));
@@ -125,40 +125,40 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
 
         // Columns and Window Functions
         var selectItems = new List<string>();
-        
+
         // Regular columns
         selectItems.AddRange(statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect)));
-        
+
         // Window functions
         selectItems.AddRange(statement.WindowFunctions.Select(wf => RenderWindowFunction(wf, dialect)));
-        
+
         sb.Append(string.Join(", ", selectItems));
 
         // FROM
         if (statement.From != null)
         {
             sb.Append(" FROM ");
-            
+
             if (statement.From.SubquerySource != null)
             {
                 // Render subquery
                 var subqueryRenderer = new MySqlQueryRenderer();
                 var subqueryParams = new Dictionary<string, object?>();
                 var subquerySql = subqueryRenderer.RenderSelect(statement.From.SubquerySource, dialect, subqueryParams);
-                
+
                 // Merge subquery parameters
                 foreach (var kvp in subqueryParams)
                 {
                     parameters[kvp.Key] = kvp.Value;
                 }
-                
+
                 sb.Append($"({subquerySql})");
             }
             else
             {
                 sb.Append(QuoteIdentifier(statement.From.Name, dialect));
             }
-            
+
             if (!string.IsNullOrEmpty(statement.From.Alias))
                 sb.Append(" AS ").Append(QuoteIdentifier(statement.From.Alias, dialect));
         }
@@ -229,7 +229,7 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
     private string RenderWindowFunction(WindowFunction windowFunction, ISqlDialect dialect)
     {
         var sb = new StringBuilder();
-        
+
         // Function name and arguments
         sb.Append(windowFunction.FunctionName).Append("(");
         if (windowFunction.Args?.Count > 0)
@@ -237,45 +237,45 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
             sb.Append(string.Join(", ", windowFunction.Args.Select(a => QuoteIdentifier(a, dialect))));
         }
         sb.Append(")");
-        
+
         // OVER clause
         if (windowFunction.Over != null)
         {
             sb.Append(" OVER (");
-            
+
             var overParts = new List<string>();
-            
+
             // PARTITION BY
             if (windowFunction.Over.PartitionByColumns?.Count > 0)
             {
-                overParts.Add("PARTITION BY " + string.Join(", ", 
+                overParts.Add("PARTITION BY " + string.Join(", ",
                     windowFunction.Over.PartitionByColumns.Select(c => QuoteIdentifier(c, dialect))));
             }
-            
+
             // ORDER BY
             if (windowFunction.Over.OrderByItems?.Count > 0)
             {
-                overParts.Add("ORDER BY " + string.Join(", ", 
-                    windowFunction.Over.OrderByItems.Select(o => 
+                overParts.Add("ORDER BY " + string.Join(", ",
+                    windowFunction.Over.OrderByItems.Select(o =>
                         $"{QuoteIdentifier(o.Column.Name, dialect)} {o.Direction}")));
             }
-            
+
             // Frame specification (ROWS/RANGE)
             if (windowFunction.Over.Frame != null)
             {
                 overParts.Add(windowFunction.Over.Frame.ToSql());
             }
-            
+
             sb.Append(string.Join(" ", overParts));
             sb.Append(")");
         }
-        
+
         // Alias
         if (!string.IsNullOrEmpty(windowFunction.Alias))
         {
             sb.Append(" AS ").Append(QuoteIdentifier(windowFunction.Alias, dialect));
         }
-        
+
         return sb.ToString();
     }
 
@@ -400,8 +400,8 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
         }
 
         var inList = string.Join(", ", paramNames);
-        return node.Negated 
-            ? $"{columnName} NOT IN ({inList})" 
+        return node.Negated
+            ? $"{columnName} NOT IN ({inList})"
             : $"{columnName} IN ({inList})";
     }
 
@@ -409,12 +409,12 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
     {
         // UPSERT implementation for MySQL using ON DUPLICATE KEY UPDATE
         var sb = new StringBuilder();
-        
+
         // INSERT INTO `table` (`col1`, `col2`, ...) VALUES (?, ?, ...)
         sb.Append("INSERT INTO ").Append(QuoteIdentifier(statement.Table.Name, dialect)).Append(" (");
         sb.Append(string.Join(", ", statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect))));
         sb.Append(") VALUES (");
-        
+
         var paramPlaceholders = new List<string>();
         for (int i = 0; i < statement.Columns.Count; i++)
         {
@@ -423,7 +423,7 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
             paramPlaceholders.Add("?");
         }
         sb.Append(string.Join(", ", paramPlaceholders)).Append(")\n");
-        
+
         // ON DUPLICATE KEY UPDATE `col1` = VALUES(`col1`), ...
         if (statement.ConflictClause?.UpdateClauses != null && statement.ConflictClause.UpdateClauses.Count > 0)
         {
@@ -436,7 +436,7 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
             }
             sb.Append(string.Join(", ", updateSets));
         }
-        
+
         return sb.ToString();
     }
 

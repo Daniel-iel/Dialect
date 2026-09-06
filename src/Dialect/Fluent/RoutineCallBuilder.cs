@@ -26,7 +26,7 @@ public sealed class RoutineCallBuilder
     {
         if (string.IsNullOrWhiteSpace(schema))
             throw new ArgumentException("Schema cannot be empty", nameof(schema));
-        
+
         _schema = schema;
         return this;
     }
@@ -38,7 +38,7 @@ public sealed class RoutineCallBuilder
     {
         if (string.IsNullOrWhiteSpace(package))
             throw new ArgumentException("Package cannot be empty", nameof(package));
-        
+
         _package = package;
         return this;
     }
@@ -50,7 +50,7 @@ public sealed class RoutineCallBuilder
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Parameter name cannot be empty", nameof(name));
-        
+
         _parameters.Add(new RoutineParameter(name, value, ParameterDirection.Input, type));
         return this;
     }
@@ -62,7 +62,7 @@ public sealed class RoutineCallBuilder
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Parameter name cannot be empty", nameof(name));
-        
+
         _parameters.Add(new RoutineParameter(name, null, ParameterDirection.Output, type));
         return this;
     }
@@ -74,7 +74,7 @@ public sealed class RoutineCallBuilder
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Parameter name cannot be empty", nameof(name));
-        
+
         _parameters.Add(new RoutineParameter(name, value, ParameterDirection.InputOutput, type));
         return this;
     }

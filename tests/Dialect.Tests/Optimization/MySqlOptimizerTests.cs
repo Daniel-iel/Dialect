@@ -8,7 +8,7 @@ namespace Dialect.Tests.Optimization;
 public class MySqlOptimizerTests
 {
     private readonly MySqlOptimizer _optimizer = new();
-    
+
     private static QueryExecutionPlan CreateExecutionPlan(
         string operationType = "ALL",
         long rowsProduced = 1000,
@@ -25,7 +25,7 @@ public class MySqlOptimizerTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         return new QueryExecutionPlan(
             RootNode: node,
             TotalCost: cost,
@@ -35,7 +35,7 @@ public class MySqlOptimizerTests
             Metadata: new Dictionary<string, object>()
         );
     }
-    
+
     private static PerformanceMetrics CreateMetrics(
         int tableScanCount = 1,
         bool hasTableScan = true,
@@ -62,21 +62,21 @@ public class MySqlOptimizerTests
             OptimizationTips: new List<string>()
         );
     }
-    
+
     [Fact]
     public void GenerateRecommendations_ReturnsRecommendations()
     {
         // Arrange
         var plan = CreateExecutionPlan();
         var metrics = CreateMetrics();
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().NotBeEmpty();
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesAnalyzeTableForLowSelectivity()
     {
@@ -101,14 +101,14 @@ public class MySqlOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "MYSQL_ANALYZE_TABLE");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesCompositeIndexForFilterConditions()
     {
@@ -133,43 +133,43 @@ public class MySqlOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders WHERE status = 'active' AND customer_id = 5", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "MYSQL_COMPOSITE_INDEX");
     }
-    
+
     [Fact(Skip = "MySQL generated column optimization not fully implemented")]
     public void GenerateRecommendations_IncludesGeneratedColumnForFunctionFilters()
     {
         // Arrange
         var plan = CreateExecutionPlan(operationType: "ALL");
         var metrics = CreateMetrics();
-        var queryWithFunction = "SELECT * FROM orders WHERE YEAR(created_at) = 2024";
-        
+        const string queryWithFunction = "SELECT * FROM orders WHERE YEAR(created_at) = 2024";
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations(queryWithFunction, metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "MYSQL_GENERATED_COLUMN");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesPartitioningForVeryLargeTable()
     {
         // Arrange
         var plan = CreateExecutionPlan(rowsExamined: 6000000);
         var metrics = CreateMetrics(totalRowsExamined: 6000000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "MYSQL_PARTITIONING");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesQueryCacheForSlowSelects()
     {
@@ -194,14 +194,14 @@ public class MySqlOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders WHERE status = 'active'", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "MYSQL_QUERY_CACHE");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_DoesNotIncludeQueryCacheForInsert()
     {
@@ -226,10 +226,10 @@ public class MySqlOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("INSERT INTO orders VALUES (...)", metrics, plan);
-        
+
         // Assert
         recommendations.Should().NotContain(r => r.RecommendationId == "MYSQL_QUERY_CACHE");
     }

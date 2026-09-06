@@ -14,7 +14,7 @@ public class SqlServerRewriteAdvisor : QueryRewriteBase
         IDictionary<string, object>? contextData = null)
     {
         var rewrites = new List<global::Dialect.Core.QueryRewrite.QueryRewrite>();
-        
+
         // CTE for multiple subquery usage
         if (CanBenefitFromCte(queryText))
         {
@@ -35,10 +35,10 @@ public class SqlServerRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string>(),
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(cteRewrite);
         }
-        
+
         // Window functions for aggregation
         if (DetectAggregationIssue(queryText))
         {
@@ -59,10 +59,10 @@ public class SqlServerRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string> { "Query logic may change significantly" },
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(windowRewrite);
         }
-        
+
         // Join order optimization
         if (DetectInefficientJoin(queryText))
         {
@@ -86,10 +86,10 @@ public class SqlServerRewriteAdvisor : QueryRewriteBase
                     { "Hint", "Use OPTION (FORCE ORDER) to override optimizer if needed" }
                 }
             );
-            
+
             rewrites.Add(joinRewrite);
         }
-        
+
         return rewrites;
     }
 }

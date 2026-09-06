@@ -31,7 +31,7 @@ public class SelectExamples : ExampleBase
     private void SimpleSelect()
     {
         OutputFormatter.PrintSubHeader("Example 1: Simple SELECT *");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Select("*")
                 .From("Users")
@@ -45,7 +45,7 @@ public class SelectExamples : ExampleBase
     private void SelectWithWhere()
     {
         OutputFormatter.PrintSubHeader("Example 2: SELECT with WHERE Clause");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Select("UserId", "Username", "Email")
                 .From("Users")
@@ -60,7 +60,7 @@ public class SelectExamples : ExampleBase
     private void SelectWithOrderBy()
     {
         OutputFormatter.PrintSubHeader("Example 3: SELECT with ORDER BY");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Select("ProductId", "Name", "Price")
                 .From("Products")
@@ -75,7 +75,7 @@ public class SelectExamples : ExampleBase
     private void SelectWithPagination()
     {
         OutputFormatter.PrintSubHeader("Example 4: SELECT with Pagination (LIMIT/TOP/OFFSET)");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Select("*")
                 .From("Orders")

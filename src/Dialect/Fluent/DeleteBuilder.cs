@@ -18,7 +18,7 @@ public sealed class DeleteBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         _table = new TableReference(tableName, null, schema);
         return this;
     }
@@ -57,10 +57,10 @@ public sealed class DeleteBuilder
     {
         if (_table == null)
             throw new InvalidOperationException("Table must be specified via From().");
-        
+
         if (_where == null && !_allowFullTableDelete)
             throw new InvalidOperationException("WHERE clause is required for DELETE. Use AllowFullTableOperation() if you intentionally want to delete all rows.");
-        
+
         return new DeleteStatement(_table, _where, _allowFullTableDelete);
     }
 }

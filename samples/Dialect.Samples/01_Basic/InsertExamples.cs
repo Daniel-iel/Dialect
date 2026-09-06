@@ -28,7 +28,7 @@ public class InsertExamples : ExampleBase
     private void SimpleInsert()
     {
         OutputFormatter.PrintSubHeader("Example 1: Simple INSERT");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Insert()
                 .Into("Users")
@@ -44,7 +44,7 @@ public class InsertExamples : ExampleBase
     private void InsertMultipleRows()
     {
         OutputFormatter.PrintSubHeader("Example 2: INSERT Multiple Rows");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Insert()
                 .Into("Products")
@@ -61,7 +61,7 @@ public class InsertExamples : ExampleBase
     private void InsertWithParameters()
     {
         OutputFormatter.PrintSubHeader("Example 3: INSERT with Parameters");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Insert()
                 .Into("Users")

@@ -19,7 +19,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         var plan = ParsePlan(planJson, queryText);
         return AnalyzeParsedPlan(plan);
     }
-    
+
     /// <summary>
     /// Parses MySQL execution plan JSON into structured format.
     /// MySQL EXPLAIN FORMAT=JSON provides access method, rows read/sent, and cost information.
@@ -30,16 +30,16 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         {
             var jsonDoc = JsonDocument.Parse(planOutput);
             var root = jsonDoc.RootElement;
-            
+
             if (root.TryGetProperty("query_block", out var queryBlockProp))
             {
                 var rootNode = ParseNode(queryBlockProp);
-                
+
                 // Extract query statistics if available
                 var executionTime = root.TryGetProperty("query_time", out var timeProp)
                     ? double.Parse(timeProp.GetString()?.Trim() ?? "0")
                     : 0.0;
-                
+
                 return new QueryExecutionPlan(
                     RootNode: rootNode,
                     TotalCost: CalculateNodeCost(rootNode),
@@ -49,7 +49,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
                     Metadata: ExtractMetadata(root)
                 );
             }
-            
+
             return CreateFallbackPlan(queryText);
         }
         catch
@@ -57,7 +57,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
             return CreateFallbackPlan(queryText);
         }
     }
-    
+
     private static ExecutionPlanNode ParseNode(JsonElement nodeElement)
     {
         var operationType = "Unknown";
@@ -65,7 +65,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
         var rowsProduced = 0L;
         var rowsExamined = 0L;
         var predicate = "";
-        
+
         // Extract table information
         if (nodeElement.TryGetProperty("table", out var tableProp))
         {
@@ -73,34 +73,34 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
             {
                 objectName = tableNameProp.GetString() ?? "";
             }
-            
+
             if (tableProp.TryGetProperty("access_type", out var accessTypeProp))
             {
                 operationType = accessTypeProp.GetString() ?? "Unknown";
             }
-            
+
             if (tableProp.TryGetProperty("rows_examined_per_scan", out var rowsExamProp))
             {
                 rowsExamined = rowsExamProp.GetInt64();
             }
-            
+
             if (tableProp.TryGetProperty("rows_produced_per_join", out var rowsProdProp))
             {
                 rowsProduced = rowsProdProp.GetInt64();
             }
-            
+
             if (tableProp.TryGetProperty("attached_condition", out var condProp))
             {
                 predicate = condProp.GetString() ?? "";
             }
         }
-        
+
         // Fallback to defaults
         if (rowsExamined == 0)
             rowsExamined = rowsProduced;
-        
+
         var children = new List<ExecutionPlanNode>();
-        
+
         // Parse nested selects
         if (nodeElement.TryGetProperty("select_list", out var selectListProp) &&
             selectListProp.ValueKind == JsonValueKind.Array)
@@ -113,7 +113,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
                 }
             }
         }
-        
+
         var properties = new Dictionary<string, object>();
         if (nodeElement.TryGetProperty("table", out var tableProp2))
         {
@@ -126,7 +126,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
                 properties["PossibleKeys"] = possibleKeysProp.GetString() ?? "None";
             }
         }
-        
+
         return new ExecutionPlanNode(
             OperationType: operationType,
             RowsProduced: rowsProduced,
@@ -138,40 +138,40 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
             Properties: properties
         );
     }
-    
+
     private static decimal CalculateNodeCost(ExecutionPlanNode node)
     {
         decimal cost = 0;
         var queue = new Queue<ExecutionPlanNode>();
         queue.Enqueue(node);
-        
+
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
             // Estimate cost as rows_examined / 1000 (rough approximation)
             cost += decimal.Parse(Math.Max(1, current.RowsExamined / 1000).ToString());
-            
+
             foreach (var child in current.Children)
             {
                 queue.Enqueue(child);
             }
         }
-        
+
         return cost;
     }
-    
+
     private static Dictionary<string, object> ExtractMetadata(JsonElement root)
     {
         var metadata = new Dictionary<string, object>();
-        
+
         if (root.TryGetProperty("query_time", out var queryTimeProp))
         {
             metadata["QueryTime"] = queryTimeProp.GetString() ?? "0";
         }
-        
+
         return metadata;
     }
-    
+
     private static QueryExecutionPlan CreateFallbackPlan(string queryText)
     {
         return new QueryExecutionPlan(
@@ -192,20 +192,20 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
             Metadata: new Dictionary<string, object>()
         );
     }
-    
+
     private PerformanceMetrics AnalyzeParsedPlan(QueryExecutionPlan plan)
     {
         var fullTableScanCount = CountOperationType(plan.RootNode, "ALL");
-        var indexSeekCount = CountOperationType(plan.RootNode, "const") + 
+        var indexSeekCount = CountOperationType(plan.RootNode, "const") +
                              CountOperationType(plan.RootNode, "eq_ref") +
                              CountOperationType(plan.RootNode, "ref");
-        var indexScanCount = CountOperationType(plan.RootNode, "range") + 
+        var indexScanCount = CountOperationType(plan.RootNode, "range") +
                              CountOperationType(plan.RootNode, "index");
-        var nestedLoopCount = 1; // MySQL uses nested loop by default for joins
-        
+        const int nestedLoopCount = 1; // MySQL uses nested loop by default for joins
+
         var totalRowsExamined = CalculateTotalRowsExamined(plan.RootNode);
         var selectivity = CalculateSelectivity(plan.TotalRowsProduced, totalRowsExamined);
-        
+
         var missingIndexes = ExtractMissingIndexes(plan);
         var tips = GenerateOptimizationTips(new PerformanceMetrics(
             TotalCost: plan.TotalCost,
@@ -226,7 +226,7 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
             MissingIndexRecommendations: missingIndexes,
             OptimizationTips: new List<string>()
         ));
-        
+
         return new PerformanceMetrics(
             TotalCost: plan.TotalCost,
             TableScanCount: fullTableScanCount,

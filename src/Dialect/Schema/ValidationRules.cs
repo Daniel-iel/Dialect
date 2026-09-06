@@ -156,7 +156,7 @@ public static class ValidationRules
         var isCompatible = column.Type switch
         {
             // Numeric types can accept numeric defaults
-            DataType.SmallInt or DataType.Int or DataType.BigInt or 
+            DataType.SmallInt or DataType.Int or DataType.BigInt or
             DataType.Decimal or DataType.Money or DataType.Float or DataType.Double
                 => IsNumericDefault(defaultStr),
 

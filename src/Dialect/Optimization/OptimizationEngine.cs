@@ -16,7 +16,7 @@ public abstract class OptimizationEngine
         PerformanceMetrics metrics,
         QueryExecutionPlan executionPlan,
         IDictionary<string, object>? contextData = null);
-    
+
     /// <summary>
     /// Protected helper: Generate index-related recommendations
     /// </summary>
@@ -25,7 +25,7 @@ public abstract class OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Recommend indexes for table scans
         if (metrics.HasTableScan && metrics.TableScanCount > 0)
         {
@@ -51,7 +51,7 @@ public abstract class OptimizationEngine
                 recommendations.Add(indexRec);
             }
         }
-        
+
         // Recommend covering indexes for frequent accesses
         if (metrics.IndexSeekCount > 0 && metrics.TotalRowsProduced > 10000)
         {
@@ -73,10 +73,10 @@ public abstract class OptimizationEngine
             );
             recommendations.Add(coveringRec);
         }
-        
+
         return recommendations;
     }
-    
+
     /// <summary>
     /// Protected helper: Generate join-related recommendations
     /// </summary>
@@ -85,7 +85,7 @@ public abstract class OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Recommend join order optimization
         if (metrics.NestedLoopJoinCount > 1)
         {
@@ -107,7 +107,7 @@ public abstract class OptimizationEngine
             );
             recommendations.Add(joinRec);
         }
-        
+
         // Recommend replacing nested loop with hash join
         if (metrics.HasIneffectiveNestedLoop)
         {
@@ -129,10 +129,10 @@ public abstract class OptimizationEngine
             );
             recommendations.Add(hashJoinRec);
         }
-        
+
         return recommendations;
     }
-    
+
     /// <summary>
     /// Protected helper: Generate sort-related recommendations
     /// </summary>
@@ -141,7 +141,7 @@ public abstract class OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         if (metrics.HasSort && metrics.SortOperationCount > 0)
         {
             // Expensive sort detected
@@ -166,10 +166,10 @@ public abstract class OptimizationEngine
                 recommendations.Add(sortRec);
             }
         }
-        
+
         return recommendations;
     }
-    
+
     /// <summary>
     /// Protected helper: Generate selectivity-based recommendations
     /// </summary>
@@ -178,7 +178,7 @@ public abstract class OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Low selectivity warning
         if (metrics.Selectivity < 0.1 && metrics.TotalRowsExamined > 10000)
         {
@@ -200,94 +200,94 @@ public abstract class OptimizationEngine
             );
             recommendations.Add(selectivityRec);
         }
-        
+
         return recommendations;
     }
-    
+
     // Protected helper methods for calculations and extraction
-    
+
     protected virtual string ExtractTableNameFromPlan(QueryExecutionPlan plan)
     {
         return ExtractTableNameFromNode(plan.RootNode) ?? "Unknown";
     }
-    
+
     private static string? ExtractTableNameFromNode(ExecutionPlanNode node)
     {
         if (!string.IsNullOrWhiteSpace(node.ObjectName))
             return node.ObjectName;
-        
+
         foreach (var child in node.Children)
         {
             var name = ExtractTableNameFromNode(child);
             if (!string.IsNullOrWhiteSpace(name))
                 return name;
         }
-        
+
         return null;
     }
-    
+
     protected virtual IReadOnlyList<string> ExtractTableNamesFromPlan(QueryExecutionPlan plan)
     {
         var tables = new HashSet<string>();
         CollectTableNames(plan.RootNode, tables);
         return tables.ToList();
     }
-    
+
     private static void CollectTableNames(ExecutionPlanNode node, HashSet<string> tables)
     {
         if (!string.IsNullOrWhiteSpace(node.ObjectName))
             tables.Add(node.ObjectName);
-        
+
         foreach (var child in node.Children)
             CollectTableNames(child, tables);
     }
-    
+
     protected virtual decimal CalculateIndexImprovementPercentage(PerformanceMetrics metrics)
     {
         // More rows examined = more improvement potential
         var improvement = Math.Min(60, (decimal)Math.Log10(metrics.TotalRowsExamined) * 10);
         return improvement;
     }
-    
+
     protected virtual decimal CalculateIndexRoiScore(PerformanceMetrics metrics)
     {
         if (metrics.TotalCost == 0) return 0;
-        
+
         var improvement = CalculateIndexImprovementPercentage(metrics);
-        var implementationCost = 15;
+        const int implementationCost = 15;
         return Math.Round(improvement / implementationCost, 2);
     }
-    
+
     protected virtual decimal CalculateCoveringIndexRoiScore(PerformanceMetrics metrics)
     {
         return metrics.IndexSeekCount > 0 ? 0.75m : 0;
     }
-    
+
     protected virtual decimal CalculateJoinOptimizationImprovement(PerformanceMetrics metrics)
     {
         return Math.Min(50, metrics.NestedLoopJoinCount * 10);
     }
-    
+
     protected virtual decimal CalculateJoinOptimizationRoi(PerformanceMetrics metrics)
     {
         var improvement = CalculateJoinOptimizationImprovement(metrics);
         return Math.Round(improvement / 30, 2);
     }
-    
+
     protected virtual decimal CalculateSortRoiScore(PerformanceMetrics metrics)
     {
         if (metrics.TotalRowsProduced == 0) return 0;
-        
+
         var improvement = Math.Min(40, (decimal)Math.Log10(metrics.TotalRowsProduced) * 5);
         return Math.Round(improvement / 35, 2);
     }
-    
+
     protected virtual decimal CalculateSelectivityImprovement(PerformanceMetrics metrics)
     {
         var potentialImprovement = (1 - metrics.Selectivity) * 100;
         return Math.Min(70m, (decimal)potentialImprovement);
     }
-    
+
     protected virtual decimal CalculateSelectivityRoi(PerformanceMetrics metrics)
     {
         var improvement = CalculateSelectivityImprovement(metrics);

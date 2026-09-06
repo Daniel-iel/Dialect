@@ -15,25 +15,25 @@ public class MySqlOptimizer : OptimizationEngine
         IDictionary<string, object>? contextData = null)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Index recommendations
         recommendations.AddRange(GenerateIndexRecommendations(metrics, executionPlan));
-        
+
         // Join recommendations
         recommendations.AddRange(GenerateJoinRecommendations(metrics, executionPlan));
-        
+
         // Sort recommendations
         recommendations.AddRange(GenerateSortRecommendations(metrics, executionPlan));
-        
+
         // Selectivity recommendations
         recommendations.AddRange(GenerateSelectivityRecommendations(metrics, executionPlan));
-        
+
         // MySQL-specific recommendations
         recommendations.AddRange(GenerateMySqlSpecificRecommendations(queryText, metrics, executionPlan));
-        
+
         return recommendations.OrderByDescending(r => r.Priority).ToList();
     }
-    
+
     /// <summary>
     /// Generates MySQL-specific recommendations
     /// </summary>
@@ -43,7 +43,7 @@ public class MySqlOptimizer : OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // ANALYZE TABLE recommendation
         if (metrics.Selectivity < 0.05)
         {
@@ -65,7 +65,7 @@ public class MySqlOptimizer : OptimizationEngine
             );
             recommendations.Add(analyzeRec);
         }
-        
+
         // Composite index recommendation
         if (metrics.FilterOperationCount > 0 && metrics.TableScanCount > 0)
         {
@@ -90,7 +90,7 @@ public class MySqlOptimizer : OptimizationEngine
             );
             recommendations.Add(compositeRec);
         }
-        
+
         // Generated column index recommendation
         if (queryText.Contains("FUNCTION", StringComparison.OrdinalIgnoreCase) && metrics.TableScanCount > 0)
         {
@@ -115,7 +115,7 @@ public class MySqlOptimizer : OptimizationEngine
             );
             recommendations.Add(genColRec);
         }
-        
+
         // Range partition recommendation for large tables
         if (metrics.TotalRowsExamined > 5000000)
         {
@@ -140,7 +140,7 @@ public class MySqlOptimizer : OptimizationEngine
             );
             recommendations.Add(partitionRec);
         }
-        
+
         // Query cache hint recommendation (if query is eligible)
         if (metrics.ExecutionTimeMs > 500 && !queryText.Contains("INSERT", StringComparison.OrdinalIgnoreCase))
         {
@@ -165,7 +165,7 @@ public class MySqlOptimizer : OptimizationEngine
             );
             recommendations.Add(cacheRec);
         }
-        
+
         return recommendations;
     }
 }

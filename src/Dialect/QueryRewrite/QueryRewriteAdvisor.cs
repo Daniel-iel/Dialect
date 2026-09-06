@@ -12,7 +12,7 @@ public abstract class QueryRewriteAdvisor
     public abstract IReadOnlyList<QueryRewrite> AnalyzeQuery(
         string queryText,
         IDictionary<string, object>? contextData = null);
-    
+
     /// <summary>
     /// Protected helper: Validate rewrite suggestion
     /// </summary>
@@ -22,7 +22,7 @@ public abstract class QueryRewriteAdvisor
                !string.IsNullOrWhiteSpace(rewrite.OriginalPattern) &&
                !string.IsNullOrWhiteSpace(rewrite.SuggestedPattern);
     }
-    
+
     /// <summary>
     /// Protected helper: Calculate ROI score for rewrite
     /// </summary>
@@ -33,7 +33,7 @@ public abstract class QueryRewriteAdvisor
         if (complexity == 0) return 0;
         return Math.Round(improvement / complexity, 2);
     }
-    
+
     /// <summary>
     /// Protected helper: Detect subquery patterns
     /// </summary>
@@ -43,7 +43,7 @@ public abstract class QueryRewriteAdvisor
                (queryText.Contains("(SELECT", StringComparison.OrdinalIgnoreCase) ||
                 queryText.Contains("FROM (", StringComparison.OrdinalIgnoreCase));
     }
-    
+
     /// <summary>
     /// Protected helper: Detect CTE candidates
     /// </summary>
@@ -52,10 +52,10 @@ public abstract class QueryRewriteAdvisor
         // CTE beneficial for multiple subquery usage or complex nested queries
         var subqueryCount = System.Text.RegularExpressions.Regex.Matches(
             queryText, @"\(SELECT", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count;
-        
+
         return subqueryCount >= 2;
     }
-    
+
     /// <summary>
     /// Protected helper: Detect inefficient nested loop patterns
     /// </summary>
@@ -64,14 +64,14 @@ public abstract class QueryRewriteAdvisor
         // Pattern: multiple joins without explicit index hints
         var joinCount = System.Text.RegularExpressions.Regex.Matches(
             queryText, @"JOIN\s+", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count;
-        
+
         // Also check for n+1 pattern (multiple WHERE IN with subqueries)
         var whereInCount = System.Text.RegularExpressions.Regex.Matches(
             queryText, @"WHERE.*IN\s*\(SELECT", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count;
-        
+
         return joinCount >= 3 || whereInCount >= 2;
     }
-    
+
     /// <summary>
     /// Protected helper: Detect aggregation without proper grouping
     /// </summary>
@@ -80,13 +80,13 @@ public abstract class QueryRewriteAdvisor
         var hasAggregate = System.Text.RegularExpressions.Regex.IsMatch(
             queryText, @"COUNT|SUM|AVG|MAX|MIN|GROUP_CONCAT|STRING_AGG",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        
+
         var hasGroupBy = queryText.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase);
-        
+
         // Aggregate without GROUP BY might benefit from CTE or window function
         return hasAggregate;
     }
-    
+
     /// <summary>
     /// Protected helper: Detect UNION optimization opportunities
     /// </summary>
@@ -94,10 +94,10 @@ public abstract class QueryRewriteAdvisor
     {
         var unionCount = System.Text.RegularExpressions.Regex.Matches(
             queryText, @"UNION", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count;
-        
+
         return unionCount >= 2;
     }
-    
+
     /// <summary>
     /// Protected helper: Calculate complexity score
     /// </summary>
@@ -114,14 +114,14 @@ public abstract class QueryRewriteAdvisor
             _ => 3                          // Default medium
         };
     }
-    
+
     /// <summary>
     /// Protected helper: Extract affected query components
     /// </summary>
     protected List<string> ExtractAffectedComponents(string queryText)
     {
         var components = new List<string>();
-        
+
         if (queryText.Contains("WHERE", StringComparison.OrdinalIgnoreCase))
             components.Add("WHERE");
         if (queryText.Contains("JOIN", StringComparison.OrdinalIgnoreCase))
@@ -134,7 +134,7 @@ public abstract class QueryRewriteAdvisor
             components.Add("GROUP BY");
         if (queryText.Contains("HAVING", StringComparison.OrdinalIgnoreCase))
             components.Add("HAVING");
-        
+
         return components;
     }
 }

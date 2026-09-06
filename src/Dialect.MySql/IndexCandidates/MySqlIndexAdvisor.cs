@@ -13,10 +13,10 @@ public class MySqlIndexAdvisor : IndexCandidateAdvisorBase
         IDictionary<string, object>? contextData = null)
     {
         var candidates = new List<IndexCandidate>();
-        
+
         var tables = ExtractTableNames(queryText);
         var filterColumns = ExtractFilterColumns(queryText);
-        
+
         // Composite index for multiple filter columns
         foreach (var table in tables)
         {
@@ -43,7 +43,7 @@ public class MySqlIndexAdvisor : IndexCandidateAdvisorBase
                         { "USING", "BTREE" }
                     }
                 );
-                
+
                 candidates.Add(compositeCandidate);
             }
             else if (filterColumns.Count > 0)
@@ -66,11 +66,11 @@ public class MySqlIndexAdvisor : IndexCandidateAdvisorBase
                     Warnings: new List<string>(),
                     DialectOptions: new Dictionary<string, string> { { "USING", "BTREE" } }
                 );
-                
+
                 candidates.Add(singleCandidate);
             }
         }
-        
+
         // Covering index with SELECT columns included
         if (queryText.Contains("SELECT", StringComparison.OrdinalIgnoreCase))
         {
@@ -93,14 +93,14 @@ public class MySqlIndexAdvisor : IndexCandidateAdvisorBase
                     Warnings: new List<string> { "Verify column selection; larger indexes slow inserts" },
                     DialectOptions: new Dictionary<string, string>()
                 );
-                
+
                 candidates.Add(coveringCandidate);
             }
         }
-        
+
         return DeduplicateCandidates(candidates);
     }
-    
+
     protected override string GenerateCreateIndexStatement(IndexCandidate candidate)
     {
         var columnList = string.Join(", ", candidate.Columns);
@@ -108,7 +108,7 @@ public class MySqlIndexAdvisor : IndexCandidateAdvisorBase
         var usingClause = candidate.DialectOptions.ContainsKey("USING")
             ? $" USING {candidate.DialectOptions["USING"]}"
             : " USING BTREE";
-        
+
         return $"CREATE {uniqueKeyword}INDEX `idx_{candidate.TableName}_{string.Join("_", candidate.Columns)}` " +
                $"ON `{candidate.TableName}` ({columnList}){usingClause};";
     }

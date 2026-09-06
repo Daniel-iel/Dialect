@@ -96,7 +96,7 @@ public class MySqlConnectionProvider : IDbConnectionProvider
         // "8.0.23"
         // "5.7.32"
         // "8.0.23-0ubuntu0.20.04.1" (Ubuntu variant)
-        
+
         // Extract version numbers from format "X.Y.Z"
         var match = System.Text.RegularExpressions.Regex.Match(
             versionString,

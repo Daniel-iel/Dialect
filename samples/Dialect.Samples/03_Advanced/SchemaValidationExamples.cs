@@ -25,8 +25,8 @@ public class SchemaValidationExamples : ExampleBase
     private static void NamingConventionValidation()
     {
         OutputFormatter.PrintSubHeader("Example 1: Naming Convention Validation");
-        
-        var namingValidationText = @"
+
+        const string namingValidationText = @"
   Validation Rules:
     ✓ Table names: PascalCase or lowercase with underscores
     ✓ Column names: PascalCase or snake_case
@@ -39,15 +39,15 @@ public class SchemaValidationExamples : ExampleBase
       - Username (✓ Valid)
       - Email (✓ Valid)
       - CreatedAt (✓ Valid)";
-        
+
         Console.WriteLine(namingValidationText);
     }
 
     private static void DataTypeValidation()
     {
         OutputFormatter.PrintSubHeader("Example 2: Data Type Validation");
-        
-        var dataTypeValidationText = @"
+
+        const string dataTypeValidationText = @"
   Validation Rules:
     ✓ DECIMAL(10,2) for monetary values
     ✓ VARCHAR/NVARCHAR for strings with length limit
@@ -58,15 +58,15 @@ public class SchemaValidationExamples : ExampleBase
     ⚠ Column 'Price' uses DECIMAL(10,2) ✓ Correct
     ⚠ Column 'Total' uses DECIMAL(10,2) ✓ Correct
     ✓ All monetary columns properly typed";
-        
+
         Console.WriteLine(dataTypeValidationText);
     }
 
     private static void ConstraintValidation()
     {
         OutputFormatter.PrintSubHeader("Example 3: Constraint Validation");
-        
-        var constraintValidationText = @"
+
+        const string constraintValidationText = @"
   Validation Rules:
     ✓ Primary keys: All tables must have
     ✓ Foreign keys: Referential integrity
@@ -83,7 +83,7 @@ public class SchemaValidationExamples : ExampleBase
       ✓ PK: OrderId
       ✓ FK: UserId -> Users(UserId)
       ✓ NOT NULL: UserId, Total";
-        
+
         Console.WriteLine(constraintValidationText);
     }
 }

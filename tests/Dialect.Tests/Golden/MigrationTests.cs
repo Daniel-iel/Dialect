@@ -29,7 +29,7 @@ public class MigrationTests
             new("Name", DataType.Varchar, false, null, false, false, 255, null)
         };
         var step = new CreateTableStep("Users", columns, new List<string> { "Id" });
-        
+
         // Assert
         var sqlServerRenderer = _sqlServerDialect.CreateMigrationRenderer();
         var pgRenderer = _postgreSqlDialect.CreateMigrationRenderer();
@@ -289,7 +289,7 @@ public class MigrationTests
         var columns = new List<ColumnDef> { new("Id", DataType.Int, false, null, true, false, null, null) };
         var createTableStep = new CreateTableStep("Users", columns, new List<string> { "Id" });
         var dropTableStep = new DropTableStep("Temp", false);
-        
+
         var steps = new List<MigrationStep> { createTableStep, dropTableStep };
         var migration = new Migration("CreateUsersTable", "001", DateTime.UtcNow, steps);
 
@@ -344,11 +344,11 @@ public class MigrationTests
     public void MIGRATION_validates_empty_steps()
     {
         // Act & Assert - building a migration with no steps should fail validation
-        var exception = Record.Exception(() => 
+        var exception = Record.Exception(() =>
         {
             var migration = new MigrationBuilder("Empty", "001").Build();
         });
-        
+
         exception.Should().NotBeNull();
         exception.Should().BeOfType<ArgumentException>();
     }

@@ -29,7 +29,7 @@ public class GroupingExamples : ExampleBase
     private void GroupByAndCount()
     {
         OutputFormatter.PrintSubHeader("Example 1: GROUP BY with COUNT");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Select("UserId", "COUNT(*) as OrderCount")
                 .From("Orders")
@@ -44,7 +44,7 @@ public class GroupingExamples : ExampleBase
     private void GroupByWithHaving()
     {
         OutputFormatter.PrintSubHeader("Example 2: GROUP BY with HAVING");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var havingCondition = new RawNode("SUM(Quantity) > 5");
@@ -63,7 +63,7 @@ public class GroupingExamples : ExampleBase
     private void MultipleAggregates()
     {
         OutputFormatter.PrintSubHeader("Example 3: Multiple Aggregate Functions");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Select("UserId", "COUNT(*) as TotalOrders", "SUM(Total) as TotalSpent", "AVG(Total) as AvgOrder")
                 .From("Orders")

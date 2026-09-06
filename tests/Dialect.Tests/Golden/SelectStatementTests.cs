@@ -171,11 +171,11 @@ public class SelectStatementTests
         // SQL Server uses OFFSET/FETCH NEXT syntax
         sqlServer.Sql.Should().Contain("OFFSET 20 ROWS");
         sqlServer.Sql.Should().Contain("FETCH NEXT 10 ROWS ONLY");
-        
+
         // PostgreSQL/MySQL use LIMIT/OFFSET
         postgreSql.Sql.Should().Contain("LIMIT 10");
         postgreSql.Sql.Should().Contain("OFFSET 20");
-        
+
         mysql.Sql.Should().Contain("LIMIT 10");
         mysql.Sql.Should().Contain("OFFSET 20");
     }
@@ -294,10 +294,10 @@ public class SelectStatementTests
         // Assert
         sqlServer.Sql.Should().Contain("WITH [active_users] AS");
         sqlServer.Sql.Should().Contain("SELECT [Id], [Name] FROM [active_users]");
-        
+
         postgreSql.Sql.Should().Contain("WITH \"active_users\" AS");
         postgreSql.Sql.Should().Contain("SELECT \"Id\", \"Name\" FROM \"active_users\"");
-        
+
         mysql.Sql.Should().Contain("WITH `active_users` AS");
         mysql.Sql.Should().Contain("SELECT `Id`, `Name` FROM `active_users`");
     }
@@ -333,10 +333,10 @@ public class SelectStatementTests
         // Assert - Verify both CTEs are present
         sqlServer.Sql.Should().Contain("WITH [active_users] AS");
         sqlServer.Sql.Should().Contain("[completed_orders] AS");
-        
+
         postgreSql.Sql.Should().Contain("WITH \"active_users\" AS");
         postgreSql.Sql.Should().Contain("\"completed_orders\" AS");
-        
+
         mysql.Sql.Should().Contain("WITH `active_users` AS");
         mysql.Sql.Should().Contain("`completed_orders` AS");
     }
@@ -364,10 +364,10 @@ public class SelectStatementTests
         // Assert
         sqlServer.Sql.Should().Contain("FROM (SELECT");
         sqlServer.Sql.Should().Contain(") AS [active_users]");
-        
+
         postgreSql.Sql.Should().Contain("FROM (SELECT");
         postgreSql.Sql.Should().Contain(") AS \"active_users\"");
-        
+
         mysql.Sql.Should().Contain("FROM (SELECT");
         mysql.Sql.Should().Contain(") AS `active_users`");
     }
@@ -400,10 +400,10 @@ public class SelectStatementTests
         // Assert - Verify nested structure
         sqlServer.Sql.Should().Contain("FROM (SELECT");
         sqlServer.Sql.Should().MatchRegex(@"\(SELECT.*FROM \(SELECT");
-        
+
         postgreSql.Sql.Should().Contain("FROM (SELECT");
         postgreSql.Sql.Should().MatchRegex(@"\(SELECT.*FROM \(SELECT");
-        
+
         mysql.Sql.Should().Contain("FROM (SELECT");
         mysql.Sql.Should().MatchRegex(@"\(SELECT.*FROM \(SELECT");
     }
@@ -416,7 +416,7 @@ public class SelectStatementTests
             new[] { "DepartmentId" },
             new[] { new OrderByClause(new Column("Salary"), SortDirection.Descending) }
         );
-        
+
         var query = SqlBuilder
             .Select("Id", "Name", "Salary")
             .SelectWindow("ROW_NUMBER", null, overClause, "rank")
@@ -431,10 +431,10 @@ public class SelectStatementTests
         // Assert - Verify window function rendering
         sqlServer.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY [DepartmentId] ORDER BY [Salary] Descending)");
         sqlServer.Sql.Should().Contain("AS [rank]");
-        
+
         postgreSql.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY \"DepartmentId\" ORDER BY \"Salary\" Descending)");
         postgreSql.Sql.Should().Contain("AS \"rank\"");
-        
+
         mysql.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY `DepartmentId` ORDER BY `Salary` Descending)");
         mysql.Sql.Should().Contain("AS `rank`");
     }
@@ -447,12 +447,12 @@ public class SelectStatementTests
             new[] { "Category" },
             new[] { new OrderByClause(new Column("Sales"), SortDirection.Descending) }
         );
-        
+
         var sumOverClause = new OverClause(
             new[] { "Category" },
             null
         );
-        
+
         var query = SqlBuilder
             .Select("Id", "Category", "Sales")
             .SelectWindow("RANK", null, rankOverClause, "sales_rank")
@@ -468,10 +468,10 @@ public class SelectStatementTests
         // Assert - Verify multiple window functions
         sqlServer.Sql.Should().Contain("RANK() OVER (PARTITION BY [Category]");
         sqlServer.Sql.Should().Contain("SUM([Sales]) OVER (PARTITION BY [Category])");
-        
+
         postgreSql.Sql.Should().Contain("RANK() OVER (PARTITION BY \"Category\"");
         postgreSql.Sql.Should().Contain("SUM(\"Sales\") OVER (PARTITION BY \"Category\")");
-        
+
         mysql.Sql.Should().Contain("RANK() OVER (PARTITION BY `Category`");
         mysql.Sql.Should().Contain("SUM(`Sales`) OVER (PARTITION BY `Category`)");
     }

@@ -27,14 +27,14 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 10,
             References: new List<string> { "INDEX_DESIGN" }
         );
-        
+
         // Assert
         recommendation.Should().NotBeNull();
         recommendation.RecommendationId.Should().Be("INDEX_001");
         recommendation.Category.Should().Be("Index");
         recommendation.IsValid.Should().BeTrue();
     }
-    
+
     [Fact]
     public void OptimizationRecommendation_ValidatesImprovementPercentage()
     {
@@ -55,7 +55,7 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 15,
             References: new List<string>()
         );
-        
+
         var invalidRec = new OptimizationRecommendation(
             RecommendationId: "TEST",
             Category: "Index",
@@ -72,12 +72,12 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 15,
             References: new List<string>()
         );
-        
+
         // Assert
         validRec.IsValid.Should().BeTrue();
         invalidRec.IsValid.Should().BeFalse();
     }
-    
+
     [Theory]
     [InlineData("Low")]
     [InlineData("Medium")]
@@ -101,12 +101,12 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 15,
             References: new List<string>()
         );
-        
+
         // Assert
         recommendation.RiskLevel.Should().Be(riskLevel);
         recommendation.IsValid.Should().BeTrue();
     }
-    
+
     [Fact]
     public void OptimizationRecommendation_CalculatesRoiScore()
     {
@@ -127,7 +127,7 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 5,
             References: new List<string>()
         );
-        
+
         var lowRoiRec = new OptimizationRecommendation(
             RecommendationId: "LOW_ROI",
             Category: "Index",
@@ -144,11 +144,11 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 120,
             References: new List<string>()
         );
-        
+
         // Assert
         highRoiRec.RoiScore.Should().BeGreaterThan(lowRoiRec.RoiScore);
     }
-    
+
     [Fact]
     public void OptimizationRecommendation_WithoutRequiredField_IsInvalid()
     {
@@ -169,7 +169,7 @@ public class OptimizationRecommendationTests
             EstimatedImplementationTimeMinutes: 15,
             References: new List<string>()
         );
-        
+
         // Assert
         invalidRec.IsValid.Should().BeFalse();
     }

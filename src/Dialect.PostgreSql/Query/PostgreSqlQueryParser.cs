@@ -12,7 +12,7 @@ public class PostgreSqlQueryParser : QueryParser
     public override ParsedQuery Parse(string sql)
     {
         var cleanSql = sql.Trim();
-        
+
         var selectClause = ExtractSelectClause(cleanSql);
         var selectColumns = ExtractColumns(selectClause);
         var fromClause = ExtractFromClause(cleanSql);
@@ -21,11 +21,11 @@ public class PostgreSqlQueryParser : QueryParser
         var joinClauses = ExtractJoinClauses(cleanSql);
         var groupByClauses = ExtractGroupByClauses(cleanSql);
         var orderByClauses = ExtractOrderByClauses(cleanSql);
-        
+
         var predicates = whereClauses.Select(c => c.RawSql).ToArray();
         var selectivity = EstimateSelectivity(predicates);
         int complexity = CountNestingDepth(cleanSql);
-        
+
         return new ParsedQuery(
             SelectClause: selectClause,
             SelectColumns: selectColumns,
@@ -49,7 +49,7 @@ public class PostgreSqlQueryParser : QueryParser
     private static string[] ExtractColumns(string clause)
     {
         if (string.IsNullOrEmpty(clause)) return Array.Empty<string>();
-        
+
         return clause.Split(',')
             .Select(c => c.Trim())
             .Where(c => !string.IsNullOrEmpty(c))
@@ -58,7 +58,7 @@ public class PostgreSqlQueryParser : QueryParser
 
     private static string ExtractFromClause(string sql)
     {
-        var match = Regex.Match(sql, @"FROM\s+(.*?)(?:WHERE|JOIN|GROUP BY|ORDER BY|$)", 
+        var match = Regex.Match(sql, @"FROM\s+(.*?)(?:WHERE|JOIN|GROUP BY|ORDER BY|$)",
             RegexOptions.IgnoreCase);
         return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
     }
@@ -66,7 +66,7 @@ public class PostgreSqlQueryParser : QueryParser
     private static string[] ExtractTables(string fromClause)
     {
         if (string.IsNullOrEmpty(fromClause)) return Array.Empty<string>();
-        
+
         return fromClause.Split(',', ' ')
             .Where(t => !string.IsNullOrEmpty(t) && !t.Contains("("))
             .Select(t => t.Trim())
@@ -80,7 +80,7 @@ public class PostgreSqlQueryParser : QueryParser
 
         var whereText = match.Groups[1].Value;
         var predicates = whereText.Split(" AND ", StringSplitOptions.None).SelectMany(x => x.Split(" OR ", StringSplitOptions.None));
-        
+
         return predicates
             .Select(pred => new ParsedClause(
                 Type: "WHERE",
@@ -94,10 +94,10 @@ public class PostgreSqlQueryParser : QueryParser
 
     private static ParsedClause[] ExtractJoinClauses(string sql)
     {
-        var matches = Regex.Matches(sql, 
-            @"(?:INNER|LEFT|RIGHT|FULL|CROSS)\s+(?:OUTER\s+)?JOIN\s+([^\s]+)\s+(?:ON|USING)\s+([^\s]+)", 
+        var matches = Regex.Matches(sql,
+            @"(?:INNER|LEFT|RIGHT|FULL|CROSS)\s+(?:OUTER\s+)?JOIN\s+([^\s]+)\s+(?:ON|USING)\s+([^\s]+)",
             RegexOptions.IgnoreCase);
-        
+
         var joins = new List<ParsedClause>();
         foreach (Match match in matches)
         {
@@ -109,7 +109,7 @@ public class PostgreSqlQueryParser : QueryParser
                 Complexity: 1
             ));
         }
-        
+
         return joins.ToArray();
     }
 
@@ -119,7 +119,7 @@ public class PostgreSqlQueryParser : QueryParser
         if (!match.Success) return Array.Empty<ParsedClause>();
 
         var columns = match.Groups[1].Value.Split(',').Select(c => c.Trim()).ToArray();
-        
+
         return new[]
         {
             new ParsedClause(
@@ -139,7 +139,7 @@ public class PostgreSqlQueryParser : QueryParser
 
         var orderText = match.Groups[1].Value;
         var columns = orderText.Split(',').Select(c => c.Trim()).ToArray();
-        
+
         return new[]
         {
             new ParsedClause(

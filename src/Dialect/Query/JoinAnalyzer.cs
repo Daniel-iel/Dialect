@@ -41,7 +41,7 @@ public class JoinAnalyzer
     private static (string leftTable, string rightTable) ExtractTableNames(string clause)
     {
         var words = clause.Split(new[] { ' ', '\t', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        
+
         // Simple extraction: "table1 JOIN table2"
         string leftTable = string.Empty;
         string rightTable = string.Empty;

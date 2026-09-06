@@ -34,7 +34,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(cteName))
             throw new ArgumentException("CTE name cannot be empty", nameof(cteName));
-        
+
         _withClauses.Add(new WithClause(cteName, query, columnNames));
         return this;
     }
@@ -46,7 +46,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(cteName))
             throw new ArgumentException("CTE name cannot be empty", nameof(cteName));
-        
+
         var query = queryBuilder.Build();
         _withClauses.Add(new WithClause(cteName, query, columnNames));
         return this;
@@ -59,7 +59,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         _from = new TableReference(tableName, alias, schema);
         return this;
     }
@@ -82,7 +82,7 @@ public sealed class SelectBuilder
             throw new ArgumentNullException(nameof(subquery));
         if (string.IsNullOrWhiteSpace(alias))
             throw new ArgumentException("Subquery alias cannot be empty", nameof(alias));
-        
+
         _from = new TableReference("query", alias, null, subquery);
         return this;
     }
@@ -96,7 +96,7 @@ public sealed class SelectBuilder
             throw new ArgumentNullException(nameof(subqueryBuilder));
         if (string.IsNullOrWhiteSpace(alias))
             throw new ArgumentException("Subquery alias cannot be empty", nameof(alias));
-        
+
         var subquery = subqueryBuilder.Build();
         _from = new TableReference("query", alias, null, subquery);
         return this;
@@ -109,7 +109,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Inner, onCondition));
         return this;
@@ -122,7 +122,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Left, onCondition));
         return this;
@@ -135,7 +135,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Right, onCondition));
         return this;
@@ -149,7 +149,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Full, onCondition));
         return this;
@@ -162,7 +162,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Cross, null));
         return this;
@@ -175,7 +175,7 @@ public sealed class SelectBuilder
     {
         if (condition == null)
             throw new ArgumentNullException(nameof(condition));
-        
+
         _where = _where == null ? condition : new AndNode(_where, condition);
         return this;
     }
@@ -205,10 +205,10 @@ public sealed class SelectBuilder
     {
         if (condition == null)
             throw new ArgumentNullException(nameof(condition));
-        
+
         if (_where == null)
             throw new InvalidOperationException("Cannot use OrWhere() without an existing Where() condition.");
-        
+
         _where = new OrNode(_where, condition);
         return this;
     }
@@ -220,7 +220,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(sqlFragment))
             throw new ArgumentException("SQL fragment cannot be empty", nameof(sqlFragment));
-        
+
         var rawCondition = new RawNode(sqlFragment, parameters);
         return Where(rawCondition);
     }
@@ -232,7 +232,7 @@ public sealed class SelectBuilder
     {
         if (columnNames == null || columnNames.Length == 0)
             throw new ArgumentException("At least one column must be specified", nameof(columnNames));
-        
+
         _groupByColumns.AddRange(columnNames.Select(c => new Column(c)));
         return this;
     }
@@ -244,7 +244,7 @@ public sealed class SelectBuilder
     {
         if (condition == null)
             throw new ArgumentNullException(nameof(condition));
-        
+
         _having = condition;
         return this;
     }
@@ -260,10 +260,10 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(functionName))
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
-        
+
         var windowFunc = new WindowFunction(functionName, args, overClause, alias);
         windowFunc.Validate();
-        
+
         _windowFunctions.Add(windowFunc);
         return this;
     }
@@ -279,11 +279,11 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(functionName))
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
-        
+
         var overClause = new OverClause(partitionByColumns, orderByItems);
         var windowFunc = new WindowFunction(functionName, null, overClause, alias);
         windowFunc.Validate();
-        
+
         _windowFunctions.Add(windowFunc);
         return this;
     }
@@ -302,11 +302,11 @@ public sealed class SelectBuilder
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
         if (string.IsNullOrWhiteSpace(columnArg))
             throw new ArgumentException("Column argument cannot be empty", nameof(columnArg));
-        
+
         var overClause = new OverClause(partitionByColumns, orderByItems);
         var windowFunc = new WindowFunction(functionName, new[] { columnArg }, overClause, alias);
         windowFunc.Validate();
-        
+
         _windowFunctions.Add(windowFunc);
         return this;
     }
@@ -318,7 +318,7 @@ public sealed class SelectBuilder
     {
         if (string.IsNullOrWhiteSpace(columnName))
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
-        
+
         _orderByClauses.Add(new OrderByClause(new Column(columnName), direction));
         return this;
     }
@@ -346,7 +346,7 @@ public sealed class SelectBuilder
     {
         if (count <= 0)
             throw new ArgumentException("Count must be greater than 0", nameof(count));
-        
+
         _rowLimit = new RowLimit(count, offset);
         return this;
     }
@@ -358,10 +358,10 @@ public sealed class SelectBuilder
     {
         if (offset < 0)
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-        
+
         if (_rowLimit == null)
             throw new InvalidOperationException("Skip() requires Take() to be called first.");
-        
+
         _rowLimit = new RowLimit(_rowLimit.Count, offset);
         return this;
     }
@@ -391,7 +391,7 @@ public sealed class SelectBuilder
     {
         if (_columns.Count == 0)
             throw new InvalidOperationException("At least one column must be selected.");
-        
+
         return new SelectStatement(
             _columns,
             _from,

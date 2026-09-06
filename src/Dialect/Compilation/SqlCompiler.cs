@@ -25,9 +25,9 @@ public static class SqlCompiler
             throw new ArgumentNullException(nameof(statement));
         if (dialect == null)
             throw new ArgumentNullException(nameof(dialect));
-        
+
         ValidateStatement(statement, dialect);
-        
+
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
     }
@@ -81,9 +81,9 @@ public static class SqlCompiler
             throw new ArgumentNullException(nameof(statement));
         if (dialect == null)
             throw new ArgumentNullException(nameof(dialect));
-        
+
         ValidateStatement(statement, dialect);
-        
+
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
     }
@@ -132,9 +132,9 @@ public static class SqlCompiler
             throw new ArgumentNullException(nameof(statement));
         if (dialect == null)
             throw new ArgumentNullException(nameof(dialect));
-        
+
         ValidateStatement(statement, dialect);
-        
+
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
     }
@@ -183,9 +183,9 @@ public static class SqlCompiler
             throw new ArgumentNullException(nameof(statement));
         if (dialect == null)
             throw new ArgumentNullException(nameof(dialect));
-        
+
         ValidateStatement(statement, dialect);
-        
+
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
     }
@@ -234,9 +234,9 @@ public static class SqlCompiler
             throw new ArgumentNullException(nameof(routine));
         if (dialect == null)
             throw new ArgumentNullException(nameof(dialect));
-        
+
         ValidateRoutine(routine, dialect);
-        
+
         var renderer = dialect.CreateRoutineRenderer();
         return renderer.Render(routine, dialect);
     }
@@ -285,13 +285,13 @@ public static class SqlCompiler
             throw new ArgumentNullException(nameof(statement));
         if (dialect == null)
             throw new ArgumentNullException(nameof(dialect));
-        
+
         if (!dialect.Supports(SqlFeature.Upsert))
             throw new SqlCompilationException(
                 $"UPSERT is not supported by {dialect.GetType().Name}");
-        
+
         ValidateUpsertStatement(statement, dialect);
-        
+
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
     }
@@ -355,13 +355,13 @@ public static class SqlCompiler
             // Validate subquery
             if (string.IsNullOrWhiteSpace(statement.From.Alias))
                 throw new SqlCompilationException("Subqueries in FROM clause must have an alias.");
-            
+
             // Recursively validate and compile the subquery
             ValidateStatement(statement.From.SubquerySource, dialect);
         }
-        
+
         ValidateIdentifier(statement.From?.Alias);
-        
+
         foreach (var join in statement.Joins)
         {
             if (join.Table.SubquerySource == null)
@@ -373,7 +373,7 @@ public static class SqlCompiler
                 // Validate subquery in JOIN
                 if (string.IsNullOrWhiteSpace(join.Table.Alias))
                     throw new SqlCompilationException("Subqueries in JOIN clauses must have an alias.");
-                
+
                 ValidateStatement(join.Table.SubquerySource, dialect);
             }
             ValidateIdentifier(join.Table.Alias);
@@ -454,30 +454,30 @@ public static class SqlCompiler
     {
         if (statement.Table == null)
             throw new SqlCompilationException("UPSERT must specify a target table");
-        
+
         ValidateIdentifier(statement.Table.Name);
         ValidateIdentifier(statement.Table.Alias);
-        
+
         if (statement.Columns.Count == 0)
             throw new SqlCompilationException("UPSERT must specify at least one column");
-        
+
         foreach (var column in statement.Columns)
         {
             ValidateIdentifier(column.Name);
         }
-        
+
         if (statement.Values == null || statement.Values.Count == 0)
             throw new SqlCompilationException("UPSERT must specify values");
-        
+
         if (statement.Values.Count != statement.Columns.Count)
             throw new SqlCompilationException(
                 $"UPSERT column count ({statement.Columns.Count}) must match value count ({statement.Values.Count})");
-        
+
         if (statement.ConflictClause != null)
         {
             if (statement.ConflictClause.UpdateClauses == null || statement.ConflictClause.UpdateClauses.Count == 0)
                 throw new SqlCompilationException("UPSERT conflict clause must specify at least one update column");
-            
+
             foreach (var updateClause in statement.ConflictClause.UpdateClauses)
             {
                 ValidateIdentifier(updateClause.ColumnName);
@@ -507,6 +507,6 @@ public static class SqlCompiler
 public sealed class SqlCompilationException : Exception
 {
     public SqlCompilationException(string message) : base(message) { }
-    public SqlCompilationException(string message, Exception innerException) 
+    public SqlCompilationException(string message, Exception innerException)
         : base(message, innerException) { }
 }

@@ -40,25 +40,25 @@ public enum SqlFeature
 {
     /// <summary>FULL OUTER JOIN — not supported natively in MySQL.</summary>
     FullJoin,
-    
+
     /// <summary>RETURNING clause — PostgreSQL specific in Phase 1.</summary>
     Returning,
-    
+
     /// <summary>Window functions (ROW_NUMBER OVER, etc.).</summary>
     WindowFunctions,
-    
+
     /// <summary>CTEs / WITH clause.</summary>
     CommonTableExpressions,
-    
+
     /// <summary>JSON operations (JSON_VALUE, ->, etc.).</summary>
     JsonOperations,
-    
+
     /// <summary>UPSERT / Merge operations.</summary>
     Upsert,
-    
+
     /// <summary>Stored procedures.</summary>
     StoredProcedures,
-    
+
     /// <summary>Scalar and table-valued functions.</summary>
     Functions
 }

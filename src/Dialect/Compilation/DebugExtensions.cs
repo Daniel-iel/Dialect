@@ -22,7 +22,7 @@ public static class DebugExtensions
             return query.Sql;
 
         var debugSql = new StringBuilder(query.Sql);
-        
+
         // Sort parameters by their name/number to replace in reverse order
         // This prevents issues with parameter names that are substrings of others
         var sortedParams = query.Parameters

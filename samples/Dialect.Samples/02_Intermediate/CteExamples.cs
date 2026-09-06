@@ -27,19 +27,19 @@ public class CteExamples : ExampleBase
     private void SimpleCte()
     {
         OutputFormatter.PrintSubHeader("Example 1: Simple CTE");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var cteQuery = SqlBuilder.Select("UserId", "COUNT(*) as OrderCount")
                 .From("Orders")
                 .GroupBy("UserId")
                 .Build();
-            
+
             var joinCondition = new ComparisonNode(
                 new Column("uo.UserId"),
                 ComparisonOperator.Equal,
                 new Column("u.UserId"));
-            
+
             return SqlBuilder.Select("u.Username", "uo.OrderCount")
                 .With("UserOrders", cteQuery)
                 .From("UserOrders uo")
@@ -55,25 +55,25 @@ public class CteExamples : ExampleBase
     private void MultipleCtes()
     {
         OutputFormatter.PrintSubHeader("Example 2: Multiple CTEs");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var productSalesCte = SqlBuilder.Select("ProductId", "SUM(Quantity) as TotalSold")
                 .From("OrderItems")
                 .GroupBy("ProductId")
                 .Build();
-            
+
             var joinCondition2 = new ComparisonNode(
                 new Column("ps.ProductId"),
                 ComparisonOperator.Equal,
                 new Column("p.ProductId"));
-            
+
             var topProductsCte = SqlBuilder.Select("p.ProductId", "p.Name", "ps.TotalSold")
                 .From("ProductSales ps")
                 .InnerJoin("Products p", joinCondition2)
                 .Where("ps.TotalSold", ComparisonOperator.GreaterThan, 5)
                 .Build();
-            
+
             return SqlBuilder.Select("*")
                 .With("ProductSales", productSalesCte)
                 .With("TopProducts", topProductsCte)

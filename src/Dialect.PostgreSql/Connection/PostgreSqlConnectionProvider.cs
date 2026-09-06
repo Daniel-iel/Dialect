@@ -95,7 +95,7 @@ public class PostgreSqlConnectionProvider : IDbConnectionProvider
         // Examples:
         // "PostgreSQL 13.2 (Debian 13.2-1.pgdg100+1) on x86_64..."
         // "PostgreSQL 14.5 on x86_64-pc-linux-gnu..."
-        
+
         // Extract version numbers from format "X.Y"
         var match = System.Text.RegularExpressions.Regex.Match(
             versionString,

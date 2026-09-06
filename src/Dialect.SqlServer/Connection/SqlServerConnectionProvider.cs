@@ -95,14 +95,14 @@ public class SqlServerConnectionProvider : IDbConnectionProvider
         // Examples:
         // "Microsoft SQL Server 2019 (RTM) - 15.0.2000.5"
         // "Microsoft SQL Server 2022 (RTM) - 16.0.1000"
-        
+
         // Extract version numbers from format "XX.Y.ZZZZ"
         var match = System.Text.RegularExpressions.Regex.Match(
             versionString,
             @"(\d+)\.(\d+)\.(\d+)"
         );
 
-        if (match.Success && 
+        if (match.Success &&
             int.TryParse(match.Groups[1].Value, out int major) &&
             int.TryParse(match.Groups[2].Value, out int minor) &&
             int.TryParse(match.Groups[3].Value, out int patch))

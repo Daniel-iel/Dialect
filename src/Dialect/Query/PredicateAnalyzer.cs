@@ -95,7 +95,7 @@ public class PredicateAnalyzer
     private static int CalculateIndexPriority(bool isIndexable, decimal selectivity)
     {
         if (!isIndexable) return 0;
-        
+
         // Scale selectivity to priority (1-10)
         // Higher selectivity = higher priority for index
         return (int)(selectivity * 10);

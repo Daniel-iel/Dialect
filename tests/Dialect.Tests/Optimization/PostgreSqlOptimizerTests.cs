@@ -8,7 +8,7 @@ namespace Dialect.Tests.Optimization;
 public class PostgreSqlOptimizerTests
 {
     private readonly PostgreSqlOptimizer _optimizer = new();
-    
+
     private static QueryExecutionPlan CreateExecutionPlan(
         string operationType = "Seq Scan",
         long rowsProduced = 1000,
@@ -25,7 +25,7 @@ public class PostgreSqlOptimizerTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         return new QueryExecutionPlan(
             RootNode: node,
             TotalCost: cost,
@@ -35,7 +35,7 @@ public class PostgreSqlOptimizerTests
             Metadata: new Dictionary<string, object>()
         );
     }
-    
+
     private static PerformanceMetrics CreateMetrics(
         int tableScanCount = 1,
         bool hasTableScan = true,
@@ -62,21 +62,21 @@ public class PostgreSqlOptimizerTests
             OptimizationTips: new List<string>()
         );
     }
-    
+
     [Fact]
     public void GenerateRecommendations_ReturnsRecommendations()
     {
         // Arrange
         var plan = CreateExecutionPlan();
         var metrics = CreateMetrics();
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().NotBeEmpty();
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesAnalyzeForLowSelectivity()
     {
@@ -101,57 +101,57 @@ public class PostgreSqlOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "POSTGRES_ANALYZE");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesVacuumForLargeTable()
     {
         // Arrange
         var plan = CreateExecutionPlan(rowsExamined: 150000);
         var metrics = CreateMetrics(totalRowsExamined: 150000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "POSTGRES_VACUUM");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesPartialIndexForFilteredQueries()
     {
         // Arrange
         var plan = CreateExecutionPlan(operationType: "Seq Scan", rowsExamined: 10000);
         var metrics = CreateMetrics(tableScanCount: 1, totalRowsExamined: 10000);
-        var queryWithWhere = "SELECT * FROM orders WHERE status = 'active' AND created_at > NOW() - INTERVAL '30 days'";
-        
+        const string queryWithWhere = "SELECT * FROM orders WHERE status = 'active' AND created_at > NOW() - INTERVAL '30 days'";
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations(queryWithWhere, metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "POSTGRES_PARTIAL_INDEX");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesBrinForLargeSequentialTable()
     {
         // Arrange
         var plan = CreateExecutionPlan(rowsExamined: 2000000);
         var metrics = CreateMetrics(tableScanCount: 1, totalRowsExamined: 2000000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "POSTGRES_BRIN");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesMaterializedViewForComplexQuery()
     {
@@ -188,7 +188,7 @@ public class PostgreSqlOptimizerTests
             },
             Properties: new Dictionary<string, object>()
         );
-        
+
         var plan = new QueryExecutionPlan(
             RootNode: node,
             TotalCost: 50.0m,
@@ -197,7 +197,7 @@ public class PostgreSqlOptimizerTests
             QueryText: "SELECT * FROM orders o JOIN customers c ON o.customer_id = c.id JOIN items i ON o.item_id = i.id",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 50.0m,
             TableScanCount: 0,
@@ -217,10 +217,10 @@ public class PostgreSqlOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "POSTGRES_MATVIEW");
     }

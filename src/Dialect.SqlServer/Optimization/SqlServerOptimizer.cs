@@ -15,25 +15,25 @@ public class SqlServerOptimizer : OptimizationEngine
         IDictionary<string, object>? contextData = null)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Index recommendations
         recommendations.AddRange(GenerateIndexRecommendations(metrics, executionPlan));
-        
+
         // Join recommendations
         recommendations.AddRange(GenerateJoinRecommendations(metrics, executionPlan));
-        
+
         // Sort recommendations
         recommendations.AddRange(GenerateSortRecommendations(metrics, executionPlan));
-        
+
         // Selectivity recommendations
         recommendations.AddRange(GenerateSelectivityRecommendations(metrics, executionPlan));
-        
+
         // SQL Server-specific recommendations
         recommendations.AddRange(GenerateSqlServerSpecificRecommendations(queryText, metrics, executionPlan));
-        
+
         return recommendations.OrderByDescending(r => r.Priority).ToList();
     }
-    
+
     /// <summary>
     /// Generates SQL Server-specific recommendations
     /// </summary>
@@ -43,7 +43,7 @@ public class SqlServerOptimizer : OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Parallelism recommendation for large queries
         if (metrics.TotalCost > 50 && metrics.ExecutionTimeMs > 500)
         {
@@ -68,7 +68,7 @@ public class SqlServerOptimizer : OptimizationEngine
             );
             recommendations.Add(parallelRec);
         }
-        
+
         // Statistics update recommendation
         if (metrics.Selectivity < 0.05)
         {
@@ -90,7 +90,7 @@ public class SqlServerOptimizer : OptimizationEngine
             );
             recommendations.Add(statsRec);
         }
-        
+
         // Columnstore index recommendation for large tables
         if (metrics.TotalRowsExamined > 1000000 && metrics.TableScanCount > 0)
         {
@@ -115,7 +115,7 @@ public class SqlServerOptimizer : OptimizationEngine
             );
             recommendations.Add(csRec);
         }
-        
+
         // Table variable vs temp table recommendation
         if (queryText.Contains("DECLARE @", StringComparison.OrdinalIgnoreCase))
         {
@@ -137,7 +137,7 @@ public class SqlServerOptimizer : OptimizationEngine
             );
             recommendations.Add(varRec);
         }
-        
+
         return recommendations;
     }
 }

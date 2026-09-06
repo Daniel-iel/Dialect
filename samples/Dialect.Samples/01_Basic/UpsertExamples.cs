@@ -29,9 +29,9 @@ public class UpsertExamples : ExampleBase
     {
         OutputFormatter.PrintSubHeader("SQL Server: MERGE Statement");
         OutputFormatter.PrintWarning("Demonstrates SQL Server specific MERGE syntax");
-        
+
         var dialect = DialectHelper.GetDialect("SQL Server");
-        
+
         var compiled = SqlBuilder.Upsert("Products")
             .Columns("ProductId", "Name", "Price")
             .Values(1, "Laptop Pro", 1299.99m)
@@ -40,7 +40,7 @@ public class UpsertExamples : ExampleBase
             .UpdateSet("Price", 1299.99m)
             .Build()
             .Compile(dialect);
-        
+
         PrintResult("SQL Server", compiled.Sql, compiled.Parameters);
     }
 
@@ -48,9 +48,9 @@ public class UpsertExamples : ExampleBase
     {
         OutputFormatter.PrintSubHeader("PostgreSQL: ON CONFLICT DO UPDATE");
         OutputFormatter.PrintWarning("Demonstrates PostgreSQL specific ON CONFLICT syntax");
-        
+
         var dialect = DialectHelper.GetDialect("PostgreSQL");
-        
+
         var compiled = SqlBuilder.Upsert("Products")
             .Columns("ProductId", "Name", "Price")
             .Values(1, "Laptop Pro", 1299.99m)
@@ -59,7 +59,7 @@ public class UpsertExamples : ExampleBase
             .UpdateSet("price", 1299.99m)
             .Build()
             .Compile(dialect);
-        
+
         PrintResult("PostgreSQL", compiled.Sql, compiled.Parameters);
     }
 
@@ -67,9 +67,9 @@ public class UpsertExamples : ExampleBase
     {
         OutputFormatter.PrintSubHeader("MySQL: ON DUPLICATE KEY UPDATE");
         OutputFormatter.PrintWarning("Demonstrates MySQL specific ON DUPLICATE KEY UPDATE syntax");
-        
+
         var dialect = DialectHelper.GetDialect("MySQL");
-        
+
         var compiled = SqlBuilder.Upsert("Products")
             .Columns("ProductId", "Name", "Price")
             .Values(1, "Laptop Pro", 1299.99m)
@@ -78,7 +78,7 @@ public class UpsertExamples : ExampleBase
             .UpdateSet("Price", 1299.99m)
             .Build()
             .Compile(dialect);
-        
+
         PrintResult("MySQL", compiled.Sql, compiled.Parameters);
     }
 }

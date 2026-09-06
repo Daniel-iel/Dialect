@@ -13,10 +13,10 @@ public class PostgreSqlIndexAdvisor : IndexCandidateAdvisorBase
         IDictionary<string, object>? contextData = null)
     {
         var candidates = new List<IndexCandidate>();
-        
+
         var tables = ExtractTableNames(queryText);
         var filterColumns = ExtractFilterColumns(queryText);
-        
+
         // Standard B-tree index for WHERE filters
         foreach (var table in tables)
         {
@@ -39,11 +39,11 @@ public class PostgreSqlIndexAdvisor : IndexCandidateAdvisorBase
                     Warnings: new List<string>(),
                     DialectOptions: new Dictionary<string, string>()
                 );
-                
+
                 candidates.Add(candidate);
             }
         }
-        
+
         // Partial index for status/state columns (common pattern)
         if (queryText.Contains("WHERE", StringComparison.OrdinalIgnoreCase))
         {
@@ -66,11 +66,11 @@ public class PostgreSqlIndexAdvisor : IndexCandidateAdvisorBase
                     Warnings: new List<string> { "Partial index only useful if many inactive records" },
                     DialectOptions: new Dictionary<string, string>()
                 );
-                
+
                 candidates.Add(partialCandidate);
             }
         }
-        
+
         // BRIN index for large sequential tables (time-series data)
         var brinCandidate = new IndexCandidate(
             CandidateId: $"POSTGRES_BRIN_{tables.FirstOrDefault() ?? "table"}",
@@ -89,11 +89,11 @@ public class PostgreSqlIndexAdvisor : IndexCandidateAdvisorBase
             Warnings: new List<string> { "BRIN best for time-series or sequential INSERT patterns" },
             DialectOptions: new Dictionary<string, string> { { "pages_per_range", "128" } }
         );
-        
+
         candidates.Add(brinCandidate);
         return DeduplicateCandidates(candidates);
     }
-    
+
     protected override string GenerateCreateIndexStatement(IndexCandidate candidate)
     {
         var columnList = string.Join(", ", candidate.Columns);
@@ -101,7 +101,7 @@ public class PostgreSqlIndexAdvisor : IndexCandidateAdvisorBase
         var partialClause = !string.IsNullOrEmpty(candidate.PartialPredicate)
             ? $" {candidate.PartialPredicate}"
             : "";
-        
+
         return $"CREATE INDEX CONCURRENTLY ix_{candidate.TableName}_{string.Join("_", candidate.Columns)} " +
                $"ON {candidate.TableName} USING {indexType} ({columnList}){partialClause};";
     }

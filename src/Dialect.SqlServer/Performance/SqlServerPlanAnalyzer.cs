@@ -18,7 +18,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         var plan = ParsePlan(planJson, queryText);
         return AnalyzeParsedPlan(plan);
     }
-    
+
     /// <summary>
     /// Parses SQL Server execution plan JSON into structured format.
     /// SQL Server 2016+ provides machine-readable JSON format from SET STATISTICS IO/TIME.
@@ -29,23 +29,23 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         {
             var jsonDoc = JsonDocument.Parse(planOutput);
             var root = jsonDoc.RootElement;
-            
+
             // Extract root execution plan node
             var rootNode = ParseNode(root.GetProperty("Root"));
-            
+
             // Extract summary statistics
             var totalCost = root.TryGetProperty("EstimatedTotalSubtreeCost", out var costProp)
                 ? decimal.Parse(costProp.GetString() ?? "0")
                 : 0m;
-            
+
             var totalRows = root.TryGetProperty("EstimatedRows", out var rowsProp)
                 ? long.Parse(rowsProp.GetString() ?? "0")
                 : 0L;
-            
+
             var executionTime = root.TryGetProperty("ExecutionTime", out var timeProp)
                 ? double.Parse(timeProp.GetString() ?? "0")
                 : 0.0;
-            
+
             return new QueryExecutionPlan(
                 RootNode: rootNode,
                 TotalCost: totalCost,
@@ -60,7 +60,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
             return CreateFallbackPlan(queryText);
         }
     }
-    
+
     private static QueryExecutionPlan CreateFallbackPlan(string queryText)
     {
         return new QueryExecutionPlan(
@@ -81,39 +81,39 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
             Metadata: new Dictionary<string, object>()
         );
     }
-    
+
     private ExecutionPlanNode ParseNode(JsonElement nodeElement)
     {
         var operationType = nodeElement.TryGetProperty("RelOp", out var opProp)
             ? opProp.GetString() ?? "Unknown"
             : "Unknown";
-        
+
         var rowsProduced = nodeElement.TryGetProperty("EstimatedRows", out var rowsProp)
             ? long.Parse(rowsProp.GetString() ?? "0")
             : 0L;
-        
+
         var rowsExamined = rowsProduced; // SQL Server doesn't always distinguish examined vs produced
-        
+
         var cost = nodeElement.TryGetProperty("EstimatedTotalSubtreeCost", out var costProp)
             ? decimal.Parse(costProp.GetString() ?? "0")
             : 0m;
-        
+
         var objectName = GetObjectName(nodeElement);
         var predicate = GetPredicate(nodeElement);
-        
+
         var children = new List<ExecutionPlanNode>();
-        if (nodeElement.TryGetProperty("RelOp", out _) && 
+        if (nodeElement.TryGetProperty("RelOp", out _) &&
             nodeElement.TryGetProperty("Child", out var childProp))
         {
             children.Add(ParseNode(childProp));
         }
-        
+
         var properties = new Dictionary<string, object>();
         if (nodeElement.TryGetProperty("NodeId", out var nodeProp))
         {
             properties["NodeId"] = nodeProp.GetString() ?? "0";
         }
-        
+
         return new ExecutionPlanNode(
             OperationType: operationType,
             RowsProduced: rowsProduced,
@@ -125,7 +125,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
             Properties: properties
         );
     }
-    
+
     private static string? GetObjectName(JsonElement nodeElement)
     {
         if (nodeElement.TryGetProperty("Object", out var objProp) &&
@@ -133,48 +133,48 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         {
             return tableProp.GetString();
         }
-        
+
         if (nodeElement.TryGetProperty("Object", out var objProp2) &&
             objProp2.TryGetProperty("Index", out var indexProp))
         {
             return indexProp.GetString();
         }
-        
+
         return null;
     }
-    
+
     private static string? GetPredicate(JsonElement nodeElement)
     {
         if (nodeElement.TryGetProperty("Predicate", out var predProp))
         {
             return predProp.GetString();
         }
-        
+
         if (nodeElement.TryGetProperty("Where", out var whereProp))
         {
             return whereProp.GetString();
         }
-        
+
         return null;
     }
-    
+
     private static Dictionary<string, object> ExtractMetadata(JsonElement root)
     {
         var metadata = new Dictionary<string, object>();
-        
+
         if (root.TryGetProperty("StatementOptLevel", out var levelProp))
         {
             metadata["OptLevel"] = levelProp.GetString() ?? "Unknown";
         }
-        
+
         if (root.TryGetProperty("StatementSubTreeCost", out var costProp))
         {
             metadata["SubtreeCost"] = costProp.GetString() ?? "0";
         }
-        
+
         return metadata;
     }
-    
+
     private PerformanceMetrics AnalyzeParsedPlan(QueryExecutionPlan plan)
     {
         var tableScanCount = CountOperationType(plan.RootNode, "TableScan");
@@ -184,10 +184,10 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         var hashJoinCount = CountOperationType(plan.RootNode, "HashJoin");
         var sortCount = CountOperationType(plan.RootNode, "Sort");
         var filterCount = CountOperationType(plan.RootNode, "Filter");
-        
+
         var totalRowsExamined = CalculateTotalRowsExamined(plan.RootNode);
         var selectivity = CalculateSelectivity(plan.TotalRowsProduced, totalRowsExamined);
-        
+
         var missingIndexes = ExtractMissingIndexes(plan);
         var tips = GenerateOptimizationTips(new PerformanceMetrics(
             TotalCost: plan.TotalCost,
@@ -208,7 +208,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
             MissingIndexRecommendations: missingIndexes,
             OptimizationTips: new List<string>()
         ));
-        
+
         return new PerformanceMetrics(
             TotalCost: plan.TotalCost,
             TableScanCount: tableScanCount,

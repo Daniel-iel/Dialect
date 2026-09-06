@@ -14,7 +14,7 @@ public class OptimizationIntegrationTests
         // Arrange
         var optimizer = new SqlServerOptimizer();
         var prioritizer = new RecommendationPrioritizer();
-        
+
         // Create a slow query execution plan
         var node = new ExecutionPlanNode(
             OperationType: "TableScan",
@@ -26,7 +26,7 @@ public class OptimizationIntegrationTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var plan = new QueryExecutionPlan(
             RootNode: node,
             TotalCost: 80.0m,
@@ -35,7 +35,7 @@ public class OptimizationIntegrationTests
             QueryText: "SELECT * FROM Orders WHERE Status = 'Pending'",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 80.0m,
             TableScanCount: 1,
@@ -55,29 +55,29 @@ public class OptimizationIntegrationTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = optimizer.GenerateRecommendations(
             "SELECT * FROM Orders WHERE Status = 'Pending'",
             metrics,
             plan
         );
-        
+
         var prioritized = prioritizer.Prioritize(recommendations, maxRecommendations: 5);
-        
+
         // Assert
         recommendations.Should().NotBeEmpty();
         prioritized.Should().HaveCountLessThanOrEqualTo(5);
         prioritized.All(r => r.IsValid).Should().BeTrue();
         prioritized.Should().BeInDescendingOrder(r => r.Priority);
     }
-    
+
     [Fact]
     public void PrioritizeByCategory_SeparatesRecommendationsByType()
     {
         // Arrange
         var prioritizer = new RecommendationPrioritizer();
-        
+
         var indexRec = new OptimizationRecommendation(
             RecommendationId: "INDEX_1",
             Category: "Index",
@@ -94,7 +94,7 @@ public class OptimizationIntegrationTests
             EstimatedImplementationTimeMinutes: 10,
             References: new List<string>()
         );
-        
+
         var queryRec = new OptimizationRecommendation(
             RecommendationId: "QUERY_1",
             Category: "QueryRewrite",
@@ -111,7 +111,7 @@ public class OptimizationIntegrationTests
             EstimatedImplementationTimeMinutes: 30,
             References: new List<string>()
         );
-        
+
         var joinRec = new OptimizationRecommendation(
             RecommendationId: "JOIN_1",
             Category: "Join",
@@ -128,26 +128,26 @@ public class OptimizationIntegrationTests
             EstimatedImplementationTimeMinutes: 15,
             References: new List<string>()
         );
-        
+
         // Act
         var grouped = prioritizer.PrioritizeByCategory(
             new[] { indexRec, queryRec, joinRec },
             topPerCategory: 1
         );
-        
+
         // Assert
         grouped.Should().HaveCount(3);
         grouped["Index"].Should().HaveCount(1);
         grouped["QueryRewrite"].Should().HaveCount(1);
         grouped["Join"].Should().HaveCount(1);
     }
-    
+
     [Fact]
     public void FilterByRiskAndRoi_RemovesHighRiskOrLowValueRecommendations()
     {
         // Arrange
         var prioritizer = new RecommendationPrioritizer();
-        
+
         var recommendations = new[]
         {
             new OptimizationRecommendation("SAFE_HIGH", "Index", "Safe High ROI", "T", null, 50, 10, 4, 5.0m, new List<string>(), new Dictionary<string, string>(), "Low", 10, new List<string>()),
@@ -155,23 +155,23 @@ public class OptimizationIntegrationTests
             new OptimizationRecommendation("HIGH_RISK", "Index", "High Risk", "T", null, 50, 50, 3, 1.0m, new List<string>(), new Dictionary<string, string>(), "High", 60, new List<string>()),
             new OptimizationRecommendation("LOW_ROI", "Index", "Low ROI", "T", null, 10, 80, 1, 0.125m, new List<string>(), new Dictionary<string, string>(), "Low", 120, new List<string>()),
         };
-        
+
         // Act
         var filtered = prioritizer.FilterByRiskAndRoi(recommendations, maxRiskLevel: "Medium", minRoiScore: 0.5m);
-        
+
         // Assert
         filtered.Should().Contain(r => r.RecommendationId == "SAFE_HIGH");
         filtered.Should().Contain(r => r.RecommendationId == "MEDIUM_HIGH");
         filtered.Should().NotContain(r => r.RecommendationId == "HIGH_RISK");
         filtered.Should().NotContain(r => r.RecommendationId == "LOW_ROI");
     }
-    
+
     [Fact(Skip = "Recommendation categorization not fully implemented")]
     public void OptimizationEngine_GeneratesRecommendationsWithCorrectCategories()
     {
         // Arrange
         var optimizer = new SqlServerOptimizer();
-        
+
         var node = new ExecutionPlanNode(
             OperationType: "NestedLoopJoin",
             RowsProduced: 10000,
@@ -194,7 +194,7 @@ public class OptimizationIntegrationTests
             },
             Properties: new Dictionary<string, object>()
         );
-        
+
         var plan = new QueryExecutionPlan(
             RootNode: node,
             TotalCost: 20.0m,
@@ -203,7 +203,7 @@ public class OptimizationIntegrationTests
             QueryText: "SELECT * FROM Orders o JOIN Customers c ON o.CustomerId = c.Id",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 20.0m,
             TableScanCount: 1,
@@ -223,25 +223,25 @@ public class OptimizationIntegrationTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = optimizer.GenerateRecommendations(
             "SELECT * FROM Orders o JOIN Customers c ON o.CustomerId = c.Id",
             metrics,
             plan
         );
-        
+
         // Assert
         recommendations.Should().Contain(r => r.Category == "Index");
         recommendations.Should().Contain(r => r.Category == "QueryRewrite");
     }
-    
+
     [Fact]
     public void RecommendationWithSqlStatement_ContainsImplementationHint()
     {
         // Arrange
         var optimizer = new SqlServerOptimizer();
-        
+
         var node = new ExecutionPlanNode(
             OperationType: "TableScan",
             RowsProduced: 10000,
@@ -252,7 +252,7 @@ public class OptimizationIntegrationTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var plan = new QueryExecutionPlan(
             RootNode: node,
             TotalCost: 10.0m,
@@ -261,7 +261,7 @@ public class OptimizationIntegrationTests
             QueryText: "SELECT * FROM Orders",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 10.0m,
             TableScanCount: 1,
@@ -281,11 +281,11 @@ public class OptimizationIntegrationTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = optimizer.GenerateRecommendations("SELECT * FROM Orders", metrics, plan);
         var indexRec = recommendations.FirstOrDefault(r => r.Category == "Index");
-        
+
         // Assert
         indexRec.Should().NotBeNull();
         indexRec!.SqlStatement.Should().NotBeNullOrWhiteSpace();

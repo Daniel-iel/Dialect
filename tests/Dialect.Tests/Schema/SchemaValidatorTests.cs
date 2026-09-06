@@ -16,10 +16,10 @@ public class SchemaValidatorTests
     {
         // Arrange
         var validator = new SqlServerDialect().CreateSchemaValidator();
-        
+
         // Act
         var result = ValidationRules.ValidateColumnName("UserId", NamingConvention.PascalCase);
-        
+
         // Assert
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);
@@ -30,7 +30,7 @@ public class SchemaValidatorTests
     {
         // Act
         var result = ValidationRules.ValidateColumnName("", NamingConvention.Any);
-        
+
         // Assert
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Errors);
@@ -42,10 +42,10 @@ public class SchemaValidatorTests
     {
         // Arrange
         var longName = new string('a', 65);
-        
+
         // Act
         var result = ValidationRules.ValidateIdentifierLength(longName, 64);
-        
+
         // Assert
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Errors);
@@ -56,7 +56,7 @@ public class SchemaValidatorTests
     {
         // Act
         var result = ValidationRules.ValidateStringTypeLength(DataType.Varchar, null);
-        
+
         // Assert
         Assert.False(result.IsValid);
     }
@@ -66,10 +66,10 @@ public class SchemaValidatorTests
     {
         // Arrange
         var column = new ColumnDef("id", DataType.Int, Nullable: true, DefaultValue: null, IsAutoIncrement: true, IsPrimaryKey: false);
-        
+
         // Act
         var result = ValidationRules.ValidateAutoIncrementNotNullable(column);
-        
+
         // Assert
         Assert.False(result.IsValid);
     }
@@ -83,15 +83,15 @@ public class SchemaValidatorTests
             new ColumnDef("id", DataType.BigInt, Nullable: false, DefaultValue: null, IsAutoIncrement: true, IsPrimaryKey: true),
             new ColumnDef("name", DataType.Varchar, Nullable: false, DefaultValue: null, IsAutoIncrement: false, IsPrimaryKey: false, Length: 255)
         };
-        
+
         var step = new CreateTableStep("Users", columns, new[] { "id" });
         var migration = new Migration("001_CreateUsers", "1.0.0", DateTime.UtcNow, new[] { step });
-        
+
         var validator = new SqlServerDialect().CreateSchemaValidator();
-        
+
         // Act
         var result = validator.Validate(migration, new SqlServerDialect());
-        
+
         // Assert
         Assert.True(result.IsValid);
     }

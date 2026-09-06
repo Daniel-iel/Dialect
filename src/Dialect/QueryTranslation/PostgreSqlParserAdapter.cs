@@ -38,7 +38,7 @@ public sealed class PostgreSqlParserAdapter : SqlParserAdapter
         var issues = new List<string>();
 
         // JSON operators
-        if (sql_lower.Contains("->>") || sql_lower.Contains("#>") || 
+        if (sql_lower.Contains("->>") || sql_lower.Contains("#>") ||
             sql_lower.Contains("@>") || sql_lower.Contains("@?"))
             issues.Add("JSON operators are PostgreSQL specific");
 

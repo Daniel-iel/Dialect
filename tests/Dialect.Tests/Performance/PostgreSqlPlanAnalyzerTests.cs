@@ -7,12 +7,12 @@ using Dialect.PostgreSql.Performance;
 public class PostgreSqlPlanAnalyzerTests
 {
     private readonly PostgreSqlPlanAnalyzer _analyzer = new();
-    
+
     [Fact]
     public void ParsePlan_HandlesValidExplainAnalyzeJson()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -29,23 +29,23 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
-        var queryText = "SELECT * FROM users";
-        
+
+        const string queryText = "SELECT * FROM users";
+
         // Act
         var plan = _analyzer.ParsePlan(planJson, queryText);
-        
+
         // Assert
         plan.RootNode.OperationType.Should().Be("Seq Scan");
         plan.RootNode.ObjectName.Should().Be("users");
         plan.ExecutionTimeMs.Should().BeGreaterThan(0);
     }
-    
+
     [Fact]
     public void ParsePlan_HandlesMissingActualRows()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -60,34 +60,34 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var plan = _analyzer.ParsePlan(planJson, "SELECT * FROM products WHERE id = 1");
-        
+
         // Assert
         plan.RootNode.RowsProduced.Should().BeGreaterThanOrEqualTo(0);
     }
-    
+
     [Fact]
     public void ParsePlan_HandlesInvalidJson()
     {
         // Arrange
-        var invalidJson = "{ invalid json }";
-        var queryText = "SELECT * FROM users";
-        
+        const string invalidJson = "{ invalid json }";
+        const string queryText = "SELECT * FROM users";
+
         // Act
         var plan = _analyzer.ParsePlan(invalidJson, queryText);
-        
+
         // Assert
         plan.RootNode.OperationType.Should().Be("Unknown");
         plan.TotalCost.Should().Be(0);
     }
-    
+
     [Fact]
     public void ParsePlan_ExtractsFilterPredicate()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -105,19 +105,19 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var plan = _analyzer.ParsePlan(planJson, "SELECT * FROM users WHERE status = 'active'");
-        
+
         // Assert
         plan.RootNode.Predicate.Should().Be("status = 'active'");
     }
-    
+
     [Fact]
     public void AnalyzePlan_CountsSequentialScans()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -134,20 +134,20 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM orders");
-        
+
         // Assert
         metrics.TableScanCount.Should().Be(1);
         metrics.HasTableScan.Should().BeTrue();
     }
-    
+
     [Fact]
     public void AnalyzePlan_CountsIndexScans()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -164,19 +164,19 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM users WHERE id = 1");
-        
+
         // Assert
         metrics.IndexScanCount.Should().BeGreaterThan(0);
     }
-    
+
     [Fact]
     public void AnalyzePlan_CountsIndexOnlyScans()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -193,19 +193,19 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT id FROM users WHERE id IN (1, 2, 3)");
-        
+
         // Assert
         metrics.IndexSeekCount.Should().BeGreaterThan(0);
     }
-    
+
     [Fact]
     public void AnalyzePlan_DetectsNestedLoopJoins()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -221,19 +221,19 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id");
-        
+
         // Assert
         metrics.NestedLoopJoinCount.Should().BeGreaterThan(0);
     }
-    
+
     [Fact]
     public void AnalyzePlan_DetectsHashJoins()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -249,19 +249,19 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id");
-        
+
         // Assert
         metrics.HashJoinCount.Should().BeGreaterThan(0);
     }
-    
+
     [Fact]
     public void AnalyzePlan_DetectsSortOperations()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -277,20 +277,20 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM users ORDER BY name");
-        
+
         // Assert
         metrics.SortOperationCount.Should().BeGreaterThan(0);
         metrics.HasSort.Should().BeTrue();
     }
-    
+
     [Fact]
     public void AnalyzePlan_CalculatesSelectivity()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -308,20 +308,20 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM users WHERE status = 'active'");
-        
+
         // Assert
         metrics.Selectivity.Should().BeLessThanOrEqualTo(1.0);
         metrics.Selectivity.Should().BeGreaterThan(0);
     }
-    
+
     [Fact(Skip = "PostgreSQL execution plan analysis not fully implemented")]
     public void AnalyzePlan_RecommendsMissingIndexes()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -339,19 +339,19 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM orders WHERE customer_id = 5");
-        
+
         // Assert
         metrics.MissingIndexRecommendations.Should().HaveCountGreaterThan(0);
     }
-    
+
     [Fact]
     public void AnalyzePlan_GeneratesOptimizationTips()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         [
             {
                 "Plan": {
@@ -367,10 +367,10 @@ public class PostgreSqlPlanAnalyzerTests
             }
         ]
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id");
-        
+
         // Assert
         metrics.OptimizationTips.Should().HaveCountGreaterThan(0);
     }

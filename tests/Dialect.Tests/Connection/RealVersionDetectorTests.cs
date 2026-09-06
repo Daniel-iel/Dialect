@@ -60,7 +60,7 @@ public class RealVersionDetectorTests
             new DatabaseVersion(2019, 0, 2000)
         );
         var detector = new QueryVersionDetector(mockProvider);
-        var connStr = "Server=localhost;Database=test";
+        const string connStr = "Server=localhost;Database=test";
 
         // Act
         var version = detector.DetectVersion(connStr);
@@ -161,7 +161,7 @@ public class RealVersionDetectorTests
         mockProvider
             .Setup(p => p.ValidateConnectionString(It.IsAny<string>()))
             .Returns(true);
-        
+
         var mockConnection = new object();
         mockProvider
             .Setup(p => p.OpenConnection(It.IsAny<string>()))

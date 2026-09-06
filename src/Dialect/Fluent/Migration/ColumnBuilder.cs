@@ -20,7 +20,7 @@ public sealed class ColumnBuilder
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Column name cannot be empty", nameof(name));
-        
+
         _name = name;
     }
 

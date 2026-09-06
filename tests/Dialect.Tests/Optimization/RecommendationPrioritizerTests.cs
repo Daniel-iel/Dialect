@@ -7,7 +7,7 @@ namespace Dialect.Tests.Optimization;
 public class RecommendationPrioritizerTests
 {
     private readonly RecommendationPrioritizer _prioritizer = new();
-    
+
     private static OptimizationRecommendation CreateRecommendation(
         string id,
         decimal roiScore,
@@ -32,7 +32,7 @@ public class RecommendationPrioritizerTests
             References: new List<string>()
         );
     }
-    
+
     [Fact]
     public void Prioritize_SortsByRoiAndPriorityByDefault()
     {
@@ -43,15 +43,15 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("REC2", roiScore: 3.0m, priority: 4, improvement: 60, implementationCost: 20),
             CreateRecommendation("REC3", roiScore: 2.0m, priority: 3, improvement: 50, implementationCost: 25),
         };
-        
+
         // Act
         var result = _prioritizer.Prioritize(recommendations);
-        
+
         // Assert
         result.Should().HaveCount(3);
         result[0].RecommendationId.Should().Be("REC2");  // Highest ROI and priority
     }
-    
+
     [Fact]
     public void Prioritize_RespectsMaxRecommendations()
     {
@@ -59,14 +59,14 @@ public class RecommendationPrioritizerTests
         var recommendations = Enumerable.Range(1, 20)
             .Select(i => CreateRecommendation($"REC{i}", roiScore: i, priority: i, improvement: i * 5, implementationCost: 10))
             .ToList();
-        
+
         // Act
         var result = _prioritizer.Prioritize(recommendations, maxRecommendations: 5);
-        
+
         // Assert
         result.Should().HaveCount(5);
     }
-    
+
     [Fact]
     public void Prioritize_WithRoiOnlyStrategy()
     {
@@ -78,16 +78,16 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("REC2", roiScore: 5.0m, priority: 1, improvement: 20, implementationCost: 5),
             CreateRecommendation("REC3", roiScore: 2.0m, priority: 3, improvement: 50, implementationCost: 25),
         };
-        
+
         // Act
         var result = prioritizer.Prioritize(recommendations);
-        
+
         // Assert
         result[0].RecommendationId.Should().Be("REC2");  // Highest ROI
         result[1].RecommendationId.Should().Be("REC3");
         result[2].RecommendationId.Should().Be("REC1");
     }
-    
+
     [Fact]
     public void Prioritize_WithPriorityOnlyStrategy()
     {
@@ -99,16 +99,16 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("REC2", roiScore: 0.5m, priority: 5, improvement: 20, implementationCost: 90),
             CreateRecommendation("REC3", roiScore: 2.0m, priority: 3, improvement: 50, implementationCost: 25),
         };
-        
+
         // Act
         var result = prioritizer.Prioritize(recommendations);
-        
+
         // Assert
         result[0].RecommendationId.Should().Be("REC2");  // Highest priority (5)
         result[1].RecommendationId.Should().Be("REC3");  // Priority 3
         result[2].RecommendationId.Should().Be("REC1");  // Priority 1
     }
-    
+
     [Fact]
     public void Prioritize_WithImpactFirstStrategy()
     {
@@ -120,16 +120,16 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("REC2", roiScore: 5.0m, priority: 1, improvement: 20, implementationCost: 5),
             CreateRecommendation("REC3", roiScore: 2.0m, priority: 3, improvement: 50, implementationCost: 25),
         };
-        
+
         // Act
         var result = prioritizer.Prioritize(recommendations);
-        
+
         // Assert
         result[0].RecommendationId.Should().Be("REC1");  // 80% improvement
         result[1].RecommendationId.Should().Be("REC3");  // 50% improvement
         result[2].RecommendationId.Should().Be("REC2");  // 20% improvement
     }
-    
+
     [Fact]
     public void Prioritize_WithLowEffortFirstStrategy()
     {
@@ -141,16 +141,16 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("REC2", roiScore: 5.0m, priority: 1, improvement: 20, implementationCost: 5),
             CreateRecommendation("REC3", roiScore: 2.0m, priority: 3, improvement: 50, implementationCost: 25),
         };
-        
+
         // Act
         var result = prioritizer.Prioritize(recommendations);
-        
+
         // Assert
         result[0].RecommendationId.Should().Be("REC2");  // Cost 5
         result[1].RecommendationId.Should().Be("REC3");  // Cost 25
         result[2].RecommendationId.Should().Be("REC1");  // Cost 90
     }
-    
+
     [Fact]
     public void PrioritizeByCategory_GroupsRecommendations()
     {
@@ -162,17 +162,17 @@ public class RecommendationPrioritizerTests
             new OptimizationRecommendation("QUERY1", "QueryRewrite", "Query Rec 1", "Test", null, 50, 30, 3, 1.67m, new List<string>(), new Dictionary<string, string>(), "Low", 20, new List<string>()),
             new OptimizationRecommendation("JOIN1", "Join", "Join Rec 1", "Test", null, 25, 25, 2, 1.0m, new List<string>(), new Dictionary<string, string>(), "Low", 15, new List<string>()),
         };
-        
+
         // Act
         var result = _prioritizer.PrioritizeByCategory(recommendations, topPerCategory: 2);
-        
+
         // Assert
         result.Should().HaveCount(3);
         result["Index"].Should().HaveCount(2);
         result["QueryRewrite"].Should().HaveCount(1);
         result["Join"].Should().HaveCount(1);
     }
-    
+
     [Fact]
     public void FilterByRiskAndRoi_FiltersAppropriately()
     {
@@ -184,17 +184,17 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("RISKY_HIGH_ROI", roiScore: 2.0m, priority: 3, improvement: 50, implementationCost: 25), // Medium risk, high ROI
             CreateRecommendation("VERY_RISKY_LOW_ROI", roiScore: 0.1m, priority: 1, improvement: 5, implementationCost: 95), // High risk, low ROI
         };
-        
+
         // Act
         var result = _prioritizer.FilterByRiskAndRoi(recommendations, maxRiskLevel: "Medium", minRoiScore: 0.5m);
-        
+
         // Assert
         result.Should().Contain(r => r.RecommendationId == "SAFE_HIGH_ROI");
         result.Should().Contain(r => r.RecommendationId == "RISKY_HIGH_ROI");
         result.Should().NotContain(r => r.RecommendationId == "SAFE_LOW_ROI");
         result.Should().NotContain(r => r.RecommendationId == "VERY_RISKY_LOW_ROI");
     }
-    
+
     [Fact(Skip = "Recommendation prioritizer risk/ROI filtering not fully implemented")]
     public void FilterByRiskAndRoi_WithLowRiskOnly()
     {
@@ -205,10 +205,10 @@ public class RecommendationPrioritizerTests
             CreateRecommendation("MEDIUM_RISK", roiScore: 3.0m, priority: 4, improvement: 60, implementationCost: 20),
             CreateRecommendation("HIGH_RISK", roiScore: 2.5m, priority: 4, improvement: 55, implementationCost: 20),
         };
-        
+
         // Act
         var result = _prioritizer.FilterByRiskAndRoi(recommendations, maxRiskLevel: "Low", minRoiScore: 0.5m);
-        
+
         // Assert
         result.Should().HaveCount(1);
         result[0].RecommendationId.Should().Be("LOW_RISK");

@@ -89,21 +89,21 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             foreach (var cte in statement.WithClauses)
             {
                 var cteName = QuoteIdentifier(cte.Name, dialect);
-                var columnSpec = cte.ColumnNames?.Count > 0 
-                    ? $"({string.Join(", ", cte.ColumnNames.Select(c => QuoteIdentifier(c, dialect)))})" 
+                var columnSpec = cte.ColumnNames?.Count > 0
+                    ? $"({string.Join(", ", cte.ColumnNames.Select(c => QuoteIdentifier(c, dialect)))})"
                     : "";
-                
+
                 // Render the CTE's SELECT statement
                 var cteRenderer = new SqlServerQueryRenderer();
                 var cteParams = new Dictionary<string, object?>();
                 var cteSql = cteRenderer.RenderSelect(cte.Query, dialect, cteParams);
-                
+
                 // Merge CTE parameters into main parameters
                 foreach (var kvp in cteParams)
                 {
                     parameters[kvp.Key] = kvp.Value;
                 }
-                
+
                 cteParts.Add($"{cteName}{columnSpec} AS ({cteSql})");
             }
             sb.Append(string.Join(", ", cteParts));
@@ -114,7 +114,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         sb.Append("SELECT");
         if (statement.IsDistinct)
             sb.Append(" DISTINCT");
-        
+
         if (statement.RowLimit?.Offset == null && statement.RowLimit?.Count > 0)
         {
             // Use TOP syntax when no OFFSET (or OFFSET is 0)
@@ -127,40 +127,40 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
 
         // Columns and Window Functions
         var selectItems = new List<string>();
-        
+
         // Regular columns
         selectItems.AddRange(statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect)));
-        
+
         // Window functions
         selectItems.AddRange(statement.WindowFunctions.Select(wf => RenderWindowFunction(wf, dialect)));
-        
+
         sb.Append(string.Join(", ", selectItems));
 
         // FROM
         if (statement.From != null)
         {
             sb.Append(" FROM ");
-            
+
             if (statement.From.SubquerySource != null)
             {
                 // Render subquery
                 var subqueryRenderer = new SqlServerQueryRenderer();
                 var subqueryParams = new Dictionary<string, object?>();
                 var subquerySql = subqueryRenderer.RenderSelect(statement.From.SubquerySource, dialect, subqueryParams);
-                
+
                 // Merge subquery parameters
                 foreach (var kvp in subqueryParams)
                 {
                     parameters[kvp.Key] = kvp.Value;
                 }
-                
+
                 sb.Append($"({subquerySql})");
             }
             else
             {
                 sb.Append(QuoteIdentifier(statement.From.Name, dialect));
             }
-            
+
             if (!string.IsNullOrEmpty(statement.From.Alias))
                 sb.Append(" AS ").Append(QuoteIdentifier(statement.From.Alias, dialect));
         }
@@ -241,7 +241,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     private string RenderWindowFunction(WindowFunction windowFunction, ISqlDialect dialect)
     {
         var sb = new StringBuilder();
-        
+
         // Function name and arguments
         sb.Append(windowFunction.FunctionName).Append("(");
         if (windowFunction.Args?.Count > 0)
@@ -249,45 +249,45 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             sb.Append(string.Join(", ", windowFunction.Args.Select(a => QuoteIdentifier(a, dialect))));
         }
         sb.Append(")");
-        
+
         // OVER clause
         if (windowFunction.Over != null)
         {
             sb.Append(" OVER (");
-            
+
             var overParts = new List<string>();
-            
+
             // PARTITION BY
             if (windowFunction.Over.PartitionByColumns?.Count > 0)
             {
-                overParts.Add("PARTITION BY " + string.Join(", ", 
+                overParts.Add("PARTITION BY " + string.Join(", ",
                     windowFunction.Over.PartitionByColumns.Select(c => QuoteIdentifier(c, dialect))));
             }
-            
+
             // ORDER BY
             if (windowFunction.Over.OrderByItems?.Count > 0)
             {
-                overParts.Add("ORDER BY " + string.Join(", ", 
-                    windowFunction.Over.OrderByItems.Select(o => 
+                overParts.Add("ORDER BY " + string.Join(", ",
+                    windowFunction.Over.OrderByItems.Select(o =>
                         $"{QuoteIdentifier(o.Column.Name, dialect)} {o.Direction}")));
             }
-            
+
             // Frame specification (ROWS/RANGE)
             if (windowFunction.Over.Frame != null)
             {
                 overParts.Add(windowFunction.Over.Frame.ToSql());
             }
-            
+
             sb.Append(string.Join(" ", overParts));
             sb.Append(")");
         }
-        
+
         // Alias
         if (!string.IsNullOrEmpty(windowFunction.Alias))
         {
             sb.Append(" AS ").Append(QuoteIdentifier(windowFunction.Alias, dialect));
         }
-        
+
         return sb.ToString();
     }
 
@@ -421,8 +421,8 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         }
 
         var inList = string.Join(", ", paramNames);
-        return node.Negated 
-            ? $"{columnName} NOT IN ({inList})" 
+        return node.Negated
+            ? $"{columnName} NOT IN ({inList})"
             : $"{columnName} IN ({inList})";
     }
 
@@ -431,10 +431,10 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         // UPSERT implementation for SQL Server using MERGE
         var sb = new StringBuilder();
         var paramCounter = 1;
-        
+
         // MERGE INTO [Table] AS target
         sb.Append("MERGE INTO ").Append(QuoteIdentifier(statement.Table.Name, dialect)).Append(" AS target\n");
-        
+
         // USING (SELECT @p1 AS Col1, @p2 AS Col2, ...) AS source
         sb.Append("USING (SELECT ");
         var sourceSelects = new List<string>();
@@ -446,7 +446,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             paramCounter++;
         }
         sb.Append(string.Join(", ", sourceSelects)).Append(") AS source\n");
-        
+
         // ON target.ConflictCol1 = source.ConflictCol1 AND target.ConflictCol2 = source.ConflictCol2
         if (statement.ConflictClause?.ConflictColumns != null && statement.ConflictClause.ConflictColumns.Count > 0)
         {
@@ -458,7 +458,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             }
             sb.Append(string.Join(" AND ", onConditions)).Append("\n");
         }
-        
+
         // WHEN MATCHED THEN UPDATE SET Col1 = source.Col1, ...
         if (statement.ConflictClause?.UpdateClauses != null && statement.ConflictClause.UpdateClauses.Count > 0)
         {
@@ -473,14 +473,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             }
             sb.Append(string.Join(", ", updateSets)).Append("\n");
         }
-        
+
         // WHEN NOT MATCHED BY TARGET THEN INSERT (Col1, Col2, ...) VALUES (source.Col1, source.Col2, ...)
         sb.Append("WHEN NOT MATCHED BY TARGET THEN INSERT (");
         sb.Append(string.Join(", ", statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect))));
         sb.Append(") VALUES (");
         var sourceRefs = statement.Columns.Select(c => $"source.{QuoteIdentifier(c.Name, dialect)}");
         sb.Append(string.Join(", ", sourceRefs)).Append(");");
-        
+
         return sb.ToString();
     }
 

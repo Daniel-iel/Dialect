@@ -11,22 +11,22 @@ public interface IQueryRenderer
     /// Renders a SELECT statement to SQL text with parameters.
     /// </summary>
     CompiledQuery Render(SelectStatement statement, ISqlDialect dialect);
-    
+
     /// <summary>
     /// Renders an INSERT statement to SQL text with parameters.
     /// </summary>
     CompiledQuery Render(InsertStatement statement, ISqlDialect dialect);
-    
+
     /// <summary>
     /// Renders an UPDATE statement to SQL text with parameters.
     /// </summary>
     CompiledQuery Render(UpdateStatement statement, ISqlDialect dialect);
-    
+
     /// <summary>
     /// Renders a DELETE statement to SQL text with parameters.
     /// </summary>
     CompiledQuery Render(DeleteStatement statement, ISqlDialect dialect);
-    
+
     /// <summary>
     /// Renders an UPSERT statement to SQL text with parameters.
     /// </summary>

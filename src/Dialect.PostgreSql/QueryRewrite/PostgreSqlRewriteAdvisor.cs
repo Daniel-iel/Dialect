@@ -14,7 +14,7 @@ public class PostgreSqlRewriteAdvisor : QueryRewriteBase
         IDictionary<string, object>? contextData = null)
     {
         var rewrites = new List<global::Dialect.Core.QueryRewrite.QueryRewrite>();
-        
+
         // Materialized view for complex aggregation
         if (DetectAggregationIssue(queryText) && DetectInefficientJoin(queryText))
         {
@@ -38,10 +38,10 @@ public class PostgreSqlRewriteAdvisor : QueryRewriteBase
                     { "Refresh", "Consider REFRESH MATERIALIZED VIEW CONCURRENTLY" }
                 }
             );
-            
+
             rewrites.Add(matviewRewrite);
         }
-        
+
         // UNION optimization
         if (DetectUnionOptimization(queryText))
         {
@@ -62,10 +62,10 @@ public class PostgreSqlRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string>(),
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(unionRewrite);
         }
-        
+
         // Window functions with partitioning
         if (DetectAggregationIssue(queryText))
         {
@@ -86,10 +86,10 @@ public class PostgreSqlRewriteAdvisor : QueryRewriteBase
                 Tradeoffs: new List<string>(),
                 DialectSpecificNotes: new Dictionary<string, string>()
             );
-            
+
             rewrites.Add(windowRewrite);
         }
-        
+
         return rewrites;
     }
 }

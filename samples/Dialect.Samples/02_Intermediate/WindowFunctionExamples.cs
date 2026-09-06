@@ -29,14 +29,14 @@ public class WindowFunctionExamples : ExampleBase
     private void RowNumber()
     {
         OutputFormatter.PrintSubHeader("Example 1: ROW_NUMBER");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var orderByItems = new List<OrderByClause>
             {
                 new OrderByClause(new Column("OrderDate"), SortDirection.Ascending)
             };
-            
+
             return SqlBuilder.Select("OrderId", "UserId", "Total")
                 .From("Orders")
                 .SelectWindow(
@@ -56,14 +56,14 @@ public class WindowFunctionExamples : ExampleBase
     private void RankAndDenseRank()
     {
         OutputFormatter.PrintSubHeader("Example 2: RANK and DENSE_RANK");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var orderByItems = new List<OrderByClause>
             {
                 new OrderByClause(new Column("Total"), SortDirection.Descending)
             };
-            
+
             return SqlBuilder.Select("UserId", "Total")
                 .From("Orders")
                 .SelectWindow(
@@ -83,14 +83,14 @@ public class WindowFunctionExamples : ExampleBase
     private void LagAndLead()
     {
         OutputFormatter.PrintSubHeader("Example 3: LAG and LEAD");
-        
+
         var results = CompileForAllDialects(dialect =>
         {
             var orderByItems = new List<OrderByClause>
             {
                 new OrderByClause(new Column("OrderDate"), SortDirection.Ascending)
             };
-            
+
             return SqlBuilder.Select("OrderId", "Total")
                 .From("Orders")
                 .SelectWindowAnalytical(

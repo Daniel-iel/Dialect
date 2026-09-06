@@ -28,7 +28,7 @@ public sealed record OverClause(
     FrameSpec? Frame = null
 )
 {
-    public bool IsEmpty => 
+    public bool IsEmpty =>
         (PartitionByColumns == null || PartitionByColumns.Count == 0) &&
         (OrderByItems == null || OrderByItems.Count == 0) &&
         Frame == null;
@@ -52,7 +52,7 @@ public sealed record WindowFunction(
     {
         if (string.IsNullOrWhiteSpace(FunctionName))
             throw new ArgumentException("Function name cannot be empty", nameof(FunctionName));
-        
+
         // Over clause is required for window functions
         if (Over == null || Over.IsEmpty)
             throw new ArgumentException($"Window function '{FunctionName}' requires an OVER clause", nameof(Over));
@@ -69,14 +69,14 @@ public static class WindowFunctionNames
     public const string Rank = "RANK";
     public const string DenseRank = "DENSE_RANK";
     public const string NTile = "NTILE";
-    
+
     // Analytical functions
     public const string Lag = "LAG";
     public const string Lead = "LEAD";
     public const string FirstValue = "FIRST_VALUE";
     public const string LastValue = "LAST_VALUE";
     public const string NthValue = "NTH_VALUE";
-    
+
     // Aggregate functions (can also be used as window functions)
     public const string Sum = "SUM";
     public const string Avg = "AVG";

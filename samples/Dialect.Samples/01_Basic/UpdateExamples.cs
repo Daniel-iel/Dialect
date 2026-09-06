@@ -29,7 +29,7 @@ public class UpdateExamples : ExampleBase
     private void SimpleUpdate()
     {
         OutputFormatter.PrintSubHeader("Example 1: Simple UPDATE");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Update()
                 .Table("Products")
@@ -45,7 +45,7 @@ public class UpdateExamples : ExampleBase
     private void UpdateWithWhere()
     {
         OutputFormatter.PrintSubHeader("Example 2: UPDATE with WHERE");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Update()
                 .Table("Orders")
@@ -61,7 +61,7 @@ public class UpdateExamples : ExampleBase
     private void UpdateMultipleColumns()
     {
         OutputFormatter.PrintSubHeader("Example 3: UPDATE Multiple Columns");
-        
+
         var results = CompileForAllDialects(dialect =>
             SqlBuilder.Update()
                 .Table("Users")

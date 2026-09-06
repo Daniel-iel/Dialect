@@ -38,12 +38,12 @@ public sealed class MySqlParserAdapter : SqlParserAdapter
         var issues = new List<string>();
 
         // JSON functions
-        if (sql_lower.Contains("json_extract") || sql_lower.Contains("json_set") || 
+        if (sql_lower.Contains("json_extract") || sql_lower.Contains("json_set") ||
             sql_lower.Contains("json_replace") || sql_lower.Contains("json_array"))
             issues.Add("JSON functions are MySQL specific");
 
         // LIMIT offset, count syntax
-        if (System.Text.RegularExpressions.Regex.IsMatch(sql, @"limit\s+\d+\s*,\s*\d+", 
+        if (System.Text.RegularExpressions.Regex.IsMatch(sql, @"limit\s+\d+\s*,\s*\d+",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             issues.Add("LIMIT offset, count syntax is MySQL specific; standard is OFFSET");
 
@@ -52,7 +52,7 @@ public sealed class MySqlParserAdapter : SqlParserAdapter
             issues.Add("Backtick identifiers are MySQL specific");
 
         // Index hints
-        if (sql_lower.Contains("force index") || sql_lower.Contains("use index") || 
+        if (sql_lower.Contains("force index") || sql_lower.Contains("use index") ||
             sql_lower.Contains("ignore index"))
             issues.Add("Index hints are MySQL specific");
 

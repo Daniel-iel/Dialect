@@ -13,11 +13,11 @@ public class SqlServerIndexAdvisor : IndexCandidateAdvisorBase
         IDictionary<string, object>? contextData = null)
     {
         var candidates = new List<IndexCandidate>();
-        
+
         // Extract tables and filter columns
         var tables = ExtractTableNames(queryText);
         var filterColumns = ExtractFilterColumns(queryText);
-        
+
         // Generate index candidates for WHERE clause filters
         foreach (var table in tables)
         {
@@ -44,11 +44,11 @@ public class SqlServerIndexAdvisor : IndexCandidateAdvisorBase
                         { "STATISTICS_NORECOMPUTE", "OFF" }
                     }
                 );
-                
+
                 candidates.Add(indexCandidate);
             }
         }
-        
+
         // Detect large table scans
         if (queryText.Contains("SELECT *", StringComparison.OrdinalIgnoreCase))
         {
@@ -71,26 +71,26 @@ public class SqlServerIndexAdvisor : IndexCandidateAdvisorBase
                     Warnings: new List<string> { "Verify column selection to minimize index size" },
                     DialectOptions: new Dictionary<string, string>()
                 );
-                
+
                 candidates.Add(coveringCandidate);
             }
         }
-        
+
         // Deduplicate and return
         return DeduplicateCandidates(candidates);
     }
-    
+
     protected override string GenerateCreateIndexStatement(IndexCandidate candidate)
     {
         var columnList = string.Join(", ", candidate.Columns.Select(c => $"[{c}]"));
         var includeClause = candidate.IncludeColumns.Count > 0
             ? $" INCLUDE ({string.Join(", ", candidate.IncludeColumns.Select(c => $"[{c}]"))})"
             : "";
-        
+
         var options = "";
         if (candidate.DialectOptions.ContainsKey("FILLFACTOR"))
             options += $" WITH (FILLFACTOR = {candidate.DialectOptions["FILLFACTOR"]})";
-        
+
         return $"CREATE {candidate.IndexType.ToUpper()} INDEX [IX_{candidate.TableName}_{string.Join("_", candidate.Columns)}] " +
                $"ON [{candidate.TableName}] ({columnList}){includeClause}{options};";
     }

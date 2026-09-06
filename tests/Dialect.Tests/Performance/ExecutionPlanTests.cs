@@ -9,7 +9,7 @@ using ExecutionPlanNode = Dialect.Core.Performance.ExecutionPlanNode;
 public class ExecutionPlanTests
 {
     private readonly SqlServerPlanAnalyzer _analyzer = new();
-    
+
     [Fact]
     public void QueryExecutionPlan_CreatesWithRootNode()
     {
@@ -24,7 +24,7 @@ public class ExecutionPlanTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         // Act
         var plan = new QueryExecutionPlan(
             RootNode: rootNode,
@@ -34,13 +34,13 @@ public class ExecutionPlanTests
             QueryText: "SELECT * FROM Users",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         // Assert
         plan.RootNode.OperationType.Should().Be("TableScan");
         plan.TotalCost.Should().Be(5.5m);
         plan.TotalRowsProduced.Should().Be(1000);
     }
-    
+
     [Fact]
     public void ExecutionPlanNode_HandlesNestedChildren()
     {
@@ -55,7 +55,7 @@ public class ExecutionPlanTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var rootNode = new ExecutionPlanNode(
             OperationType: "NestedLoopJoin",
             RowsProduced: 500,
@@ -66,12 +66,12 @@ public class ExecutionPlanTests
             Children: new[] { childNode },
             Properties: new Dictionary<string, object>()
         );
-        
+
         // Act & Assert
         rootNode.Children.Should().HaveCount(1);
         rootNode.Children.First().OperationType.Should().Be("IndexSeek");
     }
-    
+
     [Fact]
     public void PerformanceMetrics_CalculatesSelectivity()
     {
@@ -95,13 +95,13 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act & Assert
         metrics.Selectivity.Should().Be(0.001);
         metrics.TotalRowsExamined.Should().Be(100000);
         metrics.TotalRowsProduced.Should().Be(100);
     }
-    
+
     [Fact]
     public void PerformanceMetrics_FlagsTableScans()
     {
@@ -125,12 +125,12 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act & Assert
         metrics.HasTableScan.Should().BeTrue();
         metrics.TableScanCount.Should().Be(2);
     }
-    
+
     [Fact]
     public void PerformanceMetrics_FlagsIneffectiveNestedLoops()
     {
@@ -154,12 +154,12 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act & Assert
         metrics.HasIneffectiveNestedLoop.Should().BeTrue();
         metrics.NestedLoopJoinCount.Should().Be(3);
     }
-    
+
     [Fact]
     public void PerformanceMetrics_IdentifiesSortOperations()
     {
@@ -183,12 +183,12 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act & Assert
         metrics.HasSort.Should().BeTrue();
         metrics.SortOperationCount.Should().Be(1);
     }
-    
+
     [Fact]
     public void ExecutionPlanAnalyzer_CountsOperationTypes()
     {
@@ -203,7 +203,7 @@ public class ExecutionPlanTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var rootNode = new ExecutionPlanNode(
             OperationType: "TableScan",
             RowsProduced: 1000,
@@ -214,18 +214,18 @@ public class ExecutionPlanTests
             Children: new[] { leafNode },
             Properties: new Dictionary<string, object>()
         );
-        
+
         var analyzer = new PublicTestAnalyzer();
-        
+
         // Act
         var tableScans = analyzer.PublicCountOperationType(rootNode, "TableScan");
         var indexSeeks = analyzer.PublicCountOperationType(rootNode, "IndexSeek");
-        
+
         // Assert
         tableScans.Should().Be(1);
         indexSeeks.Should().Be(1);
     }
-    
+
     [Fact]
     public void ExecutionPlanAnalyzer_CalculatesTotalRowsExamined()
     {
@@ -240,7 +240,7 @@ public class ExecutionPlanTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var leaf2 = new ExecutionPlanNode(
             OperationType: "IndexSeek",
             RowsProduced: 75,
@@ -251,7 +251,7 @@ public class ExecutionPlanTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var rootNode = new ExecutionPlanNode(
             OperationType: "NestedLoopJoin",
             RowsProduced: 125,
@@ -262,16 +262,16 @@ public class ExecutionPlanTests
             Children: new[] { leaf1, leaf2 },
             Properties: new Dictionary<string, object>()
         );
-        
+
         var analyzer = new PublicTestAnalyzer();
-        
+
         // Act
         var totalRows = analyzer.PublicCalculateTotalRowsExamined(rootNode);
-        
+
         // Assert
         totalRows.Should().Be(250); // 125 + 50 + 75
     }
-    
+
     [Theory]
     [InlineData(100, 100, 1.0)]
     [InlineData(50, 100, 0.5)]
@@ -281,14 +281,14 @@ public class ExecutionPlanTests
     {
         // Arrange
         var analyzer = new PublicTestAnalyzer();
-        
+
         // Act
         var selectivity = analyzer.PublicCalculateSelectivity(rowsProduced, rowsExamined);
-        
+
         // Assert
         selectivity.Should().Be(expectedSelectivity);
     }
-    
+
     [Fact]
     public void ExecutionPlanAnalyzer_ExtractsMissingIndexes()
     {
@@ -303,7 +303,7 @@ public class ExecutionPlanTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var plan = new QueryExecutionPlan(
             RootNode: node,
             TotalCost: 10.0m,
@@ -312,17 +312,17 @@ public class ExecutionPlanTests
             QueryText: "SELECT * FROM Orders WHERE Status = 'Active'",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         var analyzer = new PublicTestAnalyzer();
-        
+
         // Act
         var recommendations = analyzer.PublicExtractMissingIndexes(plan);
-        
+
         // Assert
         recommendations.Should().HaveCountGreaterThan(0);
         recommendations.First().Should().Contain("Orders");
     }
-    
+
     [Fact]
     public void ExecutionPlanAnalyzer_GeneratesOptimizationTips()
     {
@@ -346,17 +346,17 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         var analyzer = new PublicTestAnalyzer();
-        
+
         // Act
         var tips = analyzer.PublicGenerateOptimizationTips(metrics);
-        
+
         // Assert
         tips.Should().HaveCountGreaterThan(0);
         tips.Should().Contain(t => t.Contains("table scan", StringComparison.OrdinalIgnoreCase));
     }
-    
+
     [Fact]
     public void PerformanceMetrics_IncludesMissingIndexRecommendations()
     {
@@ -366,7 +366,7 @@ public class ExecutionPlanTests
             "CREATE INDEX idx_UserId ON Users(UserId)",
             "CREATE INDEX idx_Status ON Orders(Status)"
         };
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 15.0m,
             TableScanCount: 1,
@@ -386,12 +386,12 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: recommendations,
             OptimizationTips: new List<string>()
         );
-        
+
         // Act & Assert
         metrics.MissingIndexRecommendations.Should().HaveCount(2);
         metrics.MissingIndexRecommendations.Should().Contain("CREATE INDEX idx_UserId ON Users(UserId)");
     }
-    
+
     [Fact]
     public void PerformanceMetrics_IncludesOptimizationTips()
     {
@@ -401,7 +401,7 @@ public class ExecutionPlanTests
             "Query contains full table scan - consider adding indexes",
             "Large sort operation detected - verify ORDER BY is necessary or add index"
         };
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 25.0m,
             TableScanCount: 1,
@@ -421,12 +421,12 @@ public class ExecutionPlanTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: tips
         );
-        
+
         // Act & Assert
         metrics.OptimizationTips.Should().HaveCount(2);
         metrics.OptimizationTips.Should().Contain(t => t.Contains("table scan"));
     }
-    
+
     // Test helper class - exposes protected methods for testing
     private class PublicTestAnalyzer : ExecutionPlanAnalyzer
     {
@@ -434,24 +434,24 @@ public class ExecutionPlanTests
         {
             throw new NotImplementedException();
         }
-        
+
         public override QueryExecutionPlan ParsePlan(string planOutput, string queryText)
         {
             throw new NotImplementedException();
         }
-        
+
         public int PublicCountOperationType(ExecutionPlanNode node, string operationType)
             => CountOperationType(node, operationType);
-        
+
         public long PublicCalculateTotalRowsExamined(ExecutionPlanNode node)
             => CalculateTotalRowsExamined(node);
-        
+
         public double PublicCalculateSelectivity(long rowsProduced, long rowsExamined)
             => CalculateSelectivity(rowsProduced, rowsExamined);
-        
+
         public List<string> PublicExtractMissingIndexes(QueryExecutionPlan plan)
             => ExtractMissingIndexes(plan);
-        
+
         public List<string> PublicGenerateOptimizationTips(PerformanceMetrics metrics)
             => GenerateOptimizationTips(metrics);
     }

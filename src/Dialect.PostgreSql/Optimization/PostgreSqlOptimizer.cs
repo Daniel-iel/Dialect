@@ -15,25 +15,25 @@ public class PostgreSqlOptimizer : OptimizationEngine
         IDictionary<string, object>? contextData = null)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Index recommendations
         recommendations.AddRange(GenerateIndexRecommendations(metrics, executionPlan));
-        
+
         // Join recommendations
         recommendations.AddRange(GenerateJoinRecommendations(metrics, executionPlan));
-        
+
         // Sort recommendations
         recommendations.AddRange(GenerateSortRecommendations(metrics, executionPlan));
-        
+
         // Selectivity recommendations
         recommendations.AddRange(GenerateSelectivityRecommendations(metrics, executionPlan));
-        
+
         // PostgreSQL-specific recommendations
         recommendations.AddRange(GeneratePostgreSqlSpecificRecommendations(queryText, metrics, executionPlan));
-        
+
         return recommendations.OrderByDescending(r => r.Priority).ToList();
     }
-    
+
     /// <summary>
     /// Generates PostgreSQL-specific recommendations
     /// </summary>
@@ -43,7 +43,7 @@ public class PostgreSqlOptimizer : OptimizationEngine
         QueryExecutionPlan plan)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // ANALYZE recommendation for outdated statistics
         if (metrics.Selectivity < 0.05)
         {
@@ -65,7 +65,7 @@ public class PostgreSqlOptimizer : OptimizationEngine
             );
             recommendations.Add(analyzeRec);
         }
-        
+
         // VACUUM recommendation for bloat
         if (metrics.TotalRowsExamined > 100000)
         {
@@ -87,7 +87,7 @@ public class PostgreSqlOptimizer : OptimizationEngine
             );
             recommendations.Add(vacuumRec);
         }
-        
+
         // Partial index recommendation for filtered queries
         if (queryText.Contains("WHERE", StringComparison.OrdinalIgnoreCase) && metrics.TableScanCount > 0)
         {
@@ -112,7 +112,7 @@ public class PostgreSqlOptimizer : OptimizationEngine
             );
             recommendations.Add(partialIndexRec);
         }
-        
+
         // BRIN index recommendation for large sequential tables
         if (metrics.TotalRowsExamined > 1000000 && metrics.TableScanCount > 0)
         {
@@ -137,7 +137,7 @@ public class PostgreSqlOptimizer : OptimizationEngine
             );
             recommendations.Add(brinRec);
         }
-        
+
         // MATERIALIZED VIEW recommendation for complex queries
         if (metrics.NestedLoopJoinCount > 2 || (metrics.TotalRowsProduced > 10000 && metrics.ExecutionTimeMs > 1000))
         {
@@ -162,7 +162,7 @@ public class PostgreSqlOptimizer : OptimizationEngine
             );
             recommendations.Add(matviewRec);
         }
-        
+
         return recommendations;
     }
 }

@@ -11,12 +11,12 @@ public enum CacheEvictionStrategy
     /// No eviction - allows work duplication when cache is full.
     /// </summary>
     None = 0,
-    
+
     /// <summary>
     /// Evicts the oldest (first added) entry when cache is full.
     /// </summary>
     Oldest = 1,
-    
+
     /// <summary>
     /// Evicts a random entry when cache is full.
     /// </summary>
@@ -48,7 +48,7 @@ public sealed class CompiledQueryCache
     {
         if (maxEntries <= 0)
             throw new ArgumentException("Max entries must be greater than 0", nameof(maxEntries));
-        
+
         _maxEntries = maxEntries;
         _evictionStrategy = strategy;
         _ttl = ttl;
@@ -108,7 +108,7 @@ public sealed class CompiledQueryCache
         // Add the new entry
         var newEntry = new CacheEntry { Sql = sql, CreatedAt = DateTime.UtcNow };
         _cache.TryAdd(key, newEntry);
-        
+
         if (_accessOrder != null)
         {
             _accessOrder.Enqueue(key);

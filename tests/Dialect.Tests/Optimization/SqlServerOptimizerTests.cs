@@ -8,7 +8,7 @@ namespace Dialect.Tests.Optimization;
 public class SqlServerOptimizerTests
 {
     private readonly SqlServerOptimizer _optimizer = new();
-    
+
     private static QueryExecutionPlan CreateExecutionPlan(
         string operationType = "TableScan",
         long rowsProduced = 1000,
@@ -25,7 +25,7 @@ public class SqlServerOptimizerTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         return new QueryExecutionPlan(
             RootNode: node,
             TotalCost: cost,
@@ -35,7 +35,7 @@ public class SqlServerOptimizerTests
             Metadata: new Dictionary<string, object>()
         );
     }
-    
+
     private static PerformanceMetrics CreateMetrics(
         int tableScanCount = 1,
         bool hasTableScan = true,
@@ -63,35 +63,35 @@ public class SqlServerOptimizerTests
             OptimizationTips: new List<string>()
         );
     }
-    
+
     [Fact]
     public void GenerateRecommendations_ReturnsRecommendations()
     {
         // Arrange
         var plan = CreateExecutionPlan();
         var metrics = CreateMetrics();
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().NotBeEmpty();
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesIndexRecommendationForTableScan()
     {
         // Arrange
         var plan = CreateExecutionPlan("TableScan", rowsExamined: 10000);
         var metrics = CreateMetrics(tableScanCount: 1, totalRowsExamined: 10000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.Category == "Index");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesCoveringIndexForHighRows()
     {
@@ -106,7 +106,7 @@ public class SqlServerOptimizerTests
             Children: Array.Empty<ExecutionPlanNode>(),
             Properties: new Dictionary<string, object>()
         );
-        
+
         var plan = new QueryExecutionPlan(
             RootNode: node,
             TotalCost: 2.0m,
@@ -115,7 +115,7 @@ public class SqlServerOptimizerTests
             QueryText: "SELECT * FROM Orders WHERE CustomerId = 5",
             Metadata: new Dictionary<string, object>()
         );
-        
+
         var metrics = new PerformanceMetrics(
             TotalCost: 2.0m,
             TableScanCount: 0,
@@ -135,28 +135,28 @@ public class SqlServerOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "INDEX_COVERING");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesParallelismForHighCost()
     {
         // Arrange
         var plan = CreateExecutionPlan(cost: 100);
         var metrics = CreateMetrics(totalCost: 100, executionTimeMs: 1000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "SQLSERVER_PARALLELISM");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesUpdateStatsForLowSelectivity()
     {
@@ -181,53 +181,53 @@ public class SqlServerOptimizerTests
             MissingIndexRecommendations: new List<string>(),
             OptimizationTips: new List<string>()
         );
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders WHERE CustomerId > 5000", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "SQLSERVER_UPDATE_STATS");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesColumnstoreForVeryLargeTable()
     {
         // Arrange
         var plan = CreateExecutionPlan(rowsExamined: 2000000);
         var metrics = CreateMetrics(totalRowsExamined: 2000000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders", metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "SQLSERVER_COLUMNSTORE");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_IncludesTempTableWarningForDeclaredVariables()
     {
         // Arrange
         var plan = CreateExecutionPlan();
         var metrics = CreateMetrics();
-        var queryWithVariable = "DECLARE @tempTable TABLE (id INT); SELECT * FROM Orders";
-        
+        const string queryWithVariable = "DECLARE @tempTable TABLE (id INT); SELECT * FROM Orders";
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations(queryWithVariable, metrics, plan);
-        
+
         // Assert
         recommendations.Should().Contain(r => r.RecommendationId == "SQLSERVER_TEMP_TABLE");
     }
-    
+
     [Fact]
     public void GenerateRecommendations_ReturnsOrderedByPriority()
     {
         // Arrange
         var plan = CreateExecutionPlan(rowsExamined: 10000, cost: 100);
         var metrics = CreateMetrics(totalRowsExamined: 10000, totalCost: 100, executionTimeMs: 1000);
-        
+
         // Act
         var recommendations = _optimizer.GenerateRecommendations("SELECT * FROM Orders WHERE Status = 'Active'", metrics, plan);
-        
+
         // Assert
         var priorityList = recommendations.Select(r => r.Priority).ToList();
         priorityList.Should().BeInDescendingOrder();

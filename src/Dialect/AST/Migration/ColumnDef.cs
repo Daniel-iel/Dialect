@@ -31,7 +31,7 @@ public sealed record ColumnDef(
             throw new ArgumentException("PRIMARY KEY columns must be NOT NULL");
 
         // String types should have length if VARCHAR, CHAR
-        if ((Type == DataType.Varchar || Type == DataType.Char || 
+        if ((Type == DataType.Varchar || Type == DataType.Char ||
              Type == DataType.NVarchar || Type == DataType.NChar) && Length == null)
             throw new ArgumentException($"{Type} requires a length specification");
 

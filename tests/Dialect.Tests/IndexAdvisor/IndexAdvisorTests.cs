@@ -8,34 +8,34 @@ namespace Dialect.Tests.IndexAdvisor;
 public class IndexAdvisorTests
 {
     private readonly SqlServerIndexAdvisor _advisor = new();
-    
+
     [Fact]
     public void AnalyzeQuery_ReturnsIndexCandidates()
     {
         // Arrange
-        var query = "SELECT * FROM Orders WHERE CustomerId = 5 AND Status = 'Active'";
-        
+        const string query = "SELECT * FROM Orders WHERE CustomerId = 5 AND Status = 'Active'";
+
         // Act
         var candidates = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         candidates.Should().NotBeEmpty();
     }
-    
+
     [Fact]
     public void AnalyzeQuery_IdentifiesFilterColumns()
     {
         // Arrange
-        var query = "SELECT * FROM Orders WHERE CustomerId = 5 AND Status = 'Active' AND CreatedAt > '2024-01-01'";
-        
+        const string query = "SELECT * FROM Orders WHERE CustomerId = 5 AND Status = 'Active' AND CreatedAt > '2024-01-01'";
+
         // Act
         var candidates = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         candidates.Should().HaveCountGreaterThan(0);
         candidates.First().Columns.Should().Contain("CustomerId");
     }
-    
+
     [Fact]
     public void IndexCandidate_IsValid()
     {
@@ -57,11 +57,11 @@ public class IndexAdvisorTests
             Warnings: new List<string>(),
             DialectOptions: new Dictionary<string, string>()
         );
-        
+
         // Assert
         candidate.IsValid.Should().BeTrue();
     }
-    
+
     [Fact]
     public void IndexCandidate_InvalidWithoutTableName()
     {
@@ -83,49 +83,49 @@ public class IndexAdvisorTests
             Warnings: new List<string>(),
             DialectOptions: new Dictionary<string, string>()
         );
-        
+
         // Assert
         candidate.IsValid.Should().BeFalse();
     }
-    
+
     [Fact]
     public void GenerateCreateIndexStatement_ProducesValidSql()
     {
         // Arrange
-        var query = "SELECT * FROM Orders WHERE CustomerId = 5";
+        const string query = "SELECT * FROM Orders WHERE CustomerId = 5";
         var candidates = _advisor.AnalyzeQuery(query);
-        
+
         // Act
         var candidate = candidates.First();
         // Note: GenerateCreateIndexStatement is protected, tested through actual index candidate DDL
-        
+
         // Assert
         candidate.TableName.Should().Be("Orders");
         candidate.Columns.Should().NotBeEmpty();
     }
-    
+
     [Fact]
     public void AnalyzeQuery_SuggestsCoveringIndexForSelectStar()
     {
         // Arrange
-        var query = "SELECT * FROM Orders WHERE CustomerId = 5";
-        
+        const string query = "SELECT * FROM Orders WHERE CustomerId = 5";
+
         // Act
         var candidates = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         candidates.Should().Contain(c => c.IndexType == "Nonclustered");
     }
-    
+
     [Fact]
     public void AnalyzeQuery_DeduplicatesRedundantSuggestions()
     {
         // Arrange
-        var query = "SELECT * FROM Orders WHERE CustomerId = 5 AND CustomerId IN (1, 2, 3)";
-        
+        const string query = "SELECT * FROM Orders WHERE CustomerId = 5 AND CustomerId IN (1, 2, 3)";
+
         // Act
         var candidates = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         var customerIdIndexes = candidates.Where(c => c.Columns.Contains("CustomerId")).ToList();
         customerIdIndexes.Should().HaveCountLessThanOrEqualTo(2);  // Deduplicated

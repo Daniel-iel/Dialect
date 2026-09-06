@@ -21,7 +21,7 @@ public class RoslynSqlDiscoveryServiceTests
     public void DiscoverSqlStrings_WithSimpleSelectStatement_FindsIt()
     {
         // Arrange
-        var sourceCode = @"
+        const string sourceCode = @"
             var sql = ""SELECT id, name FROM users WHERE id = @id"";
             var result = sql.Execute();
         ";
@@ -40,7 +40,7 @@ public class RoslynSqlDiscoveryServiceTests
     public void DiscoverSqlStrings_WithMultipleSqlStrings_FindsAll()
     {
         // Arrange
-        var sourceCode = @"
+        const string sourceCode = @"
             var select = ""SELECT * FROM products WHERE price > 100"";
             var insert = ""INSERT INTO orders (customer_id) VALUES (@customerId)"";
             var update = ""UPDATE inventory SET stock = stock - 1 WHERE id = @id"";
@@ -59,7 +59,7 @@ public class RoslynSqlDiscoveryServiceTests
     public void DiscoverSqlStrings_WithEmptyCode_ReturnsEmpty()
     {
         // Arrange
-        var sourceCode = "";
+        const string sourceCode = "";
 
         // Act
         var discovered = _discoveryService.DiscoverSqlStrings(sourceCode);
@@ -72,7 +72,7 @@ public class RoslynSqlDiscoveryServiceTests
     public void DiscoverSqlStrings_WithNoSqlStrings_ReturnsEmpty()
     {
         // Arrange
-        var sourceCode = @"
+        const string sourceCode = @"
             var greeting = ""Hello World"";
             var message = ""This is not SQL"";
             var count = 42;

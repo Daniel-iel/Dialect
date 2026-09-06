@@ -8,20 +8,20 @@ namespace Dialect.Tests.QueryRewrite;
 public class QueryRewriteAdvisorTests
 {
     private readonly SqlServerRewriteAdvisor _advisor = new();
-    
+
     [Fact]
     public void AnalyzeQuery_ReturnsQueryRewrites()
     {
         // Arrange
-        var query = "SELECT * FROM (SELECT id FROM Orders) sub JOIN (SELECT id FROM Customers) c ON sub.id = c.id";
-        
+        const string query = "SELECT * FROM (SELECT id FROM Orders) sub JOIN (SELECT id FROM Customers) c ON sub.id = c.id";
+
         // Act
         var rewrites = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         rewrites.Should().NotBeEmpty();
     }
-    
+
     [Fact]
     public void QueryRewrite_IsValid()
     {
@@ -43,11 +43,11 @@ public class QueryRewriteAdvisorTests
             Tradeoffs: new List<string>(),
             DialectSpecificNotes: new Dictionary<string, string>()
         );
-        
+
         // Assert
         rewrite.IsValid.Should().BeTrue();
     }
-    
+
     [Fact]
     public void QueryRewrite_InvalidWithoutCategory()
     {
@@ -69,50 +69,50 @@ public class QueryRewriteAdvisorTests
             Tradeoffs: new List<string>(),
             DialectSpecificNotes: new Dictionary<string, string>()
         );
-        
+
         // Assert
         rewrite.IsValid.Should().BeFalse();
     }
-    
+
     [Fact]
     public void AnalyzeQuery_DetectsCteOpportunities()
     {
         // Arrange
-        var query = "SELECT * FROM (SELECT id FROM orders) o1 JOIN (SELECT id FROM customers) c1 ON o1.id = c1.id";
-        
+        const string query = "SELECT * FROM (SELECT id FROM orders) o1 JOIN (SELECT id FROM customers) c1 ON o1.id = c1.id";
+
         // Act
         var rewrites = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         rewrites.Should().Contain(r => r.Category == "CTE");
     }
-    
+
     [Fact]
     public void AnalyzeQuery_DetectsWindowFunctionOpportunities()
     {
         // Arrange
-        var query = "SELECT id, COUNT(*) FROM orders GROUP BY category ORDER BY id";
-        
+        const string query = "SELECT id, COUNT(*) FROM orders GROUP BY category ORDER BY id";
+
         // Act
         var rewrites = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         rewrites.Should().Contain(r => r.Category == "WindowFunction");
     }
-    
+
     [Fact]
     public void AnalyzeQuery_DetectsJoinOrderOptimization()
     {
         // Arrange
-        var query = "SELECT * FROM a JOIN b ON a.id = b.id JOIN c ON b.id = c.id JOIN d ON c.id = d.id WHERE d.status = 'active'";
-        
+        const string query = "SELECT * FROM a JOIN b ON a.id = b.id JOIN c ON b.id = c.id JOIN d ON c.id = d.id WHERE d.status = 'active'";
+
         // Act
         var rewrites = _advisor.AnalyzeQuery(query);
-        
+
         // Assert
         rewrites.Should().Contain(r => r.Category == "JoinOrder");
     }
-    
+
     [Theory]
     [InlineData("Low")]
     [InlineData("Medium")]
@@ -137,7 +137,7 @@ public class QueryRewriteAdvisorTests
             Tradeoffs: new List<string>(),
             DialectSpecificNotes: new Dictionary<string, string>()
         );
-        
+
         // Assert
         rewrite.RiskLevel.Should().Be(riskLevel);
         rewrite.IsValid.Should().BeTrue();

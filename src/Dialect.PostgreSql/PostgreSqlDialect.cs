@@ -55,8 +55,8 @@ public sealed class PostgreSqlDialect : ISqlDialect
     public IRoutineRenderer CreateRoutineRenderer() => new PostgreSqlRoutineRenderer();
     public IMigrationRenderer CreateMigrationRenderer() => new PostgreSqlMigrationRenderer();
     public SchemaValidator CreateSchemaValidator() => new PostgreSqlSchemaValidator();
-    
+
     public IndexAdvisor CreateIndexAdvisor() => new Indexing.PostgreSqlIndexAdvisor();
-    
+
     public VersionDetector CreateVersionDetector() => new PostgreSqlVersionDetector();
 }

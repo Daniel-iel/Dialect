@@ -15,11 +15,11 @@ public sealed class SqlBuilder
     {
         if (columns == null || columns.Length == 0)
             throw new ArgumentException("At least one column must be specified", nameof(columns));
-        
+
         var cols = columns.Select(c => new Column(c)).ToList();
         return new SelectBuilder(cols);
     }
-    
+
     /// <summary>
     /// Starts building a SELECT statement with explicit Column objects.
     /// </summary>
@@ -27,10 +27,10 @@ public sealed class SqlBuilder
     {
         if (columns == null || columns.Length == 0)
             throw new ArgumentException("At least one column must be specified", nameof(columns));
-        
+
         return new SelectBuilder(columns.ToList());
     }
-    
+
     /// <summary>
     /// Starts building an INSERT statement.
     /// </summary>
@@ -38,7 +38,7 @@ public sealed class SqlBuilder
     {
         return new InsertBuilder();
     }
-    
+
     /// <summary>
     /// Starts building an UPDATE statement.
     /// </summary>
@@ -46,7 +46,7 @@ public sealed class SqlBuilder
     {
         return new UpdateBuilder();
     }
-    
+
     /// <summary>
     /// Starts building a DELETE statement.
     /// </summary>
@@ -54,7 +54,7 @@ public sealed class SqlBuilder
     {
         return new DeleteBuilder();
     }
-    
+
     /// <summary>
     /// Starts building a routine call (procedure or function).
     /// </summary>
@@ -62,10 +62,10 @@ public sealed class SqlBuilder
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Routine name cannot be empty", nameof(name));
-        
+
         return new RoutineCallBuilder(name, kind);
     }
-    
+
     /// <summary>
     /// Starts building an UPSERT statement (INSERT ... ON CONFLICT / ON DUPLICATE KEY).
     /// </summary>
@@ -73,7 +73,7 @@ public sealed class SqlBuilder
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
-        
+
         return new UpsertBuilder(tableName, schema);
     }
 }

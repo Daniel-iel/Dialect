@@ -1,7 +1,4 @@
 namespace Dialect.Samples._03_Advanced;
-
-using Dialect.Core.Dialects;
-using Dialect.Core.Indexing;
 using Dialect.Core.Performance;
 using Dialect.Samples.Utilities;
 
@@ -28,8 +25,8 @@ public class IndexAdvisorExamples : ExampleBase
     private static void WhereColumnIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 1: Indexes for WHERE Clauses");
-        
-        var sql = "SELECT * FROM Users WHERE Email = 'user@example.com' AND Username = 'john'";
+
+        const string sql = "SELECT * FROM Users WHERE Email = 'user@example.com' AND Username = 'john'";
         var metrics = new PerformanceMetrics(
             TotalCost: 100.5m,
             TableScanCount: 1,
@@ -49,7 +46,7 @@ public class IndexAdvisorExamples : ExampleBase
             MissingIndexRecommendations: new[] { "Index on Email", "Composite index on (Email, Username)" },
             OptimizationTips: new[] { "Add index on frequently filtered columns", "Consider composite index for multi-column predicates" }
         );
-        
+
         var whereIndexText = @$"
   Query: {sql}
   Performance Metrics: Rows Scanned={metrics.TotalRowsExamined}, Returned={metrics.TotalRowsProduced}, Cost={metrics.TotalCost}
@@ -61,17 +58,17 @@ public class IndexAdvisorExamples : ExampleBase
     2. Composite index on (Email, Username) (MEDIUM PRIORITY)
        - Covers both filtering columns
        - Would enable index-only scans";
-        
+
         Console.WriteLine(whereIndexText);
     }
 
     private static void JoinColumnIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 2: Indexes for JOIN Columns");
-        
-        var sql = "SELECT * FROM Orders o JOIN Users u ON o.UserId = u.UserId WHERE o.Total > 500";
-        
-        var joinIndexText = @$"
+
+        const string sql = "SELECT * FROM Orders o JOIN Users u ON o.UserId = u.UserId WHERE o.Total > 500";
+
+        const string? joinIndexText = @$"
   Query: {sql}
 
   Index Recommendations:
@@ -81,17 +78,17 @@ public class IndexAdvisorExamples : ExampleBase
     2. Index on Orders(UserId, Total) (HIGH PRIORITY)
        - Composite index covers both JOIN and WHERE
        - Enables index-only scans";
-        
+
         Console.WriteLine(joinIndexText);
     }
 
     private static void CompositeIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 3: Covering Indexes");
-        
-        var sql = "SELECT OrderId, UserId, Total FROM Orders WHERE UserId = 1 ORDER BY OrderDate";
-        
-        var compositeIndexText = @$"
+
+        const string sql = "SELECT OrderId, UserId, Total FROM Orders WHERE UserId = 1 ORDER BY OrderDate";
+
+        const string? compositeIndexText = @$"
   Query: {sql}
 
   Index Recommendation:
@@ -100,7 +97,7 @@ public class IndexAdvisorExamples : ExampleBase
        - Orders by OrderDate
        - Includes all selected columns (covering index)
        - Result: Complete index-only scan, zero table lookups";
-        
+
         Console.WriteLine(compositeIndexText);
     }
 }

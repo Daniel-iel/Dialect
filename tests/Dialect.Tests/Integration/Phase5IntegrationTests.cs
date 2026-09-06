@@ -265,7 +265,7 @@ public class Phase5IntegrationTests
         // Verify complete Phase 5 API is available on all dialects
         foreach (var dialect in _allDialects)
         {
-            var hasMethods = 
+            var hasMethods =
                 dialect.GetType().GetMethod("CreateSchemaValidator") != null &&
                 dialect.GetType().GetMethod("CreateIndexAdvisor") != null &&
                 dialect.GetType().GetMethod("CreateVersionDetector") != null;

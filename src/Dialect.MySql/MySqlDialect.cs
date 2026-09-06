@@ -56,8 +56,8 @@ public sealed class MySqlDialect : ISqlDialect
     public IRoutineRenderer CreateRoutineRenderer() => new MySqlRoutineRenderer();
     public IMigrationRenderer CreateMigrationRenderer() => new MySqlMigrationRenderer();
     public SchemaValidator CreateSchemaValidator() => new MySqlSchemaValidator();
-    
+
     public IndexAdvisor CreateIndexAdvisor() => new Indexing.MySqlIndexAdvisor();
-    
+
     public VersionDetector CreateVersionDetector() => new MySqlVersionDetector();
 }

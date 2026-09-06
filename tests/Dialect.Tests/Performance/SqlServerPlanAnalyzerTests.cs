@@ -7,12 +7,12 @@ using Dialect.SqlServer.Performance;
 public class SqlServerPlanAnalyzerTests
 {
     private readonly SqlServerPlanAnalyzer _analyzer = new();
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void ParsePlan_HandlesValidJsonPlan()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "TableScan",
@@ -25,39 +25,39 @@ public class SqlServerPlanAnalyzerTests
             "ExecutionTime": 125.5
         }
         """;
-        
-        var queryText = "SELECT * FROM Users";
-        
+
+        const string queryText = "SELECT * FROM Users";
+
         // Act
         var plan = _analyzer.ParsePlan(planJson, queryText);
-        
+
         // Assert
         plan.RootNode.OperationType.Should().Be("TableScan");
         plan.TotalCost.Should().Be(5.5m);
         plan.TotalRowsProduced.Should().Be(1000);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void ParsePlan_HandlesInvalidJson()
     {
         // Arrange
-        var invalidJson = "{ invalid json }";
-        var queryText = "SELECT * FROM Users";
-        
+        const string invalidJson = "{ invalid json }";
+        const string queryText = "SELECT * FROM Users";
+
         // Act
         var plan = _analyzer.ParsePlan(invalidJson, queryText);
-        
+
         // Assert
         plan.RootNode.OperationType.Should().Be("Unknown");
         plan.TotalCost.Should().Be(0);
         plan.TotalRowsProduced.Should().Be(0);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void ParsePlan_ExtractsObjectName()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "IndexSeek",
@@ -69,19 +69,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 100
         }
         """;
-        
+
         // Act
         var plan = _analyzer.ParsePlan(planJson, "SELECT * FROM Users WHERE UserId = 5");
-        
+
         // Assert
         plan.RootNode.ObjectName.Should().Be("IX_UserId");
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void ParsePlan_ExtractsPredicate()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "TableScan",
@@ -94,19 +94,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 500
         }
         """;
-        
+
         // Act
         var plan = _analyzer.ParsePlan(planJson, "SELECT * FROM Users WHERE Status = 'Active'");
-        
+
         // Assert
         plan.RootNode.Predicate.Should().Be("[Users].[Status] = 'Active'");
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_CountsTableScans()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "TableScan",
@@ -118,20 +118,20 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 10000
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM Orders");
-        
+
         // Assert
         metrics.TableScanCount.Should().Be(1);
         metrics.HasTableScan.Should().BeTrue();
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_CountsIndexSeeks()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "IndexSeek",
@@ -143,19 +143,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 50
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM Products WHERE ProductId = 1");
-        
+
         // Assert
         metrics.IndexSeekCount.Should().Be(1);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_DetectsNestedLoopJoins()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "NestedLoopJoin",
@@ -166,19 +166,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 500
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id");
-        
+
         // Assert
         metrics.NestedLoopJoinCount.Should().BeGreaterThan(0);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_DetectsHashJoins()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "HashJoin",
@@ -189,19 +189,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 1000
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id");
-        
+
         // Assert
         metrics.HashJoinCount.Should().BeGreaterThan(0);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_DetectsSortOperations()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "Sort",
@@ -212,20 +212,20 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 5000
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM Users ORDER BY Name");
-        
+
         // Assert
         metrics.SortOperationCount.Should().BeGreaterThan(0);
         metrics.HasSort.Should().BeTrue();
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_CalculatesSelectivity()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "TableScan",
@@ -237,19 +237,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 50
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM Users WHERE Status = 'Active'");
-        
+
         // Assert
         metrics.Selectivity.Should().BeLessThan(1.0);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_FlagsCostlyTableScans()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "TableScan",
@@ -261,20 +261,20 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 1000000
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM LargeTable");
-        
+
         // Assert
         metrics.TableScanCount.Should().Be(1);
         metrics.OptimizationTips.Should().Contain(t => t.Contains("table scan"));
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_RecommendsMissingIndexes()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "TableScan",
@@ -287,19 +287,19 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 5000
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM Orders WHERE Status = 'Active'");
-        
+
         // Assert
         metrics.MissingIndexRecommendations.Should().HaveCountGreaterThan(0);
     }
-    
+
     [Fact(Skip = "SQL Server execution plan JSON parsing not fully implemented")]
     public void AnalyzePlan_GeneratesOptimizationTips()
     {
         // Arrange
-        var planJson = """
+        const string planJson = """
         {
             "Root": {
                 "RelOp": "NestedLoopJoin",
@@ -310,10 +310,10 @@ public class SqlServerPlanAnalyzerTests
             "EstimatedRows": 50000
         }
         """;
-        
+
         // Act
         var metrics = _analyzer.AnalyzePlan(planJson, "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id");
-        
+
         // Assert
         metrics.OptimizationTips.Should().HaveCountGreaterThan(0);
     }

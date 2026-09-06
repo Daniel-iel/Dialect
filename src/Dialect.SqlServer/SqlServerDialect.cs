@@ -56,8 +56,8 @@ public sealed class SqlServerDialect : ISqlDialect
     public IRoutineRenderer CreateRoutineRenderer() => new SqlServerRoutineRenderer();
     public IMigrationRenderer CreateMigrationRenderer() => new SqlServerMigrationRenderer();
     public SchemaValidator CreateSchemaValidator() => new SqlServerSchemaValidator();
-    
+
     public IndexAdvisor CreateIndexAdvisor() => new Indexing.SqlServerIndexAdvisor();
-    
+
     public VersionDetector CreateVersionDetector() => new SqlServerVersionDetector();
 }

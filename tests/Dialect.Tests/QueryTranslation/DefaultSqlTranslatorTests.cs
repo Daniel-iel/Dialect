@@ -39,7 +39,7 @@ public class DefaultSqlTranslatorTests
     {
         // Arrange
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters);
-        var sourceSql = "SELECT id, name FROM users";
+        const string sourceSql = "SELECT id, name FROM users";
 
         // Act
         var result = translator.Translate(sourceSql);
@@ -61,7 +61,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sourceSql = "SELECT id FROM users";
+        const string sourceSql = "SELECT id FROM users";
 
         // Act
         var result = translator.Translate(sourceSql, connectionString, mockDialect);
@@ -79,7 +79,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sourceSql = "SELECT id FROM users";
+        const string sourceSql = "SELECT id FROM users";
 
         // Act
         var result = translator.Translate(sourceSql, connectionString, mockDialect);
@@ -97,7 +97,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sourceSql = "SELECT id FROM users";
+        const string sourceSql = "SELECT id FROM users";
 
         // Act
         var result = translator.Translate(sourceSql, connectionString, mockDialect);
@@ -113,7 +113,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sourceSql = "SELECT id FROM users";
+        const string sourceSql = "SELECT id FROM users";
 
         // Act
         var result = translator.Translate(sourceSql, "", mockDialect);
@@ -129,7 +129,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sourceSql = "SELECT id FROM users";
+        const string sourceSql = "SELECT id FROM users";
 
         // Act & Assert
         // Note: In this implementation, we catch empty/null and return error result
@@ -148,7 +148,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sqlWithMerge = "MERGE INTO target t USING source s ON t.id = s.id WHEN MATCHED THEN UPDATE SET t.value = s.value";
+        const string sqlWithMerge = "MERGE INTO target t USING source s ON t.id = s.id WHEN MATCHED THEN UPDATE SET t.value = s.value";
 
         // Act
         var result = translator.Translate(sqlWithMerge, SqlProvider.SqlServer, mockDialect);
@@ -165,7 +165,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sqlWithJsonOps = "SELECT data ->> 'key' as value FROM users WHERE data @> '{\"status\": \"active\"}'::jsonb";
+        const string sqlWithJsonOps = "SELECT data ->> 'key' as value FROM users WHERE data @> '{\"status\": \"active\"}'::jsonb";
 
         // Act
         var result = translator.Translate(sqlWithJsonOps, SqlProvider.PostgreSql, mockDialect);
@@ -182,7 +182,7 @@ public class DefaultSqlTranslatorTests
         // Arrange
         var mockDialect = new MockSqlDialect();
         var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
-        var sqlWithGroupConcat = "SELECT id, GROUP_CONCAT(name SEPARATOR ', ') as names FROM users GROUP BY department";
+        const string sqlWithGroupConcat = "SELECT id, GROUP_CONCAT(name SEPARATOR ', ') as names FROM users GROUP BY department";
 
         // Act
         var result = translator.Translate(sqlWithGroupConcat, SqlProvider.MySql, mockDialect);

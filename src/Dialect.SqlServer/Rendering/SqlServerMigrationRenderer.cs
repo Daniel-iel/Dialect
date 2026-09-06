@@ -104,7 +104,7 @@ public sealed class SqlServerMigrationRenderer : IMigrationRenderer
     {
         var tableName = QuoteIdentifier(step.TableName);
         var columnName = QuoteIdentifier(step.ColumnName);
-        
+
         var statements = new List<string>();
 
         if (step.NewType.HasValue)
@@ -133,7 +133,7 @@ public sealed class SqlServerMigrationRenderer : IMigrationRenderer
         var tableName = QuoteIdentifier(step.TableName);
         var columns = string.Join(", ", step.ColumnNames.Select(c => QuoteIdentifier(c)));
         var unique = step.IsUnique ? "UNIQUE " : "";
-        
+
         return $"CREATE {unique}INDEX {indexName} ON {tableName} ({columns})";
     }
 

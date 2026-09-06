@@ -32,7 +32,7 @@ public sealed record UpsertConflictClause(
 /// Represents an UPSERT statement (INSERT ... ON CONFLICT / INSERT ... ON DUPLICATE KEY).
 /// This is a combined INSERT/UPDATE operation that inserts a row if it doesn't exist,
 /// or updates it if a conflict is detected (based on primary key or unique constraints).
-/// 
+///
 /// Example SQL Server (MERGE):
 ///   MERGE INTO Users AS target
 ///   USING (SELECT @Id, @Name, @Email) AS source (Id, Name, Email)
@@ -63,7 +63,7 @@ public sealed record UpsertStatement(
             throw new ArgumentException("Values must be provided for UPSERT", nameof(Values));
         if (Values.Count != Columns.Count)
             throw new ArgumentException("Column count must match value count", nameof(Values));
-        
+
         ConflictClause?.Validate();
     }
 }

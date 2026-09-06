@@ -143,8 +143,8 @@ public class IndexAdvisorTests
     public void CreateIndexAdvisor_OnAllDialects_ReturnsNonNull()
     {
         // Arrange
-        var dialects = new ISqlDialect[] 
-        { 
+        var dialects = new ISqlDialect[]
+        {
             new SqlServerDialect(),
             new PostgreSqlDialect(),
             new MySqlDialect()

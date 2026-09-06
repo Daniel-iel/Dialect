@@ -18,7 +18,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         var plan = ParsePlan(planJson, queryText);
         return AnalyzeParsedPlan(plan);
     }
-    
+
     /// <summary>
     /// Parses PostgreSQL execution plan JSON into structured format.
     /// PostgreSQL EXPLAIN ANALYZE provides detailed JSON output with actual vs. estimated costs.
@@ -29,24 +29,24 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         {
             var jsonDoc = JsonDocument.Parse(planOutput);
             var root = jsonDoc.RootElement;
-            
+
             // PostgreSQL wraps plan in an array
             if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
             {
                 var planElement = root[0];
-                
+
                 if (planElement.TryGetProperty("Plan", out var planProp))
                 {
                     var rootNode = ParseNode(planProp);
-                    
+
                     var planningTime = planElement.TryGetProperty("Planning Time", out var planningProp)
                         ? double.Parse(planningProp.GetString()?.Replace(" ms", "").Trim() ?? "0")
                         : 0.0;
-                    
+
                     var executionTime = planElement.TryGetProperty("Execution Time", out var execProp)
                         ? double.Parse(execProp.GetString()?.Replace(" ms", "").Trim() ?? "0")
                         : 0.0;
-                    
+
                     return new QueryExecutionPlan(
                         RootNode: rootNode,
                         TotalCost: GetNodeCost(planProp),
@@ -60,7 +60,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
                     );
                 }
             }
-            
+
             // Fallback if different structure
             return CreateFallbackPlan(queryText);
         }
@@ -69,33 +69,33 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
             return CreateFallbackPlan(queryText);
         }
     }
-    
+
     private static ExecutionPlanNode ParseNode(JsonElement nodeElement)
     {
         var nodeType = nodeElement.TryGetProperty("Node Type", out var typeProp)
             ? typeProp.GetString() ?? "Unknown"
             : "Unknown";
-        
+
         var planRows = nodeElement.TryGetProperty("Plan Rows", out var planRowsProp)
             ? long.Parse(planRowsProp.GetInt64().ToString())
             : 0L;
-        
+
         var actualRows = nodeElement.TryGetProperty("Actual Rows", out var actualRowsProp)
             ? long.Parse(actualRowsProp.GetInt64().ToString())
             : planRows;
-        
+
         var planCost = nodeElement.TryGetProperty("Total Cost", out var costProp)
             ? decimal.Parse(costProp.GetDecimal().ToString())
             : 0m;
-        
+
         var relationName = nodeElement.TryGetProperty("Relation Name", out var relProp)
             ? relProp.GetString()
             : null;
-        
+
         var filter = nodeElement.TryGetProperty("Filter", out var filterProp)
             ? filterProp.GetString()
             : null;
-        
+
         var children = new List<ExecutionPlanNode>();
         if (nodeElement.TryGetProperty("Plans", out var plansProp) &&
             plansProp.ValueKind == JsonValueKind.Array)
@@ -105,7 +105,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
                 children.Add(ParseNode(childElement));
             }
         }
-        
+
         var properties = new Dictionary<string, object>();
         if (nodeElement.TryGetProperty("Actual Loops", out var loopsProp))
         {
@@ -115,7 +115,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         {
             properties["StartupCost"] = startupProp.GetDecimal();
         }
-        
+
         return new ExecutionPlanNode(
             OperationType: nodeType,
             RowsProduced: actualRows,
@@ -127,7 +127,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
             Properties: properties
         );
     }
-    
+
     private static decimal GetNodeCost(JsonElement nodeElement)
     {
         if (nodeElement.TryGetProperty("Total Cost", out var costProp))
@@ -136,7 +136,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         }
         return 0m;
     }
-    
+
     private static long GetNodeRows(JsonElement nodeElement)
     {
         // Prefer actual rows from ANALYZE, fall back to plan rows
@@ -144,15 +144,15 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         {
             return actualRowsProp.GetInt64();
         }
-        
+
         if (nodeElement.TryGetProperty("Plan Rows", out var planRowsProp))
         {
             return planRowsProp.GetInt64();
         }
-        
+
         return 0L;
     }
-    
+
     private static QueryExecutionPlan CreateFallbackPlan(string queryText)
     {
         return new QueryExecutionPlan(
@@ -173,7 +173,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
             Metadata: new Dictionary<string, object>()
         );
     }
-    
+
     private PerformanceMetrics AnalyzeParsedPlan(QueryExecutionPlan plan)
     {
         var seqScanCount = CountOperationType(plan.RootNode, "Seq Scan");
@@ -184,10 +184,10 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
         var mergeJoinCount = CountOperationType(plan.RootNode, "Merge Join");
         var sortCount = CountOperationType(plan.RootNode, "Sort");
         var filterCount = CountOperationType(plan.RootNode, "Filter");
-        
+
         var totalRowsExamined = CalculateTotalRowsExamined(plan.RootNode);
         var selectivity = CalculateSelectivity(plan.TotalRowsProduced, totalRowsExamined);
-        
+
         var missingIndexes = ExtractMissingIndexes(plan);
         var tips = GenerateOptimizationTips(new PerformanceMetrics(
             TotalCost: plan.TotalCost,
@@ -208,7 +208,7 @@ public class PostgreSqlPlanAnalyzer : ExecutionPlanAnalyzer
             MissingIndexRecommendations: missingIndexes,
             OptimizationTips: new List<string>()
         ));
-        
+
         return new PerformanceMetrics(
             TotalCost: plan.TotalCost,
             TableScanCount: seqScanCount,
