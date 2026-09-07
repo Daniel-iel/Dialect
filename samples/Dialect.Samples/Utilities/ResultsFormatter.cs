@@ -63,68 +63,7 @@ public static class ResultsFormatter
         return output.ToString();
     }
 
-    /// <summary>
-    /// Format a list of result rows as a Markdown table.
-    /// Handles dynamic objects with any property structure.
-    /// </summary>
-    private static string FormatResultsAsMarkdownTable(List<dynamic> rows)
-    {
-        if (rows == null || rows.Count == 0)
-            return "*No results to display.*";
 
-        var output = new System.Text.StringBuilder();
-
-        // Extract column names from first row
-        var firstRow = rows[0] as Dictionary<string, object?>;
-        if (firstRow == null)
-            return "*Unable to format results.*";
-
-        var columnNames = firstRow.Keys.ToList();
-
-        // Header row
-        output.AppendLine("| " + string.Join(" | ", columnNames) + " |");
-        output.AppendLine("| " + string.Join(" | ", columnNames.Select(_ => "---")) + " |");
-
-        // Data rows (limit to first 10 to avoid huge tables)
-        foreach (var row in rows.Take(10))
-        {
-            var dict = row as Dictionary<string, object?>;
-            if (dict != null)
-            {
-                var values = columnNames.Select(col =>
-                    dict.ContainsKey(col) ? (dict[col]?.ToString() ?? "NULL") : "");
-                output.AppendLine("| " + string.Join(" | ", values) + " |");
-            }
-        }
-
-        if (rows.Count > 10)
-        {
-            output.AppendLine($"\n*Showing 10 of {rows.Count} rows.*");
-        }
-
-        return output.ToString();
-    }
-
-    /// <summary>
-    /// Format error information.
-    /// </summary>
-    public static string FormatError(string exampleName, Exception ex)
-    {
-        var output = new System.Text.StringBuilder();
-        output.AppendLine($"\n## ⚠️ Error in {exampleName}");
-        output.AppendLine($"\n**Error Type:** `{ex.GetType().Name}`");
-        output.AppendLine($"\n**Message:** {ex.Message}");
-        if (ex.InnerException != null)
-        {
-            output.AppendLine($"\n**Inner Error:** {ex.InnerException.Message}");
-        }
-        output.AppendLine($"\n**Stack Trace:**");
-        output.AppendLine($"```");
-        output.AppendLine(ex.StackTrace);
-        output.AppendLine($"```");
-
-        return output.ToString();
-    }
 
     /// <summary>
     /// Get colored ANSI prefix for dialect name (for console output).
@@ -150,14 +89,6 @@ public static class ResultsFormatter
 
         var indent = new string(' ', spaces);
         return indent + text.Replace("\n", "\n" + indent);
-    }
-
-    /// <summary>
-    /// Create a separator line.
-    /// </summary>
-    public static string CreateSeparator(int width = 80, char character = '=')
-    {
-        return new string(character, width);
     }
 
     /// <summary>

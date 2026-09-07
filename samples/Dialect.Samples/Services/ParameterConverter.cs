@@ -92,46 +92,4 @@ public static class ParameterConverter
         
         return result;
     }
-
-    /// <summary>
-    /// Convert parameters for Dapper (which strips all prefixes and uses positional mapping).
-    /// Dapper's DynamicParameters expects parameter names without prefixes.
-    /// </summary>
-    /// <param name="parameters">Raw parameters from CompiledQuery</param>
-    /// <returns>Dictionary with prefix-stripped parameter names</returns>
-    public static Dictionary<string, object?> ConvertForDapper(IReadOnlyDictionary<string, object?> parameters)
-    {
-        if (parameters == null || parameters.Count == 0)
-            return new Dictionary<string, object?>();
-
-        var result = new Dictionary<string, object?>();
-        
-        foreach (var (key, value) in parameters)
-        {
-            // Strip any leading @ or : prefix
-            var paramName = key.StartsWith("@")
-                ? key[1..]
-                : key.StartsWith(":")
-                    ? key[1..]
-                    : key;
-
-            result[paramName] = value;
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Check if a parameter name needs conversion for a specific dialect.
-    /// </summary>
-    public static bool NeedsConversion(string paramName, string dialectName)
-    {
-        return dialectName.ToLower() switch
-        {
-            "sql server" or "sqlserver" => !paramName.StartsWith("@"),
-            "postgresql" or "postgres" => !paramName.StartsWith(":"),
-            "mysql" => !paramName.StartsWith("@"),
-            _ => false
-        };
-    }
 }

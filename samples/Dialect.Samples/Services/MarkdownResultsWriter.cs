@@ -65,14 +65,6 @@ public class MarkdownResultsWriter
     }
 
     /// <summary>
-    /// Add the captured console output from an example's Run() method.
-    /// </summary>
-    public void AddExampleOutput(string exampleName, string output)
-    {
-        _outputs.Add(new ExampleOutputCapture(exampleName, output));
-    }
-
-    /// <summary>
     /// Add an error that occurred during example execution.
     /// </summary>
     public void AddErrorResult(string exampleName, Exception ex)
