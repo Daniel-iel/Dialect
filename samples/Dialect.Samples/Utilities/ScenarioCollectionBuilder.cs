@@ -78,21 +78,6 @@ public class ScenarioCollectionBuilder
     }
 
     /// <summary>
-    /// Add multiple scenarios at once.
-    /// </summary>
-    public ScenarioCollectionBuilder AddRange(params ScenarioDefinition[] scenarios)
-    {
-        if (scenarios != null)
-        {
-            foreach (var scenario in scenarios)
-            {
-                Add(scenario);
-            }
-        }
-        return this;
-    }
-
-    /// <summary>
     /// Finalize scenario collection and execute all scenarios.
     /// Returns the list of compiled results for all scenarios across all dialects.
     /// </summary>
@@ -126,26 +111,9 @@ public class ScenarioCollectionBuilder
     }
 
     /// <summary>
-    /// Get all collected scenarios without executing.
-    /// Useful for testing or manual scenario management.
-    /// </summary>
-    public IReadOnlyList<ScenarioDefinition> GetScenarios() => _scenarios.AsReadOnly();
-
-    /// <summary>
     /// Get scenario count.
     /// </summary>
     public int Count => _scenarios.Count;
-
-    /// <summary>
-    /// Filter scenarios by tag.
-    /// </summary>
-    public ScenarioCollectionBuilder FilterByTag(string tag)
-    {
-        var filtered = _scenarios.Where(s => s.Tags?.Contains(tag) ?? false).ToList();
-        _scenarios.Clear();
-        _scenarios.AddRange(filtered);
-        return this;
-    }
 
     /// <summary>
     /// Get a scenario by name.
@@ -154,40 +122,3 @@ public class ScenarioCollectionBuilder
         _scenarios.FirstOrDefault(s => s.Name == name);
 }
 
-/// <summary>
-/// Extension methods for working with scenario collections.
-/// </summary>
-public static class ScenarioCollectionExtensions
-{
-    /// <summary>
-    /// Convert scenario definitions to example scenarios for execution.
-    /// </summary>
-    public static List<ExampleScenario> ToExampleScenarios(
-        this IEnumerable<ScenarioDefinition> scenarios)
-    {
-        var dialectHelper = new DialectHelper();
-        var result = new List<ExampleScenario>();
-
-        foreach (var scenario in scenarios)
-        {
-            var compiledResults = new Dictionary<string, (string, IReadOnlyDictionary<string, object?>)>();
-
-            foreach (var (dialectName, dialect) in dialectHelper.GetAllDialects())
-            {
-                try
-                {
-                    var compiled = scenario.Builder(dialect);
-                    compiledResults[dialectName] = (compiled.Sql, compiled.Parameters);
-                }
-                catch (Exception ex)
-                {
-                    compiledResults[dialectName] = ($"ERROR: {ex.Message}", new Dictionary<string, object?>());
-                }
-            }
-
-            result.Add(new ExampleScenario(scenario.Name, compiledResults));
-        }
-
-        return result;
-    }
-}
