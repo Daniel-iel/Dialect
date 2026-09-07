@@ -31,20 +31,6 @@ public interface IScenarioRepository
     IEnumerable<ScenarioDefinition> GetByTags(params string[] tags);
 
     /// <summary>
-    /// Gets all scenarios that contain all of the specified tags.
-    /// </summary>
-    /// <param name="tags">Tag(s) that scenarios must contain</param>
-    /// <returns>Enumerable of scenarios matching all tags</returns>
-    IEnumerable<ScenarioDefinition> GetByAllTags(params string[] tags);
-
-    /// <summary>
-    /// Searches scenarios by description text (case-insensitive partial match).
-    /// </summary>
-    /// <param name="searchText">Text to search for in descriptions</param>
-    /// <returns>Enumerable of scenarios with matching descriptions</returns>
-    IEnumerable<ScenarioDefinition> SearchByDescription(string searchText);
-
-    /// <summary>
     /// Gets the count of scenarios in the repository.
     /// </summary>
     int Count { get; }
@@ -78,28 +64,6 @@ public class InMemoryScenarioRepository : IScenarioRepository
 
         return _scenarios.Where(s =>
             s.Tags.Any(tag => tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
-    }
-
-    /// <inheritdoc/>
-    public IEnumerable<ScenarioDefinition> GetByAllTags(params string[] tags)
-    {
-        if (tags == null || tags.Length == 0)
-            return _scenarios;
-
-        return _scenarios.Where(s =>
-            tags.All(tag => s.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
-    }
-
-    /// <inheritdoc/>
-    public IEnumerable<ScenarioDefinition> SearchByDescription(string searchText)
-    {
-        if (string.IsNullOrWhiteSpace(searchText))
-            return _scenarios;
-
-        var lowerSearch = searchText.ToLowerInvariant();
-        return _scenarios.Where(s =>
-            s.Description.Contains(lowerSearch, StringComparison.OrdinalIgnoreCase) ||
-            s.Name.Contains(lowerSearch, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <inheritdoc/>
