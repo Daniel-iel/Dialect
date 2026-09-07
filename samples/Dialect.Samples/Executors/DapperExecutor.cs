@@ -1,11 +1,12 @@
-using System.Data;
-using System.Data.Common;
 using Dapper;
+using Dialect.Samples.Utilities;
 using Microsoft.Data.SqlClient;
 using MySqlConnector;
 using Npgsql;
+using System.Data;
+using System.Data.Common;
 
-namespace Dialect.Samples.Utilities;
+namespace Dialect.Samples.Executors;
 
 /// <summary>
 /// DapperExecutor handles database connections and query execution using Dapper

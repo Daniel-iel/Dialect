@@ -1,10 +1,10 @@
-using System.Text;
 using Dialect.Samples._01_Basic;
 using Dialect.Samples._02_Intermediate;
 using Dialect.Samples._03_Advanced;
+using Dialect.Samples.Services;
 using Dialect.Samples.Utilities;
 
-namespace Dialect.Samples.Services;
+namespace Dialect.Samples.Executors;
 
 /// <summary>
 /// Executes all examples in batch mode, collecting compiled queries without printing to console.
@@ -106,7 +106,7 @@ public class BatchExampleExecutor
                 foreach (var scenario in scenarios)
                 {
                     var dialectResults = new Dictionary<string, (string Sql, IReadOnlyDictionary<string, object?> Parameters, List<dynamic> Results, long ExecutionTimeMs, int RowCount)>();
-                    
+
                     foreach (var (dialectName, (sql, parameters)) in scenario.CompiledResults)
                     {
                         var (results, timeMs, rowCount) = await ExecuteQueryAsync(dialectName, sql, parameters);
@@ -121,11 +121,11 @@ public class BatchExampleExecutor
             {
                 // Fallback to old behavior: use GetCompiledResults()
                 var compiledResults = example.GetCompiledResults();
-                
+
                 if (compiledResults.Count > 0)
                 {
                     var dialectResults = new Dictionary<string, (string Sql, IReadOnlyDictionary<string, object?> Parameters, List<dynamic> Results, long ExecutionTimeMs, int RowCount)>();
-                    
+
                     foreach (var (dialectName, (sql, parameters)) in compiledResults)
                     {
                         var (results, timeMs, rowCount) = await ExecuteQueryAsync(dialectName, sql, parameters);

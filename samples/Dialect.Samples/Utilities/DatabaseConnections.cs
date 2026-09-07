@@ -23,17 +23,4 @@ public static class DatabaseConnections
     public static string MySqlConnectionString =>
         "Server=localhost;Port=3306;Database=dialect_samples;Uid=root;Pwd=root;";
 
-    /// <summary>
-    /// Get connection string by database type.
-    /// </summary>
-    public static string GetConnectionString(string databaseType)
-    {
-        return databaseType.ToLower() switch
-        {
-            "sqlserver" or "sql server" => SqlServerConnectionString,
-            "postgresql" or "postgres" => PostgreSqlConnectionString,
-            "mysql" => MySqlConnectionString,
-            _ => throw new ArgumentException($"Unknown database type: {databaseType}")
-        };
-    }
 }

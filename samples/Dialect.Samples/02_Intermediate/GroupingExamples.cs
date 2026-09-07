@@ -8,6 +8,7 @@ using Dialect.Samples.Utilities;
 
 /// <summary>
 /// Grouping and aggregation examples.
+/// Uses data-driven scenario definitions for clean, maintainable test organization.
 /// </summary>
 public class GroupingExamples : ExampleBase
 {
@@ -17,62 +18,52 @@ public class GroupingExamples : ExampleBase
     {
     }
 
-    public override void Run()
+    private static readonly ScenarioDefinition[] Scenarios = new[]
     {
-        GroupByAndCount();
-        Console.WriteLine("\n");
-        GroupByWithHaving();
-        Console.WriteLine("\n");
-        MultipleAggregates();
-    }
-
-    private void GroupByAndCount()
-    {
-        OutputFormatter.PrintSubHeader("Example 1: GROUP BY with COUNT");
-
-        var results = CompileForAllDialects(dialect =>
-            SqlBuilder.Select("UserId", "COUNT(*) as OrderCount")
+        new ScenarioDefinition(
+            "GROUP BY and COUNT",
+            "GROUP BY with COUNT aggregate function to count rows per group",
+            dialect => SqlBuilder.Select("UserId", "COUNT(*) as OrderCount")
                 .From("Orders")
                 .GroupBy("UserId")
                 .Build()
                 .Compile(dialect)
-        );
+        ),
 
-        AddScenario("GROUP BY and COUNT", results);
-    }
+        new ScenarioDefinition(
+            "GROUP BY with HAVING",
+            "GROUP BY with HAVING clause filtering groups by aggregate condition",
+            dialect =>
+            {
+                var havingCondition = new RawNode("SUM(Quantity) > 5");
+                return SqlBuilder.Select("ProductId", "SUM(Quantity) as TotalQuantity")
+                    .From("OrderItems")
+                    .GroupBy("ProductId")
+                    .Having(havingCondition)
+                    .Build()
+                    .Compile(dialect);
+            }
+        ),
 
-    private void GroupByWithHaving()
-    {
-        OutputFormatter.PrintSubHeader("Example 2: GROUP BY with HAVING");
-
-        var results = CompileForAllDialects(dialect =>
-        {
-            var havingCondition = new RawNode("SUM(Quantity) > 5");
-            return SqlBuilder.Select("ProductId", "SUM(Quantity) as TotalQuantity")
-                .From("OrderItems")
-                .GroupBy("ProductId")
-                .Having(havingCondition)
-                .Build()
-                .Compile(dialect);
-        }
-        );
-
-        AddScenario("GROUP BY with HAVING", results);
-    }
-
-    private void MultipleAggregates()
-    {
-        OutputFormatter.PrintSubHeader("Example 3: Multiple Aggregate Functions");
-
-        var results = CompileForAllDialects(dialect =>
-            SqlBuilder.Select("UserId", "COUNT(*) as TotalOrders", "SUM(Total) as TotalSpent", "AVG(Total) as AvgOrder")
+        new ScenarioDefinition(
+            "Multiple Aggregate Functions",
+            "GROUP BY with COUNT, SUM, and AVG aggregate functions",
+            dialect => SqlBuilder.Select("UserId", "COUNT(*) as TotalOrders", "SUM(Total) as TotalSpent", "AVG(Total) as AvgOrder")
                 .From("Orders")
                 .GroupBy("UserId")
                 .OrderBy("TotalSpent DESC")
                 .Build()
                 .Compile(dialect)
-        );
+        ),
+    };
 
-        AddScenario("Multiple Aggregate Functions", results);
+    public override void Run()
+    {
+        foreach (var scenario in Scenarios)
+        {
+            var results = CompileForAllDialects(scenario.Builder);
+            AddScenario(scenario.Name, results);
+            Console.WriteLine("\n");
+        }
     }
 }

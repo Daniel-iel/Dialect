@@ -8,6 +8,7 @@ using Dialect.Samples.Utilities;
 
 /// <summary>
 /// Index advisor examples demonstrating index recommendations.
+/// Uses data-driven scenario definitions for clean, maintainable test organization.
 /// 
 /// NOTE: This is an educational example showing how the framework can identify index opportunities
 /// for various query patterns (WHERE filtering, JOIN operations, and covering indexes).
@@ -24,123 +25,62 @@ public class IndexAdvisorExamples : ExampleBase
     {
     }
 
-    public override void Run()
+    private static readonly ScenarioDefinition[] Scenarios = new[]
     {
-        WhereColumnIndexes();
-        Console.WriteLine("\n");
-        JoinColumnIndexes();
-        Console.WriteLine("\n");
-        CompositeIndexes();
-    }
-
-    private void WhereColumnIndexes()
-    {
-        OutputFormatter.PrintSubHeader("Example 1: Indexes for WHERE Clauses");
-
-        // Build and compile a query for index analysis
-        var compiledResults = CompileForAllDialects(dialect =>
-            SqlBuilder.Select("*")
+        new ScenarioDefinition(
+            "Index Advisor - Multi-column WHERE filtering",
+            "Demonstrates index recommendations for multi-column WHERE clauses",
+            dialect => SqlBuilder.Select("*")
                 .From("Users")
                 .Where("Email", "user@example.com")
                 .Where("Username", "john")
                 .Build()
                 .Compile(dialect)
-        );
+        ),
 
-        AddScenario("Index Advisor - Multi-column WHERE filtering", compiledResults);
+        new ScenarioDefinition(
+            "Index Advisor - JOIN and WHERE combination",
+            "Demonstrates index recommendations for JOIN and WHERE patterns",
+            dialect =>
+            {
+                var joinCondition = new ComparisonNode(
+                    new Column("o.UserId"),
+                    ComparisonOperator.Equal,
+                    new Column("u.UserId")
+                );
+                return SqlBuilder.Select("OrderId", "UserId", "Total")
+                    .From("Orders o")
+                    .InnerJoin("Users u", joinCondition)
+                    .Build()
+                    .Compile(dialect);
+            }
+        ),
 
-        const string sql = "SELECT * FROM Users WHERE Email = 'user@example.com' AND Username = 'john'";
-        var metrics = new PerformanceMetrics(
-            TotalCost: 100.5m,
-            TableScanCount: 1,
-            IndexSeekCount: 0,
-            IndexScanCount: 0,
-            NestedLoopJoinCount: 0,
-            HashJoinCount: 0,
-            SortOperationCount: 0,
-            FilterOperationCount: 1,
-            TotalRowsExamined: 10000,
-            TotalRowsProduced: 1,
-            Selectivity: 0.0001,
-            HasTableScan: true,
-            HasSort: false,
-            HasIneffectiveNestedLoop: false,
-            ExecutionTimeMs: 45.2,
-            MissingIndexRecommendations: new[] { "Index on Email", "Composite index on (Email, Username)" },
-            OptimizationTips: new[] { "Add index on frequently filtered columns", "Consider composite index for multi-column predicates" }
-        );
-
-        var whereIndexText = @$"
-  Index Recommendations:
-    1. Single-column index on Email (HIGH PRIORITY)
-       - Estimated selectivity: 99.99%
-       - Expected performance improvement: 100-1000x
-    2. Composite index on (Email, Username) (MEDIUM PRIORITY)
-       - Covers both filtering columns
-       - Would enable index-only scans";
-
-        Console.WriteLine(whereIndexText);
-    }
-
-    private void JoinColumnIndexes()
-    {
-        OutputFormatter.PrintSubHeader("Example 2: Indexes for JOIN Columns");
-
-        // Build and compile a query for JOIN index analysis
-        var compiledResults = CompileForAllDialects(dialect =>
-        {
-            var joinCondition = new ComparisonNode(
-                new Column("o.UserId"),
-                ComparisonOperator.Equal,
-                new Column("u.UserId")
-            );
-            
-            return SqlBuilder.Select("OrderId", "UserId", "Total")
-                .From("Orders o")
-                .InnerJoin("Users u", joinCondition)
-                .Build()
-                .Compile(dialect);
-        });
-
-
-        AddScenario("Index Advisor - JOIN and WHERE combination", compiledResults);
-
-        const string? joinIndexText = @$"
-  Index Recommendations:
-    1. Foreign key index on Orders.UserId (CRITICAL)
-       - Used for JOIN operation
-       - Prevents nested loop joins
-    2. Index on Orders(UserId, Total) (HIGH PRIORITY)
-       - Composite index covers both JOIN and WHERE
-       - Enables index-only scans";
-
-        Console.WriteLine(joinIndexText);
-    }
-
-    private void CompositeIndexes()
-    {
-        OutputFormatter.PrintSubHeader("Example 3: Covering Indexes");
-
-        // Build and compile a query for composite index analysis
-        var compiledResults = CompileForAllDialects(dialect =>
-            SqlBuilder.Select("OrderId", "UserId", "Total")
+        new ScenarioDefinition(
+            "Index Advisor - Covering index with ORDER BY",
+            "Demonstrates covering index recommendations for SELECT with ORDER BY",
+            dialect => SqlBuilder.Select("OrderId", "UserId", "Total")
                 .From("Orders")
                 .Where("UserId", 1)
                 .OrderBy("OrderDate DESC")
                 .Build()
                 .Compile(dialect)
-        );
+        ),
+    };
 
-        AddScenario("Index Advisor - Covering index with ORDER BY", compiledResults);
+    public override void Run()
+    {
+        foreach (var scenario in Scenarios)
+        {
+            var results = CompileForAllDialects(scenario.Builder);
+            AddScenario(scenario.Name, results);
+            Console.WriteLine("\n");
+        }
 
-        const string? compositeIndexText = @$"
-  Index Recommendation:
-    Composite index on Orders(UserId, OrderDate, Total, OrderId)
-       - Filters by UserId
-       - Orders by OrderDate
-       - Includes all selected columns (covering index)
-       - Result: Complete index-only scan, zero table lookups";
-
-        Console.WriteLine(compositeIndexText);
+        // Educational recommendations output
+        Console.WriteLine("\n  Index Recommendations Summary:");
+        Console.WriteLine("    1. WHERE clauses: Single and composite indexes on filtered columns");
+        Console.WriteLine("    2. JOINs: Foreign key indexes on join columns");
+        Console.WriteLine("    3. Covering indexes: Include SELECT columns for index-only scans");
     }
 }

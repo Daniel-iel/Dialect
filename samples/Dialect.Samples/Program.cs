@@ -2,7 +2,7 @@ using Dialect.PostgreSql.DI;
 using Dialect.Samples._01_Basic;
 using Dialect.Samples._02_Intermediate;
 using Dialect.Samples._03_Advanced;
-using Dialect.Samples.Services;
+using Dialect.Samples.Executors;
 using Dialect.Samples.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 

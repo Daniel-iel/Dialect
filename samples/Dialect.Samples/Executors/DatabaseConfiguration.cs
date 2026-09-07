@@ -1,4 +1,4 @@
-namespace Dialect.Samples.Services;
+namespace Dialect.Samples.Executors;
 
 /// <summary>
 /// Configuration for database connections used during batch execution.
@@ -16,7 +16,7 @@ public class DatabaseConfiguration
     {
         return new DatabaseConfiguration
         {
-            SqlServerConnectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONN") 
+            SqlServerConnectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONN")
                 ?? "Server=localhost;Database=DialectSamples;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;",
             PostgreSqlConnectionString = Environment.GetEnvironmentVariable("POSTGRESQL_CONN")
                 ?? "Host=localhost;Database=dialect_samples;Username=postgres;Password=postgres;Port=5432;",

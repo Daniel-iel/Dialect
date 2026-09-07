@@ -1,4 +1,4 @@
-namespace Dialect.Samples.Services;
+namespace Dialect.Samples.Executors;
 
 /// <summary>
 /// Represents the result of a query execution.
