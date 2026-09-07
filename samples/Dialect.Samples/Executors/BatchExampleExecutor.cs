@@ -1,6 +1,8 @@
 using Dialect.Samples._01_Basic;
 using Dialect.Samples._02_Intermediate;
 using Dialect.Samples._03_Advanced;
+using Dialect.Samples._04_ErrorHandling;
+using Dialect.Samples._06_AdvancedQueries;
 using Dialect.Samples.Services;
 using Dialect.Samples.Utilities;
 
@@ -69,6 +71,16 @@ public class BatchExampleExecutor
         _allExamples.Add(new OptimizationExamples());
         _allExamples.Add(new IndexAdvisorExamples());
         _allExamples.Add(new SchemaValidationExamples());
+        _allExamples.Add(new QueryAnalysisExamples());
+        _allExamples.Add(new MigrationsExamples());
+        _allExamples.Add(new PerformanceOptimizationExamples());
+
+        // Error Handling & Debugging Examples (New in Phase 3)
+        _allExamples.Add(new ErrorHandlingExamples());
+        _allExamples.Add(new DebuggingExamples());
+
+        // Advanced Queries Examples (New in Phase 3)
+        _allExamples.Add(new BatchOperationsExamples());
     }
 
     /// <summary>

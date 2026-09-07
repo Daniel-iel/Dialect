@@ -29,6 +29,7 @@
 - [What is Dialect?](#what-is-dialect)
 - [Key Features](#key-features)
 - [Supported Databases](#supported-databases)
+- [📖 Documentation Hub](#-documentation-hub)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
@@ -166,6 +167,43 @@ var translated = Translator
 
 ---
 
+## 📖 Documentation Hub
+
+Comprehensive guides for all aspects of Dialect:
+
+### 🚀 Getting Started (New Users)
+
+| Guide | Purpose |
+|-------|---------|
+| [**Installation Guide**](docs/INSTALLATION.md) | Install Dialect packages, verify setup |
+| [**Setup & Configuration**](docs/SETUP.md) | Register in DI, configure connection strings |
+| [**Database Setup**](docs/DATABASE-SETUP.md) | SQL Server, PostgreSQL, MySQL specific configuration |
+
+### 💻 Development
+
+| Guide | Purpose |
+|-------|---------|
+| [**Docker Setup**](docs/DOCKER-SETUP.md) | Run databases locally with Docker Compose |
+| [**Contributing Guide**](docs/CONTRIBUTING.md) | Build from source, run tests, submit PRs |
+
+### 📋 Support & Reference
+
+| Guide | Purpose |
+|-------|---------|
+| [**Troubleshooting**](docs/TROUBLESHOOTING.md) | Common issues, errors, FAQs |
+| [**Documentation Index**](docs/README.md) | Overview of all documentation |
+
+### Quick Links
+
+- ✅ **[Installation](docs/INSTALLATION.md)** — 5 min read
+- ✅ **[Setup](docs/SETUP.md)** — 10 min read
+- ✅ **[Database Setup](docs/DATABASE-SETUP.md)** — 15 min read (detailed)
+- ✅ **[Docker Setup](docs/DOCKER-SETUP.md)** — Optional, 10 min read
+- ✅ **[Troubleshooting](docs/TROUBLESHOOTING.md)** — Reference
+- ✅ **[Contributing](docs/CONTRIBUTING.md)** — If contributing
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -176,7 +214,7 @@ var translated = Translator
 
 ```bash
 # Core framework
-dotnet add package Dialect.Core
+dotnet add package Dialect
 
 # Add dialect packages as needed
 dotnet add package Dialect.SqlServer
@@ -187,7 +225,7 @@ dotnet add package Dialect.MySql
 ### Or via Package Manager Console
 
 ```powershell
-Install-Package Dialect.Core
+Install-Package Dialect
 Install-Package Dialect.SqlServer
 Install-Package Dialect.PostgreSql
 Install-Package Dialect.MySql

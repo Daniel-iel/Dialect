@@ -465,13 +465,13 @@ será convertido de uma vez:
 
 ```bash
 # projeto inteiro
-myframework-convert --scope project --path ./MyApp.csproj --source sqlserver
+dialect --scope project --path ./MyApp.csproj --source sqlserver
 
 # um arquivo só
-myframework-convert --scope file --path ./Repositories/UserRepository.cs --source sqlserver
+dialect --scope file --path ./Repositories/UserRepository.cs --source sqlserver
 
 # um método específico
-myframework-convert --scope method --path ./Repositories/UserRepository.cs \
+dialect --scope method --path ./Repositories/UserRepository.cs \
     --type UserRepository --method GetActiveUsers --source sqlserver
 ```
 
