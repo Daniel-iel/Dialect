@@ -50,7 +50,7 @@ public class WindowFunctionExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("Window Function - ROW_NUMBER", results);
     }
 
     private void RankAndDenseRank()
@@ -77,7 +77,7 @@ public class WindowFunctionExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("Window Function - RANK and DENSE_RANK", results);
     }
 
     private void LagAndLead()
@@ -105,6 +105,6 @@ public class WindowFunctionExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("Window Function - LAG and LEAD", results);
     }
 }

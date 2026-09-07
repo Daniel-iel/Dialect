@@ -38,7 +38,7 @@ public class InsertExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("Simple INSERT", results);
     }
 
     private void InsertMultipleRows()
@@ -55,7 +55,7 @@ public class InsertExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("INSERT Multiple Rows", results);
     }
 
     private void InsertWithParameters()
@@ -71,6 +71,6 @@ public class InsertExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("INSERT with Parameters", results);
     }
 }

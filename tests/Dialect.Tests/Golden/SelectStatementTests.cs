@@ -475,4 +475,119 @@ public class SelectStatementTests
         mysql.Sql.Should().Contain("RANK() OVER (PARTITION BY `Category`");
         mysql.Sql.Should().Contain("SUM(`Sales`) OVER (PARTITION BY `Category`)");
     }
+
+    [Fact]
+    public void SELECT_with_SKIP_only_generates_correct_SQL()
+    {
+        // Arrange - Skip without Take should work independently
+        var query = SqlBuilder
+            .Select("Id", "Name")
+            .From("Users")
+            .OrderBy("Id")
+            .Skip(5)
+            .Build();
+
+        // Act
+        var sqlServer = query.Compile(_sqlServerDialect);
+        var postgreSql = query.Compile(_postgreSqlDialect);
+        var mysql = query.Compile(_mySqlDialect);
+
+        // Assert
+        // SQL Server requires ORDER BY with OFFSET, no FETCH NEXT means no limit
+        sqlServer.Sql.Should().Contain("OFFSET 5 ROWS");
+        sqlServer.Sql.Should().NotContain("FETCH NEXT");
+
+        // PostgreSQL supports OFFSET without LIMIT
+        postgreSql.Sql.Should().Be("SELECT \"Id\", \"Name\" FROM \"Users\" ORDER BY \"Id\" ASC OFFSET 5");
+
+        // MySQL needs a very large LIMIT when using OFFSET alone
+        mysql.Sql.Should().Contain("OFFSET 5");
+        mysql.Sql.Should().Contain("LIMIT 18446744073709551615");
+    }
+
+    [Fact]
+    public void SELECT_with_TAKE_then_SKIP_order_reversal_works()
+    {
+        // Arrange - New order: Take() then Skip() (reversed from traditional order)
+        var query = SqlBuilder
+            .Select("Id", "Name")
+            .From("Users")
+            .OrderBy("Id")
+            .Take(10)
+            .Skip(5)
+            .Build();
+
+        // Act
+        var sqlServer = query.Compile(_sqlServerDialect);
+        var postgreSql = query.Compile(_postgreSqlDialect);
+        var mysql = query.Compile(_mySqlDialect);
+
+        // Assert - Should work same as Skip then Take
+        sqlServer.Sql.Should().Contain("OFFSET 5 ROWS");
+        sqlServer.Sql.Should().Contain("FETCH NEXT 10 ROWS ONLY");
+
+        postgreSql.Sql.Should().Contain("LIMIT 10");
+        postgreSql.Sql.Should().Contain("OFFSET 5");
+
+        mysql.Sql.Should().Contain("LIMIT 10");
+        mysql.Sql.Should().Contain("OFFSET 5");
+    }
+
+    [Fact]
+    public void SELECT_with_SKIP_then_TAKE_maintains_backward_compatibility()
+    {
+        // Arrange - Original order: Skip() then Take()
+        var query = SqlBuilder
+            .Select("Id", "Name")
+            .From("Users")
+            .OrderBy("Id")
+            .Skip(5)
+            .Take(10)
+            .Build();
+
+        // Act
+        var sqlServer = query.Compile(_sqlServerDialect);
+        var postgreSql = query.Compile(_postgreSqlDialect);
+        var mysql = query.Compile(_mySqlDialect);
+
+        // Assert - Should produce same SQL as Take then Skip
+        sqlServer.Sql.Should().Contain("OFFSET 5 ROWS");
+        sqlServer.Sql.Should().Contain("FETCH NEXT 10 ROWS ONLY");
+
+        postgreSql.Sql.Should().Contain("LIMIT 10");
+        postgreSql.Sql.Should().Contain("OFFSET 5");
+
+        mysql.Sql.Should().Contain("LIMIT 10");
+        mysql.Sql.Should().Contain("OFFSET 5");
+    }
+
+    [Fact]
+    public void SELECT_with_multiple_SKIP_TAKE_calls_last_writer_wins()
+    {
+        // Arrange - Multiple calls; last one wins
+        var query = SqlBuilder
+            .Select("Id", "Name")
+            .From("Users")
+            .OrderBy("Id")
+            .Skip(5)
+            .Skip(10)  // Overwrites previous Skip
+            .Take(20)
+            .Take(15)  // Overwrites previous Take
+            .Build();
+
+        // Act
+        var sqlServer = query.Compile(_sqlServerDialect);
+        var postgreSql = query.Compile(_postgreSqlDialect);
+        var mysql = query.Compile(_mySqlDialect);
+
+        // Assert - Should use final values: Skip(10) and Take(15)
+        sqlServer.Sql.Should().Contain("OFFSET 10 ROWS");
+        sqlServer.Sql.Should().Contain("FETCH NEXT 15 ROWS ONLY");
+
+        postgreSql.Sql.Should().Contain("LIMIT 15");
+        postgreSql.Sql.Should().Contain("OFFSET 10");
+
+        mysql.Sql.Should().Contain("LIMIT 15");
+        mysql.Sql.Should().Contain("OFFSET 10");
+    }
 }

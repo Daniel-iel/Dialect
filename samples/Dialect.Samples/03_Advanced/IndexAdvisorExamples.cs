@@ -1,9 +1,20 @@
 namespace Dialect.Samples._03_Advanced;
+using Dialect.Core.AST;
+using Dialect.Core.Compilation;
+using Dialect.Core.Dialects;
+using Dialect.Core.Fluent;
 using Dialect.Core.Performance;
 using Dialect.Samples.Utilities;
 
 /// <summary>
 /// Index advisor examples demonstrating index recommendations.
+/// 
+/// NOTE: This is an educational example showing how the framework can identify index opportunities
+/// for various query patterns (WHERE filtering, JOIN operations, and covering indexes).
+/// 
+/// The recommendations shown are illustrative and based on query structure analysis.
+/// In production, index recommendations would be based on actual execution plans and 
+/// workload analysis from real database instances.
 /// </summary>
 public class IndexAdvisorExamples : ExampleBase
 {
@@ -22,9 +33,21 @@ public class IndexAdvisorExamples : ExampleBase
         CompositeIndexes();
     }
 
-    private static void WhereColumnIndexes()
+    private void WhereColumnIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 1: Indexes for WHERE Clauses");
+
+        // Build and compile a query for index analysis
+        var compiledResults = CompileForAllDialects(dialect =>
+            SqlBuilder.Select("*")
+                .From("Users")
+                .Where("Email", "user@example.com")
+                .Where("Username", "john")
+                .Build()
+                .Compile(dialect)
+        );
+
+        AddScenario("Index Advisor - Multi-column WHERE filtering", compiledResults);
 
         const string sql = "SELECT * FROM Users WHERE Email = 'user@example.com' AND Username = 'john'";
         var metrics = new PerformanceMetrics(
@@ -48,9 +71,6 @@ public class IndexAdvisorExamples : ExampleBase
         );
 
         var whereIndexText = @$"
-  Query: {sql}
-  Performance Metrics: Rows Scanned={metrics.TotalRowsExamined}, Returned={metrics.TotalRowsProduced}, Cost={metrics.TotalCost}
-
   Index Recommendations:
     1. Single-column index on Email (HIGH PRIORITY)
        - Estimated selectivity: 99.99%
@@ -62,15 +82,30 @@ public class IndexAdvisorExamples : ExampleBase
         Console.WriteLine(whereIndexText);
     }
 
-    private static void JoinColumnIndexes()
+    private void JoinColumnIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 2: Indexes for JOIN Columns");
 
-        const string sql = "SELECT * FROM Orders o JOIN Users u ON o.UserId = u.UserId WHERE o.Total > 500";
+        // Build and compile a query for JOIN index analysis
+        var compiledResults = CompileForAllDialects(dialect =>
+        {
+            var joinCondition = new ComparisonNode(
+                new Column("o.UserId"),
+                ComparisonOperator.Equal,
+                new Column("u.UserId")
+            );
+            
+            return SqlBuilder.Select("OrderId", "UserId", "Total")
+                .From("Orders o")
+                .InnerJoin("Users u", joinCondition)
+                .Build()
+                .Compile(dialect);
+        });
+
+
+        AddScenario("Index Advisor - JOIN and WHERE combination", compiledResults);
 
         const string? joinIndexText = @$"
-  Query: {sql}
-
   Index Recommendations:
     1. Foreign key index on Orders.UserId (CRITICAL)
        - Used for JOIN operation
@@ -82,15 +117,23 @@ public class IndexAdvisorExamples : ExampleBase
         Console.WriteLine(joinIndexText);
     }
 
-    private static void CompositeIndexes()
+    private void CompositeIndexes()
     {
         OutputFormatter.PrintSubHeader("Example 3: Covering Indexes");
 
-        const string sql = "SELECT OrderId, UserId, Total FROM Orders WHERE UserId = 1 ORDER BY OrderDate";
+        // Build and compile a query for composite index analysis
+        var compiledResults = CompileForAllDialects(dialect =>
+            SqlBuilder.Select("OrderId", "UserId", "Total")
+                .From("Orders")
+                .Where("UserId", 1)
+                .OrderBy("OrderDate DESC")
+                .Build()
+                .Compile(dialect)
+        );
+
+        AddScenario("Index Advisor - Covering index with ORDER BY", compiledResults);
 
         const string? compositeIndexText = @$"
-  Query: {sql}
-
   Index Recommendation:
     Composite index on Orders(UserId, OrderDate, Total, OrderId)
        - Filters by UserId

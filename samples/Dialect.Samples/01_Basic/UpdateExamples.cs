@@ -39,7 +39,7 @@ public class UpdateExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("Simple UPDATE", results);
     }
 
     private void UpdateWithWhere()
@@ -55,7 +55,7 @@ public class UpdateExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("UPDATE with WHERE", results);
     }
 
     private void UpdateMultipleColumns()
@@ -72,6 +72,6 @@ public class UpdateExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("UPDATE Multiple Columns", results);
     }
 }

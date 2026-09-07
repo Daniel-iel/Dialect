@@ -1,8 +1,8 @@
-using Dialect.Core.AST;
-using Dialect.Core.DI;
+using Dialect.PostgreSql.DI;
 using Dialect.Samples._01_Basic;
 using Dialect.Samples._02_Intermediate;
 using Dialect.Samples._03_Advanced;
+using Dialect.Samples.Services;
 using Dialect.Samples.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,14 +26,36 @@ class Program
         }
     }
 
+    static void SafeReadKey()
+    {
+        try
+        {
+            if (!Console.IsInputRedirected)
+            {
+                Console.ReadKey();
+            }
+        }
+        catch
+        {
+            // ReadKey() may fail in some terminal environments
+        }
+    }
+
     static void Main(string[] args)
     {
         // Initialize SQL Framework with default dialect (PostgreSQL)
         // This registers the default dialect in SqlDialectRegistry
         // which will be used by all .Compile() calls throughout the application
         var services = new ServiceCollection();
-        services.AddSqlFramework(SqlProvider.PostgreSql);
+        services.AddPostgreSqlFramework();
         var serviceProvider = services.BuildServiceProvider();
+
+        // If input is redirected or an explicit batch command is provided, run batch mode
+        if (Console.IsInputRedirected || args.Contains("--batch") || args.Contains("98"))
+        {
+            MainAsync(args).GetAwaiter().GetResult();
+            return;
+        }
 
         DisplayWelcome();
 
@@ -45,7 +67,7 @@ class Program
             if (ExecuteExample(choice))
             {
                 Console.WriteLine("\nPress any key to continue...");
-                Console.ReadKey();
+                SafeReadKey();
                 SafeClear();
             }
             else if (choice.Equals("exit", StringComparison.OrdinalIgnoreCase) || choice == "0")
@@ -55,7 +77,7 @@ class Program
             else
             {
                 OutputFormatter.PrintError("Invalid choice. Please try again.");
-                Console.ReadKey();
+                SafeReadKey();
                 SafeClear();
             }
         }
@@ -63,10 +85,29 @@ class Program
         Console.WriteLine("\nThank you for using Dialect Samples! 👋");
     }
 
+    static async Task MainAsync(string[] args)
+    {
+        Console.WriteLine("Starting Dialect Samples Batch Execution...");
+        var executor = new BatchExampleExecutor();
+
+        try
+        {
+            var resultPath = await executor.ExecuteAll();
+            Console.WriteLine($"\nBatch execution completed successfully!");
+            Console.WriteLine($"Results saved to: {resultPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\nError during batch execution: {ex.Message}");
+            if (ex.StackTrace != null)
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+
     static void DisplayWelcome()
     {
         SafeClear();
-        OutputFormatter.PrintSectionHeader("🚀 DIALECT FRAMEWORK - COMPREHENSIVE SAMPLES 🚀");
+        OutputFormatter.PrintSectionHeader("DIALECT FRAMEWORK - COMPREHENSIVE SAMPLES 🚀");
 
         const string? welcomeText = @"
 Welcome to the Dialect FluentBuilder SQL Framework samples!
@@ -82,7 +123,7 @@ Supported Databases:
 Press any key to continue...";
 
         Console.WriteLine(welcomeText);
-        Console.ReadKey();
+        SafeReadKey();
         SafeClear();
     }
 
@@ -91,30 +132,31 @@ Press any key to continue...";
         OutputFormatter.PrintSectionHeader("SELECT AN EXAMPLE CATEGORY");
 
         const string? menuText = @"
-📚 BASIC EXAMPLES (DML Fundamentals)
+BASIC EXAMPLES (DML Fundamentals)
   1. SELECT - Basic Queries
   2. INSERT - Data Insertion
   3. UPDATE - Data Modification
   4. DELETE - Data Removal
   5. UPSERT - Insert or Update (Dialect Comparison)
 
-🔄 INTERMEDIATE EXAMPLES (Query Composition)
+INTERMEDIATE EXAMPLES (Query Composition)
   6. JOINs - Inner, Left, Right, Full, Cross
   7. CTEs - Common Table Expressions
   8. Window Functions - ROW_NUMBER, RANK, LAG, LEAD
   9. Grouping & Aggregation - GROUP BY, HAVING
 
-⚙️  ADVANCED EXAMPLES (Performance & Analysis)
+ADVANCED EXAMPLES (Performance & Analysis)
   10. Query Optimization - Analysis & Parsing
   11. Index Advisor - Performance Tuning
   12. Schema Validation - Data Integrity
 
-💡 UTILITIES
+UTILITIES
+  98. Batch Execution - All Examples
   99. Docker Setup Guide
   0. Exit";
 
         Console.WriteLine(menuText);
-        Console.Write("\nEnter choice (1-12, 99, or 0): ");
+        Console.Write("\nEnter choice (1-12, 98, 99, or 0): ");
     }
 
     static bool ExecuteExample(string choice)
@@ -142,6 +184,7 @@ Press any key to continue...";
                 "12" => RunExample(new SchemaValidationExamples()),
 
                 // Utilities
+                "98" => ExecuteBatchMode(),
                 "99" => DisplayDockerSetupGuide(),
 
                 _ => false
@@ -177,13 +220,24 @@ Press any key to continue...";
         }
     }
 
+    static bool ExecuteBatchMode()
+    {
+        Console.WriteLine("\nExecuting all examples in batch mode...\n");
+        MainAsync(new string[] { }).GetAwaiter().GetResult();
+
+        Console.WriteLine("\nPress any key to continue...");
+        SafeReadKey();
+        SafeClear();
+        return true;
+    }
+
     static bool DisplayDockerSetupGuide()
     {
         Console.Clear();
-        OutputFormatter.PrintSectionHeader("🐳 DOCKER SETUP GUIDE");
+        OutputFormatter.PrintSectionHeader("DOCKER SETUP GUIDE");
 
         const string? quickStartText = @"
-🚀 QUICK START
+QUICK START
 1. Install Docker Desktop (https://www.docker.com/products/docker-desktop)
 2. Navigate to project root directory
 3. Run the following command:
@@ -191,7 +245,7 @@ Press any key to continue...";
    docker-compose up -d";
 
         const string? verifyContainersText = @"
-📊 VERIFY CONTAINERS ARE RUNNING
+VERIFY CONTAINERS ARE RUNNING
 Run: docker-compose ps
 
 You should see 3 containers with STATUS 'Up':
@@ -200,25 +254,25 @@ You should see 3 containers with STATUS 'Up':
   • dialect-mysql       (Port 3306)";
 
         const string? healthChecksText = @"
-✅ HEALTH CHECKS
+HEALTH CHECKS
 Containers include automatic health checks. Run:
   docker-compose ps  (check STATUS column)";
 
         const string? connectionStringsText = @"
-🔧 CONNECTION STRINGS
+CONNECTION STRINGS
 SQL Server:   Server=localhost,1433; User=sa; Password=P@ssw0rd!
 PostgreSQL:   Host=localhost:5432; User=postgres; Password=postgres
 MySQL:        Host=localhost:3306; User=root; Password=root";
 
         const string? stopResetText = @"
-🛑 STOP CONTAINERS
+STOP CONTAINERS
   docker-compose down
 
-🗑️  REMOVE DATA & RESET
+REMOVE DATA & RESET
   docker-compose down -v";
 
         const string? databaseSchemaText = @"
-📝 DATABASE SCHEMA
+DATABASE SCHEMA
 All databases contain identical schemas:
   • Users (UserId, Username, Email, CreatedAt)
   • Products (ProductId, Name, Price, StockQuantity)
@@ -226,13 +280,13 @@ All databases contain identical schemas:
   • OrderItems (OrderItemId, OrderId, ProductId, Quantity, UnitPrice)";
 
         const string? sampleDataText = @"
-💾 SAMPLE DATA
+SAMPLE DATA
   • 4 Users (john_doe, jane_smith, bob_wilson, alice_johnson)
   • 5 Products (Laptop, Mouse, Keyboard, Monitor, Headphones)
   • 5 Orders with multiple order items";
 
         const string? troubleshootingText = @"
-📖 TROUBLESHOOTING
+TROUBLESHOOTING
 Q: Container won't start?
 A: Check Docker is running, ports not in use, disk space available
 
@@ -251,7 +305,7 @@ Press any key to return to menu...";
             Console.WriteLine(text);
         }
 
-        Console.ReadKey();
+        SafeReadKey();
         Console.Clear();
 
         return true;

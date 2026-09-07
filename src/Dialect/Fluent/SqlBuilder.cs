@@ -5,6 +5,18 @@ using Dialect.Core.AST;
 /// <summary>
 /// Entry point for building SQL queries using a fluent API.
 /// Thread-confined: never share a builder across threads before calling Build().
+/// 
+/// Pagination (Skip/Take) Methods:
+/// - Skip() and Take() are independent and can be called in any order
+/// - Both methods can also be called alone (Skip without Take, or Take without Skip)
+/// - When building, the final RowLimit object combines Count and Offset values
+/// - Order of calls: Skip(5).Take(10) is equivalent to Take(10).Skip(5)
+/// 
+/// Examples:
+///   .Skip(5).Take(10)       → Renders as OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY (SQL Server)
+///   .Take(10).Skip(5)       → Same SQL as above
+///   .Skip(5)                → Renders as OFFSET 5 ROWS (SQL Server) or OFFSET 5 (PostgreSQL/MySQL)
+///   .Take(10)               → Renders as TOP 10 (SQL Server) or LIMIT 10 (PostgreSQL/MySQL)
 /// </summary>
 public sealed class SqlBuilder
 {

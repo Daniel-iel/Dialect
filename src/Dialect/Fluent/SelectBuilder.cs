@@ -54,11 +54,20 @@ public sealed class SelectBuilder
 
     /// <summary>
     /// Sets the FROM clause.
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias", "schema.tableName alias"
     /// </summary>
     public SelectBuilder From(string tableName, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+
+        // If no explicit alias is provided, try to parse it from tableName
+        if (string.IsNullOrEmpty(alias))
+        {
+            var (parsedTableName, parsedAlias) = ParseTableAlias(tableName);
+            tableName = parsedTableName;
+            alias = parsedAlias;
+        }
 
         _from = new TableReference(tableName, alias, schema);
         return this;
@@ -104,11 +113,20 @@ public sealed class SelectBuilder
 
     /// <summary>
     /// Adds an INNER JOIN clause.
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
     /// </summary>
     public SelectBuilder InnerJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+
+        // If no explicit alias is provided, try to parse it from tableName
+        if (string.IsNullOrEmpty(alias))
+        {
+            var (parsedTableName, parsedAlias) = ParseTableAlias(tableName);
+            tableName = parsedTableName;
+            alias = parsedAlias;
+        }
 
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Inner, onCondition));
@@ -117,11 +135,20 @@ public sealed class SelectBuilder
 
     /// <summary>
     /// Adds a LEFT JOIN clause.
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
     /// </summary>
     public SelectBuilder LeftJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+
+        // If no explicit alias is provided, try to parse it from tableName
+        if (string.IsNullOrEmpty(alias))
+        {
+            var (parsedTableName, parsedAlias) = ParseTableAlias(tableName);
+            tableName = parsedTableName;
+            alias = parsedAlias;
+        }
 
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Left, onCondition));
@@ -130,11 +157,20 @@ public sealed class SelectBuilder
 
     /// <summary>
     /// Adds a RIGHT JOIN clause.
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
     /// </summary>
     public SelectBuilder RightJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+
+        // If no explicit alias is provided, try to parse it from tableName
+        if (string.IsNullOrEmpty(alias))
+        {
+            var (parsedTableName, parsedAlias) = ParseTableAlias(tableName);
+            tableName = parsedTableName;
+            alias = parsedAlias;
+        }
 
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Right, onCondition));
@@ -144,11 +180,20 @@ public sealed class SelectBuilder
     /// <summary>
     /// Adds a FULL OUTER JOIN clause.
     /// Note: Not supported natively in MySQL; will throw at Compile() time if using MySQL dialect.
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
     /// </summary>
     public SelectBuilder FullJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+
+        // If no explicit alias is provided, try to parse it from tableName
+        if (string.IsNullOrEmpty(alias))
+        {
+            var (parsedTableName, parsedAlias) = ParseTableAlias(tableName);
+            tableName = parsedTableName;
+            alias = parsedAlias;
+        }
 
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Full, onCondition));
@@ -157,11 +202,20 @@ public sealed class SelectBuilder
 
     /// <summary>
     /// Adds a CROSS JOIN clause (no ON condition).
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
     /// </summary>
     public SelectBuilder CrossJoin(string tableName, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+
+        // If no explicit alias is provided, try to parse it from tableName
+        if (string.IsNullOrEmpty(alias))
+        {
+            var (parsedTableName, parsedAlias) = ParseTableAlias(tableName);
+            tableName = parsedTableName;
+            alias = parsedAlias;
+        }
 
         var table = new TableReference(tableName, alias, schema);
         _joins.Add(new JoinClause(table, JoinType.Cross, null));
@@ -312,14 +366,51 @@ public sealed class SelectBuilder
     }
 
     /// <summary>
-    /// Adds ORDER BY clause.
+    /// Adds a raw SQL expression or aggregate function that should not be quoted.
+    /// Use this for: COUNT(*), SUM(amount) AS total, CAST(x AS VARCHAR), etc.
     /// </summary>
-    public SelectBuilder OrderBy(string columnName, SortDirection direction = SortDirection.Ascending)
+    public SelectBuilder SelectAggregate(string rawExpression)
+    {
+        if (string.IsNullOrWhiteSpace(rawExpression))
+            throw new ArgumentException("Raw expression cannot be empty", nameof(rawExpression));
+
+        _columns.Add(new Column(rawExpression, null, null, true));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds multiple raw SQL expressions or aggregate functions that should not be quoted.
+    /// </summary>
+    public SelectBuilder SelectAggregate(params string[] rawExpressions)
+    {
+        if (rawExpressions == null || rawExpressions.Length == 0)
+            throw new ArgumentException("At least one raw expression must be specified", nameof(rawExpressions));
+
+        foreach (var expr in rawExpressions)
+        {
+            if (string.IsNullOrWhiteSpace(expr))
+                throw new ArgumentException("Raw expression cannot be empty", nameof(rawExpressions));
+            _columns.Add(new Column(expr, null, null, true));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Adds ORDER BY clause.
+    /// Supports formats: "columnName", "columnName ASC", "columnName DESC"
+    /// </summary>
+    public SelectBuilder OrderBy(string columnName, SortDirection? direction = null)
     {
         if (string.IsNullOrWhiteSpace(columnName))
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
 
-        _orderByClauses.Add(new OrderByClause(new Column(columnName), direction));
+        // Parse column name and direction from string (e.g., "Price DESC" -> column="Price", direction=Descending)
+        var (parsedColumn, parsedDirection) = ParseOrderByString(columnName);
+        
+        // Use explicit direction parameter if provided, otherwise use parsed direction
+        var finalDirection = direction ?? parsedDirection ?? SortDirection.Ascending;
+
+        _orderByClauses.Add(new OrderByClause(new Column(parsedColumn), finalDirection));
         return this;
     }
 
@@ -340,29 +431,37 @@ public sealed class SelectBuilder
     }
 
     /// <summary>
-    /// Sets pagination using LIMIT/OFFSET or TOP.
+    /// Sets the row count for pagination (LIMIT/OFFSET or TOP).
+    /// Can be called independently or in combination with Skip().
     /// </summary>
     public SelectBuilder Take(int count, int? offset = null)
     {
         if (count <= 0)
             throw new ArgumentException("Count must be greater than 0", nameof(count));
 
-        _rowLimit = new RowLimit(count, offset);
+        // Preserve existing offset if present, otherwise use the provided offset
+        var currentOffset = _rowLimit?.Offset;
+        if (offset.HasValue)
+            currentOffset = offset;
+
+        _rowLimit = new RowLimit(count, currentOffset);
         return this;
     }
 
     /// <summary>
     /// Sets the OFFSET for pagination.
+    /// Can be called independently (without Take()) or in combination with Take().
+    /// When called without Take(), renders only OFFSET without LIMIT.
     /// </summary>
     public SelectBuilder Skip(int offset)
     {
         if (offset < 0)
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
 
-        if (_rowLimit == null)
-            throw new InvalidOperationException("Skip() requires Take() to be called first.");
-
-        _rowLimit = new RowLimit(_rowLimit.Count, offset);
+        // If _rowLimit doesn't exist, create one with null Count (offset-only)
+        // If _rowLimit exists, preserve Count and update Offset
+        var currentCount = _rowLimit?.Count;
+        _rowLimit = new RowLimit(currentCount, offset);
         return this;
     }
 
@@ -382,6 +481,73 @@ public sealed class SelectBuilder
     {
         _dialectExtensions[typeof(T)] = extension;
         return this;
+    }
+
+    /// <summary>
+    /// Parses a table name string to extract table name and alias.
+    /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
+    /// </summary>
+    private (string tableName, string? alias) ParseTableAlias(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return (input, null);
+
+        var trimmed = input.Trim();
+        var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 1)
+        {
+            // Just table name, no alias
+            return (parts[0], null);
+        }
+        else if (parts.Length == 2)
+        {
+            // "tableName alias" format
+            return (parts[0], parts[1]);
+        }
+        else if (parts.Length == 3 && parts[1].Equals("AS", StringComparison.OrdinalIgnoreCase))
+        {
+            // "tableName AS alias" format
+            return (parts[0], parts[2]);
+        }
+
+        // Fallback: treat first part as table name, rest as alias (for schema.table cases)
+        return (parts[0], string.Join(" ", parts.Skip(1)));
+    }
+
+    /// <summary>
+    /// Parses an ORDER BY string to extract column name and sort direction.
+    /// Supports formats: "columnName", "columnName ASC", "columnName DESC"
+    /// </summary>
+    private (string columnName, SortDirection? direction) ParseOrderByString(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return (input, null);
+
+        var trimmed = input.Trim();
+        var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 1)
+        {
+            // No direction specified
+            return (parts[0], null);
+        }
+
+        // Check if last part is ASC or DESC
+        var lastPart = parts[parts.Length - 1].ToUpperInvariant();
+        if (lastPart == "ASC")
+        {
+            var columnName = string.Join(" ", parts.Take(parts.Length - 1));
+            return (columnName, SortDirection.Ascending);
+        }
+        else if (lastPart == "DESC")
+        {
+            var columnName = string.Join(" ", parts.Take(parts.Length - 1));
+            return (columnName, SortDirection.Descending);
+        }
+
+        // No direction keyword found, treat entire string as column name
+        return (trimmed, null);
     }
 
     /// <summary>

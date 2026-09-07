@@ -49,7 +49,7 @@ public class CteExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("Simple CTE", results);
     }
 
     private void MultipleCtes()
@@ -83,6 +83,6 @@ public class CteExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("Multiple CTEs", results);
     }
 }

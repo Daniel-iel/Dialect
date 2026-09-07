@@ -46,7 +46,7 @@ public class JoinExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("INNER JOIN", results);
     }
 
     private void LeftJoin()
@@ -70,7 +70,7 @@ public class JoinExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("LEFT JOIN", results);
     }
 
     private void MultipleJoins()
@@ -106,6 +106,6 @@ public class JoinExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("Multiple JOINs", results);
     }
 }

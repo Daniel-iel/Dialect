@@ -1,13 +1,22 @@
 namespace Dialect.Samples._03_Advanced;
 
 using Dialect.Core.AST;
+using Dialect.Core.Compilation;
 using Dialect.Core.Dialects;
+using Dialect.Core.Fluent;
 using Dialect.Core.Query;
 using Dialect.SqlServer.Query;
 using Dialect.Samples.Utilities;
 
 /// <summary>
 /// Query optimization and analysis examples.
+/// 
+/// NOTE: This is an educational example demonstrating the framework's query analysis capabilities.
+/// The optimization analysis (query parsing, predicate analysis, join analysis) demonstrates 
+/// how the Dialect framework can parse and analyze SQL queries for optimization opportunities.
+/// 
+/// In a real-world scenario, these would integrate with actual SQL execution plans and
+/// performance metrics from live database instances.
 /// </summary>
 public class OptimizationExamples : ExampleBase
 {
@@ -26,9 +35,29 @@ public class OptimizationExamples : ExampleBase
         JoinAnalysis();
     }
 
-    private static void QueryParsing()
+    private void QueryParsing()
     {
         OutputFormatter.PrintSubHeader("Example 1: Query Parsing and Analysis");
+
+        // Build and compile a query for analysis
+        var compiledResults = CompileForAllDialects(dialect =>
+        {
+            var joinCondition = new ComparisonNode(
+                new Column("o.UserId"),
+                ComparisonOperator.Equal,
+                new Column("u.UserId")
+            );
+            
+            return SqlBuilder.Select("OrderId", "Username", "Total")
+                .From("Orders o")
+                .InnerJoin("Users u", joinCondition)
+                .OrderBy("Total DESC")
+                .Build()
+                .Compile(dialect);
+        });
+
+
+        AddScenario("Query Parsing - JOIN with WHERE and ORDER BY", compiledResults);
 
         const string sql = "SELECT o.OrderId, u.Username, o.Total FROM Orders o JOIN Users u ON o.UserId = u.UserId WHERE o.Total > 500 ORDER BY o.Total DESC";
 
@@ -36,8 +65,6 @@ public class OptimizationExamples : ExampleBase
         var analysis = parser.Parse(sql);
 
         var queryAnalysisText = @$"
-  Query: {sql}
-
   Analysis Results:
     - Has WHERE clause: {analysis.WhereClauses.Length > 0}
     - Has JOIN: {analysis.JoinClauses.Length > 0}
@@ -48,9 +75,19 @@ public class OptimizationExamples : ExampleBase
         Console.WriteLine(queryAnalysisText);
     }
 
-    private static void PredicateAnalysis()
+    private void PredicateAnalysis()
     {
         OutputFormatter.PrintSubHeader("Example 2: Predicate Analysis");
+
+        // Build and compile a query with multiple predicates
+        var compiledResults = CompileForAllDialects(dialect =>
+            SqlBuilder.Select("OrderId", "UserId", "Total", "OrderDate")
+                .From("Orders")
+                .Build()
+                .Compile(dialect)
+        );
+
+        AddScenario("Predicate Analysis - Multi-condition WHERE", compiledResults);
 
         const string sql = "SELECT * FROM Orders WHERE UserId = 1 AND Total > 100 AND OrderDate >= '2024-01-01'";
 
@@ -62,8 +99,6 @@ public class OptimizationExamples : ExampleBase
         var predicate3 = analyzer.Analyze("OrderDate >= '2024-01-01'");
 
         var predicateAnalysisText = @$"
-  Query: {sql}
-
   Predicate Analysis:
     - Total predicates: 3
     - Predicate 1: {predicate1.Column} ({predicate1.OperatorType}) - Selectivity: {predicate1.Selectivity:P1}, Indexable: {predicate1.IsIndexable}
@@ -74,9 +109,40 @@ public class OptimizationExamples : ExampleBase
         Console.WriteLine(predicateAnalysisText);
     }
 
-    private static void JoinAnalysis()
+    private void JoinAnalysis()
     {
         OutputFormatter.PrintSubHeader("Example 3: JOIN Analysis");
+
+        // Build and compile a query with multiple JOINs
+        var compiledResults = CompileForAllDialects(dialect =>
+        {
+            var join1 = new ComparisonNode(
+                new Column("o.UserId"),
+                ComparisonOperator.Equal,
+                new Column("u.UserId")
+            );
+            var join2 = new ComparisonNode(
+                new Column("o.OrderId"),
+                ComparisonOperator.Equal,
+                new Column("oi.OrderId")
+            );
+            var join3 = new ComparisonNode(
+                new Column("oi.ProductId"),
+                ComparisonOperator.Equal,
+                new Column("p.ProductId")
+            );
+            
+            return SqlBuilder.Select("OrderId", "UserId", "Total")
+                .From("Orders o")
+                .InnerJoin("Users u", join1)
+                .InnerJoin("OrderItems oi", join2)
+                .InnerJoin("Products p", join3)
+                .Build()
+                .Compile(dialect);
+        });
+
+
+        AddScenario("JOIN Analysis - Multi-table JOIN with WHERE", compiledResults);
 
         const string sql = "SELECT * FROM Orders o JOIN Users u ON o.UserId = u.UserId JOIN OrderItems oi ON o.OrderId = oi.OrderId JOIN Products p ON oi.ProductId = p.ProductId WHERE o.Total > 500";
 
@@ -88,8 +154,6 @@ public class OptimizationExamples : ExampleBase
         var join3 = analyzer.Analyze("OrderItems oi JOIN Products p ON oi.ProductId = p.ProductId");
 
         var joinAnalysisText = @$"
-  Query: {sql}
-
   JOIN Analysis:
     - Total joins: 3
     - Join 1: {join1.JoinType} between {join1.LeftTable} and {join1.RightTable} - Optimal: {join1.IsOptimal}

@@ -127,7 +127,15 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         var selectItems = new List<string>();
 
         // Regular columns
-        selectItems.AddRange(statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect)));
+        foreach (var c in statement.Columns)
+        {
+            if (c.Name == "*")
+                selectItems.Add("*");
+            else if (c.IsRawExpression)
+                selectItems.Add(c.Name);
+            else
+                selectItems.Add(QuoteIdentifier(c.Name, dialect));
+        }
 
         // Window functions
         selectItems.AddRange(statement.WindowFunctions.Select(wf => RenderWindowFunction(wf, dialect)));
@@ -218,10 +226,11 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         }
 
         // LIMIT / OFFSET (PostgreSQL syntax, end of query)
-        if (statement.RowLimit?.Count > 0)
+        // PostgreSQL supports LIMIT without OFFSET and OFFSET without LIMIT
+        if (statement.RowLimit?.Count.HasValue == true && statement.RowLimit.Count > 0)
             sb.Append($" LIMIT {statement.RowLimit.Count}");
 
-        if (statement.RowLimit?.Offset > 0)
+        if (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0)
             sb.Append($" OFFSET {statement.RowLimit.Offset}");
 
         return sb.ToString();
@@ -258,7 +267,7 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
             {
                 overParts.Add("ORDER BY " + string.Join(", ",
                     windowFunction.Over.OrderByItems.Select(o =>
-                        $"{QuoteIdentifier(o.Column.Name, dialect)} {o.Direction}")));
+                        $"{QuoteIdentifier(o.Column.Name, dialect)} {(o.Direction == SortDirection.Descending ? "DESC" : "ASC")}")));
             }
 
             // Frame specification (ROWS/RANGE)

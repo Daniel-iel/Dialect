@@ -7,7 +7,7 @@ using Dialect.Core.Dialects;
 /// Default implementation of ISqlDialectProvider.
 /// Wraps the SqlDialectRegistry singleton for dependency injection.
 /// </summary>
-internal sealed class DefaultSqlDialectProvider : ISqlDialectProvider
+public sealed class DefaultSqlDialectProvider : ISqlDialectProvider
 {
     /// <summary>
     /// Gets the default dialect from the registry.

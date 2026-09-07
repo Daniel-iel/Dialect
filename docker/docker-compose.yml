@@ -7,11 +7,13 @@ services:
     environment:
       SA_PASSWORD: "P@ssw0rd!"
       ACCEPT_EULA: "Y"
+      MSSQL_DATA_DIR: /var/opt/mssql/data
     ports:
       - "1433:1433"
     volumes:
-      - sqlserver-data:/var/opt/mssql/data
-      - ./docker/sql-server/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sqlserver-data-local:/var/opt/mssql/data
+    cap_add:
+      - SYS_PTRACE
     healthcheck:
       test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "P@ssw0rd!", "-Q", "SELECT 1"]
       interval: 10s
@@ -26,12 +28,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dialect_samples
       POSTGRES_INITDB_ARGS: "-U postgres"
     ports:
       - "5432:5432"
     volumes:
       - postgresql-data:/var/lib/postgresql/data
-      - ./docker/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -50,7 +53,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s

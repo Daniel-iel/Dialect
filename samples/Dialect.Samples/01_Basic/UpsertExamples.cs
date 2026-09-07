@@ -18,67 +18,25 @@ public class UpsertExamples : ExampleBase
 
     public override void Run()
     {
-        SqlServerMerge();
-        Console.WriteLine("\n");
-        PostgreSqlOnConflict();
-        Console.WriteLine("\n");
-        MySqlOnDuplicateKey();
+        UpsertAll();
     }
 
-    private void SqlServerMerge()
+    private void UpsertAll()
     {
-        OutputFormatter.PrintSubHeader("SQL Server: MERGE Statement");
-        OutputFormatter.PrintWarning("Demonstrates SQL Server specific MERGE syntax");
+        OutputFormatter.PrintSubHeader("UPSERT - Insert or Update");
+        OutputFormatter.PrintWarning("Demonstrates SQL Server MERGE, PostgreSQL ON CONFLICT, MySQL ON DUPLICATE KEY UPDATE");
 
-        var dialect = DialectHelper.GetDialect("SQL Server");
+        var results = CompileForAllDialects(dialect =>
+            SqlBuilder.Upsert("Products")
+                .Columns("ProductId", "Name", "Price")
+                .Values(1, "Laptop Pro", 1299.99m)
+                .OnConflict("ProductId")
+                .UpdateSet("Name", "Laptop Pro")
+                .UpdateSet("Price", 1299.99m)
+                .Build()
+                .Compile(dialect)
+        );
 
-        var compiled = SqlBuilder.Upsert("Products")
-            .Columns("ProductId", "Name", "Price")
-            .Values(1, "Laptop Pro", 1299.99m)
-            .OnConflict("ProductId")
-            .UpdateSet("Name", "Laptop Pro")
-            .UpdateSet("Price", 1299.99m)
-            .Build()
-            .Compile(dialect);
-
-        PrintResult("SQL Server", compiled.Sql, compiled.Parameters);
-    }
-
-    private void PostgreSqlOnConflict()
-    {
-        OutputFormatter.PrintSubHeader("PostgreSQL: ON CONFLICT DO UPDATE");
-        OutputFormatter.PrintWarning("Demonstrates PostgreSQL specific ON CONFLICT syntax");
-
-        var dialect = DialectHelper.GetDialect("PostgreSQL");
-
-        var compiled = SqlBuilder.Upsert("Products")
-            .Columns("ProductId", "Name", "Price")
-            .Values(1, "Laptop Pro", 1299.99m)
-            .OnConflict("product_id")
-            .UpdateSet("name", "Laptop Pro")
-            .UpdateSet("price", 1299.99m)
-            .Build()
-            .Compile(dialect);
-
-        PrintResult("PostgreSQL", compiled.Sql, compiled.Parameters);
-    }
-
-    private void MySqlOnDuplicateKey()
-    {
-        OutputFormatter.PrintSubHeader("MySQL: ON DUPLICATE KEY UPDATE");
-        OutputFormatter.PrintWarning("Demonstrates MySQL specific ON DUPLICATE KEY UPDATE syntax");
-
-        var dialect = DialectHelper.GetDialect("MySQL");
-
-        var compiled = SqlBuilder.Upsert("Products")
-            .Columns("ProductId", "Name", "Price")
-            .Values(1, "Laptop Pro", 1299.99m)
-            .OnConflict("ProductId")
-            .UpdateSet("Name", "Laptop Pro")
-            .UpdateSet("Price", 1299.99m)
-            .Build()
-            .Compile(dialect);
-
-        PrintResult("MySQL", compiled.Sql, compiled.Parameters);
+        AddScenario("UPSERT - Insert or Update", results);
     }
 }

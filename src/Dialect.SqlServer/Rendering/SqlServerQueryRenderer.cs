@@ -115,9 +115,9 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         if (statement.IsDistinct)
             sb.Append(" DISTINCT");
 
-        if (statement.RowLimit?.Offset == null && statement.RowLimit?.Count > 0)
+        // Use TOP syntax when Offset is null/0 AND Count has a value
+        if ((statement.RowLimit?.Offset == null || statement.RowLimit.Offset == 0) && statement.RowLimit?.Count.HasValue == true)
         {
-            // Use TOP syntax when no OFFSET (or OFFSET is 0)
             sb.Append($" TOP {statement.RowLimit.Count}");
             if (statement.RowLimit.WithTies)
                 sb.Append(" WITH TIES");
@@ -129,7 +129,15 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         var selectItems = new List<string>();
 
         // Regular columns
-        selectItems.AddRange(statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect)));
+        foreach (var c in statement.Columns)
+        {
+            if (c.Name == "*")
+                selectItems.Add("*");
+            else if (c.IsRawExpression)
+                selectItems.Add(c.Name);
+            else
+                selectItems.Add(QuoteIdentifier(c.Name, dialect));
+        }
 
         // Window functions
         selectItems.AddRange(statement.WindowFunctions.Select(wf => RenderWindowFunction(wf, dialect)));
@@ -212,7 +220,8 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         }
 
         // ORDER BY (required for OFFSET/FETCH, or when we have ORDER BY)
-        if (statement.OrderByClauses?.Count > 0 || statement.RowLimit?.Offset > 0)
+        // Note: SQL Server requires ORDER BY when using OFFSET
+        if (statement.OrderByClauses?.Count > 0 || (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0))
         {
             sb.Append(" ORDER BY ");
             if (statement.OrderByClauses?.Count > 0)
@@ -226,11 +235,12 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
                 sb.Append("(SELECT NULL)");
             }
 
-            // OFFSET/FETCH NEXT - only when OFFSET is > 0
-            if (statement.RowLimit?.Offset > 0)
+            // OFFSET/FETCH NEXT - only when Offset is > 0
+            if (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0)
             {
                 sb.Append($" OFFSET {statement.RowLimit.Offset} ROWS");
-                if (statement.RowLimit?.Count > 0)
+                // FETCH NEXT is optional; only include if Count has a value
+                if (statement.RowLimit?.Count.HasValue == true)
                     sb.Append($" FETCH NEXT {statement.RowLimit.Count} ROWS ONLY");
             }
         }
@@ -269,7 +279,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             {
                 overParts.Add("ORDER BY " + string.Join(", ",
                     windowFunction.Over.OrderByItems.Select(o =>
-                        $"{QuoteIdentifier(o.Column.Name, dialect)} {o.Direction}")));
+                        $"{QuoteIdentifier(o.Column.Name, dialect)} {(o.Direction == SortDirection.Descending ? "DESC" : "ASC")}")));
             }
 
             // Frame specification (ROWS/RANGE)

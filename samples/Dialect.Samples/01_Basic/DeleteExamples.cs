@@ -38,7 +38,7 @@ public class DeleteExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("DELETE with Simple WHERE", results);
     }
 
     private void DeleteWithParameter()
@@ -53,7 +53,7 @@ public class DeleteExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("DELETE with Parameter", results);
     }
 
     private void DeleteMultipleConditions()
@@ -72,6 +72,6 @@ public class DeleteExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("DELETE with Multiple Conditions", results);
     }
 }

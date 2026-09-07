@@ -127,7 +127,15 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
         var selectItems = new List<string>();
 
         // Regular columns
-        selectItems.AddRange(statement.Columns.Select(c => QuoteIdentifier(c.Name, dialect)));
+        foreach (var c in statement.Columns)
+        {
+            if (c.Name == "*")
+                selectItems.Add("*");
+            else if (c.IsRawExpression)
+                selectItems.Add(c.Name);
+            else
+                selectItems.Add(QuoteIdentifier(c.Name, dialect));
+        }
 
         // Window functions
         selectItems.AddRange(statement.WindowFunctions.Select(wf => RenderWindowFunction(wf, dialect)));
@@ -217,11 +225,21 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
         }
 
         // LIMIT / OFFSET (MySQL syntax, end of query)
-        if (statement.RowLimit?.Count > 0)
+        // Note: Older MySQL versions require LIMIT when using OFFSET
+        // For MySQL 8.0.13+, OFFSET can work without LIMIT using special syntax
+        if (statement.RowLimit?.Count.HasValue == true && statement.RowLimit.Count > 0)
+        {
             sb.Append($" LIMIT {statement.RowLimit.Count}");
-
-        if (statement.RowLimit?.Offset > 0)
+            if (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0)
+                sb.Append($" OFFSET {statement.RowLimit.Offset}");
+        }
+        else if (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0)
+        {
+            // When only OFFSET is specified (no LIMIT), use a very large LIMIT for compatibility
+            // This works with MySQL 8.0+
+            sb.Append(" LIMIT 18446744073709551615");
             sb.Append($" OFFSET {statement.RowLimit.Offset}");
+        }
 
         return sb.ToString();
     }
@@ -257,7 +275,7 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
             {
                 overParts.Add("ORDER BY " + string.Join(", ",
                     windowFunction.Over.OrderByItems.Select(o =>
-                        $"{QuoteIdentifier(o.Column.Name, dialect)} {o.Direction}")));
+                        $"{QuoteIdentifier(o.Column.Name, dialect)} {(o.Direction == SortDirection.Descending ? "DESC" : "ASC")}")));
             }
 
             // Frame specification (ROWS/RANGE)

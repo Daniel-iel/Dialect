@@ -23,6 +23,11 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+results/*
+*/results/
+results
+sqlserver-data-local
+
 # .NET Core
 project.lock.json
 project.fragment.lock.json

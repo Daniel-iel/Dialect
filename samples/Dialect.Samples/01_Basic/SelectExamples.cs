@@ -26,6 +26,8 @@ public class SelectExamples : ExampleBase
         SelectWithOrderBy();
         Console.WriteLine("\n");
         SelectWithPagination();
+        Console.WriteLine("\n");
+        SelectWithFlexiblePagination();
     }
 
     private void SimpleSelect()
@@ -39,7 +41,7 @@ public class SelectExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("Simple SELECT *", results);
     }
 
     private void SelectWithWhere()
@@ -54,7 +56,7 @@ public class SelectExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("SELECT with WHERE Clause", results);
     }
 
     private void SelectWithOrderBy()
@@ -69,7 +71,7 @@ public class SelectExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("SELECT with ORDER BY", results);
     }
 
     private void SelectWithPagination()
@@ -86,6 +88,36 @@ public class SelectExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("SELECT with Pagination (LIMIT/TOP/OFFSET)", results);
+    }
+
+    private void SelectWithFlexiblePagination()
+    {
+        OutputFormatter.PrintSubHeader("Example 5: SELECT with Flexible Pagination (Skip and Take in any order)");
+
+        // Demonstrate that Skip() and Take() can be called in any order
+        var orderIndependentResults = CompileForAllDialects(dialect =>
+            SqlBuilder.Select("*")
+                .From("Orders")
+                .OrderBy("OrderId DESC")
+                .Take(10)          // Take first
+                .Skip(5)            // Then Skip - order doesn't matter!
+                .Build()
+                .Compile(dialect)
+        );
+
+        AddScenario("Take(10).Skip(5) - Same as Skip(5).Take(10)", orderIndependentResults);
+
+        // Demonstrate Skip without Take
+        var skipOnlyResults = CompileForAllDialects(dialect =>
+            SqlBuilder.Select("*")
+                .From("Orders")
+                .OrderBy("OrderId DESC")
+                .Skip(5)            // Skip alone works independently
+                .Build()
+                .Compile(dialect)
+        );
+
+        AddScenario("Skip(5) - Skip without Take", skipOnlyResults);
     }
 }

@@ -38,7 +38,7 @@ public class GroupingExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("GROUP BY and COUNT", results);
     }
 
     private void GroupByWithHaving()
@@ -57,7 +57,7 @@ public class GroupingExamples : ExampleBase
         }
         );
 
-        PrintResults(results);
+        AddScenario("GROUP BY with HAVING", results);
     }
 
     private void MultipleAggregates()
@@ -73,6 +73,6 @@ public class GroupingExamples : ExampleBase
                 .Compile(dialect)
         );
 
-        PrintResults(results);
+        AddScenario("Multiple Aggregate Functions", results);
     }
 }
