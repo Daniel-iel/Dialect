@@ -74,7 +74,7 @@ public class DatabaseConfiguration
 
         foreach (var (dialectName, executor) in executors)
         {
-            results[dialectName] = await executor.TestConnectionAsync();
+            results[dialectName] = await executor.TestConnectionAsync().ConfigureAwait(false);
         }
 
         return results;

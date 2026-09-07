@@ -120,39 +120,11 @@ public class DatabaseConfigurationBuilder
         if (string.IsNullOrWhiteSpace(_mySqlConnectionString))
             throw new InvalidOperationException("MySQL connection string not configured");
 
-        var config = new DatabaseConfiguration
+        return new DatabaseConfiguration
         {
             SqlServerConnectionString = _sqlServerConnectionString,
             PostgreSqlConnectionString = _postgreSqlConnectionString,
             MySqlConnectionString = _mySqlConnectionString
         };
-
-        if (_validateOnBuild)
-        {
-            ValidateConnections(config);
-        }
-
-        return config;
-    }
-
-    /// <summary>
-    /// Validate that all configured databases are accessible.
-    /// Throws exception if any connection fails.
-    /// </summary>
-    private static void ValidateConnections(DatabaseConfiguration config)
-    {
-        // Validation would be async, but this is called from sync Build()
-        // TODO: Consider making Build() async or adding separate ValidateAsync() method
-        var sqlServerExecutor = new SqlServerExecutor(config.SqlServerConnectionString ?? "");
-        var pgExecutor = new PostgreSqlExecutor(config.PostgreSqlConnectionString ?? "");
-        var mysqlExecutor = new MySqlExecutor(config.MySqlConnectionString ?? "");
-
-        // For now, just verify connection strings are not empty
-        if (string.IsNullOrEmpty(config.SqlServerConnectionString))
-            throw new InvalidOperationException("SQL Server connection string is empty after validation");
-        if (string.IsNullOrEmpty(config.PostgreSqlConnectionString))
-            throw new InvalidOperationException("PostgreSQL connection string is empty after validation");
-        if (string.IsNullOrEmpty(config.MySqlConnectionString))
-            throw new InvalidOperationException("MySQL connection string is empty after validation");
     }
 }

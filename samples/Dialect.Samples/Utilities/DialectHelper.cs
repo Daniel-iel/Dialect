@@ -29,17 +29,4 @@ public class DialectHelper
     {
         return _dialects;
     }
-
-    /// <summary>
-    /// Get a specific dialect by name.
-    /// </summary>
-    public ISqlDialect GetDialect(string name)
-    {
-        if (_dialects.TryGetValue(name, out var dialect))
-        {
-            return dialect;
-        }
-
-        throw new ArgumentException($"Unknown dialect: {name}. Available: {string.Join(", ", _dialects.Keys)}");
-    }
 }

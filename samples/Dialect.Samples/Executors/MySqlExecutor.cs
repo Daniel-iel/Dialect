@@ -1,4 +1,3 @@
-using Dialect.Samples.Services;
 using MySqlConnector;
 using System.Data.Common;
 

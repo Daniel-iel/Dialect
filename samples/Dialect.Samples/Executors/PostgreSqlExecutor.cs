@@ -1,6 +1,5 @@
 using System.Data;
 using System.Data.Common;
-using Dialect.Samples.Services;
 using Npgsql;
 
 namespace Dialect.Samples.Executors;

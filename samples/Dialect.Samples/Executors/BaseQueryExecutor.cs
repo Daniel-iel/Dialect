@@ -67,9 +67,9 @@ public abstract class BaseQueryExecutor : QueryExecutor
                     }
 
                     // Execute and parse results
-                    using (var reader = await command.ExecuteReaderAsync())
+                    using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
                     {
-                        rows = await ParseResultsAsync(reader);
+                        rows = await ParseResultsAsync(reader).ConfigureAwait(false);
                     }
                 }
             }
@@ -96,7 +96,7 @@ public abstract class BaseQueryExecutor : QueryExecutor
 
             using (var connection = CreateConnection())
             {
-                await connection.OpenAsync();
+                await connection.OpenAsync().ConfigureAwait(false);
 
                 using (var command = connection.CreateCommand())
                 {
@@ -109,7 +109,7 @@ public abstract class BaseQueryExecutor : QueryExecutor
                         AddParameterToCommand(command, paramName, paramValue);
                     }
 
-                    int affectedRows = await command.ExecuteNonQueryAsync();
+                    int affectedRows = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                     sw.Stop();
 
                     return new ExecutionResult(new List<dynamic>(), sw.ElapsedMilliseconds, affectedRows);
@@ -132,7 +132,7 @@ public abstract class BaseQueryExecutor : QueryExecutor
         {
             using (var connection = CreateConnection())
             {
-                await connection.OpenAsync();
+                await connection.OpenAsync().ConfigureAwait(false);
                 return true;
             }
         }
@@ -158,7 +158,7 @@ public abstract class BaseQueryExecutor : QueryExecutor
             .ToList();
 
         // Read all rows asynchronously
-        while (await reader.ReadAsync())
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
             var row = new Dictionary<string, object?>();
             for (int i = 0; i < reader.FieldCount; i++)

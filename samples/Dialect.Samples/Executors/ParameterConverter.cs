@@ -1,4 +1,4 @@
-namespace Dialect.Samples.Services;
+namespace Dialect.Samples.Executors;
 
 using Dialect.Core.AST;
 
@@ -43,13 +43,13 @@ public static class ParameterConverter
     private static Dictionary<string, object?> ConvertForSqlServer(IReadOnlyDictionary<string, object?> parameters)
     {
         var result = new Dictionary<string, object?>();
-        
+
         foreach (var (key, value) in parameters)
         {
             var paramName = key.StartsWith("@") ? key : "@" + key;
             result[paramName] = value;
         }
-        
+
         return result;
     }
 
@@ -60,19 +60,19 @@ public static class ParameterConverter
     private static Dictionary<string, object?> ConvertForPostgreSQL(IReadOnlyDictionary<string, object?> parameters)
     {
         var result = new Dictionary<string, object?>();
-        
+
         foreach (var (key, value) in parameters)
         {
             // Convert @p1 to :p1, or keep :p1 as-is
-            var paramName = key.StartsWith("@") 
+            var paramName = key.StartsWith("@")
                 ? ":" + key[1..]  // @p1 → :p1
                 : key.StartsWith(":")
                     ? key           // :p1 → :p1 (no change)
                     : ":" + key;    // p1 → :p1
-            
+
             result[paramName] = value;
         }
-        
+
         return result;
     }
 
@@ -83,13 +83,13 @@ public static class ParameterConverter
     private static Dictionary<string, object?> ConvertForMySQL(IReadOnlyDictionary<string, object?> parameters)
     {
         var result = new Dictionary<string, object?>();
-        
+
         foreach (var (key, value) in parameters)
         {
             var paramName = key.StartsWith("@") ? key : "@" + key;
             result[paramName] = value;
         }
-        
+
         return result;
     }
 }

@@ -5,7 +5,7 @@ using Dialect.Core.Dialects;
 
 /// <summary>
 /// Immutable definition of a database query scenario.
-/// 
+///
 /// Enables data-driven example design by separating scenario metadata from execution logic.
 /// Instead of defining scenarios as private methods, scenarios are declared as static data
 /// using ScenarioDefinition records, which can be:
@@ -13,7 +13,7 @@ using Dialect.Core.Dialects;
 /// - Tested independently
 /// - Reused across multiple example classes
 /// - Serialized or stored for testing frameworks
-/// 
+///
 /// Example usage:
 /// <code>
 /// private static readonly ScenarioDefinition[] Scenarios = new[]
@@ -52,14 +52,6 @@ public record ScenarioDefinition(
 )
 {
     /// <summary>
-    /// Create a scenario with minimal required information.
-    /// </summary>
-    public ScenarioDefinition(string name, Func<ISqlDialect, CompiledQuery> builder)
-        : this(name, "", builder, Array.Empty<string>())
-    {
-    }
-
-    /// <summary>
     /// Create a scenario with name, description, and builder.
     /// </summary>
     public ScenarioDefinition(string name, string description, Func<ISqlDialect, CompiledQuery> builder)
@@ -67,12 +59,3 @@ public record ScenarioDefinition(
     {
     }
 };
-
-/// <summary>
-/// Results of executing a single scenario across all dialects.
-/// </summary>
-public record ScenarioExecutionResult(
-    string ScenarioName,
-    Dictionary<string, (string Sql, IReadOnlyDictionary<string, object?> Parameters)> CompiledResults,
-    Dictionary<string, (List<dynamic> Rows, long ExecutionTimeMs, int RowCount, string? Error)> ExecutedResults
-);

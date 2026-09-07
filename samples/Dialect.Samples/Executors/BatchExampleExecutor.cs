@@ -109,7 +109,7 @@ public class BatchExampleExecutor
 
                     foreach (var (dialectName, (sql, parameters)) in scenario.CompiledResults)
                     {
-                        var (results, timeMs, rowCount) = await ExecuteQueryAsync(dialectName, sql, parameters);
+                        var (results, timeMs, rowCount) = await ExecuteQueryAsync(dialectName, sql, parameters).ConfigureAwait(false);
                         dialectResults[dialectName] = (sql, parameters, results, timeMs, rowCount);
                     }
 
@@ -128,7 +128,7 @@ public class BatchExampleExecutor
 
                     foreach (var (dialectName, (sql, parameters)) in compiledResults)
                     {
-                        var (results, timeMs, rowCount) = await ExecuteQueryAsync(dialectName, sql, parameters);
+                        var (results, timeMs, rowCount) = await ExecuteQueryAsync(dialectName, sql, parameters).ConfigureAwait(false);
                         dialectResults[dialectName] = (sql, parameters, results, timeMs, rowCount);
                     }
 
@@ -173,11 +173,11 @@ public class BatchExampleExecutor
             ExecutionResult result;
             if (isSelectQuery)
             {
-                result = await executor.ExecuteQueryAsync(sql, paramDict);
+                result = await executor.ExecuteQueryAsync(sql, paramDict).ConfigureAwait(false);
             }
             else
             {
-                result = await executor.ExecuteNonQueryAsync(sql, paramDict);
+                result = await executor.ExecuteNonQueryAsync(sql, paramDict).ConfigureAwait(false);
             }
 
             if (result.Error != null)

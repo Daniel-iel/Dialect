@@ -41,7 +41,7 @@ class Program
         }
     }
 
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         // Initialize SQL Framework with default dialect (PostgreSQL)
         // This registers the default dialect in SqlDialectRegistry
@@ -53,7 +53,7 @@ class Program
         // If input is redirected or an explicit batch command is provided, run batch mode
         if (Console.IsInputRedirected || args.Contains("--batch") || args.Contains("98"))
         {
-            MainAsync(args).GetAwaiter().GetResult();
+            await MainAsync(args);
             return;
         }
 
@@ -64,7 +64,7 @@ class Program
             DisplayMenu();
             var choice = Console.ReadLine()?.Trim() ?? "";
 
-            if (ExecuteExample(choice))
+            if (await ExecuteExample(choice))
             {
                 Console.WriteLine("\nPress any key to continue...");
                 SafeReadKey();
@@ -159,7 +159,7 @@ UTILITIES
         Console.Write("\nEnter choice (1-12, 98, 99, or 0): ");
     }
 
-    static bool ExecuteExample(string choice)
+    static async Task<bool> ExecuteExample(string choice)
     {
         try
         {
@@ -184,7 +184,7 @@ UTILITIES
                 "12" => RunExample(new SchemaValidationExamples()),
 
                 // Utilities
-                "98" => ExecuteBatchMode(),
+                "98" => await ExecuteBatchMode(),
                 "99" => DisplayDockerSetupGuide(),
 
                 _ => false
@@ -220,10 +220,10 @@ UTILITIES
         }
     }
 
-    static bool ExecuteBatchMode()
+    static async Task<bool> ExecuteBatchMode()
     {
         Console.WriteLine("\nExecuting all examples in batch mode...\n");
-        MainAsync(new string[] { }).GetAwaiter().GetResult();
+        await MainAsync(new string[] { });
 
         Console.WriteLine("\nPress any key to continue...");
         SafeReadKey();
