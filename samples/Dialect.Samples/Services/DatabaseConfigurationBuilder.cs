@@ -155,28 +155,4 @@ public class DatabaseConfigurationBuilder
         if (string.IsNullOrEmpty(config.MySqlConnectionString))
             throw new InvalidOperationException("MySQL connection string is empty after validation");
     }
-
-    /// <summary>
-    /// Create a default configuration with environment overrides applied.
-    /// Shortcut for: new DatabaseConfigurationBuilder().Build()
-    /// </summary>
-    public static DatabaseConfiguration CreateDefault()
-    {
-        return new DatabaseConfigurationBuilder().Build();
-    }
-
-    /// <summary>
-    /// Create a configuration for testing with custom connection strings.
-    /// </summary>
-    public static DatabaseConfiguration CreateForTesting(
-        string sqlServerConn,
-        string postgreSqlConn,
-        string mysqlConn)
-    {
-        return new DatabaseConfigurationBuilder()
-            .WithSqlServerConnectionString(sqlServerConn)
-            .WithPostgreSqlConnectionString(postgreSqlConn)
-            .WithMySqlConnectionString(mysqlConn)
-            .Build();
-    }
 }
