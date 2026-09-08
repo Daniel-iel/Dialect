@@ -280,6 +280,60 @@ public sealed class SelectBuilder
     }
 
     /// <summary>
+    /// Adds a WHERE IN subquery condition (column IN (SELECT ...)).
+    /// </summary>
+    public SelectBuilder WhereIn(string columnName, SelectStatement subquery)
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+            throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        if (subquery == null)
+            throw new ArgumentNullException(nameof(subquery));
+
+        var inCondition = new InNode(new Column(columnName), null, subquery, Negated: false);
+        return Where(inCondition);
+    }
+
+    /// <summary>
+    /// Adds a WHERE IN subquery condition using a SelectBuilder.
+    /// </summary>
+    public SelectBuilder WhereIn(string columnName, SelectBuilder subqueryBuilder)
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+            throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        if (subqueryBuilder == null)
+            throw new ArgumentNullException(nameof(subqueryBuilder));
+
+        return WhereIn(columnName, subqueryBuilder.Build());
+    }
+
+    /// <summary>
+    /// Adds a WHERE NOT IN subquery condition (column NOT IN (SELECT ...)).
+    /// </summary>
+    public SelectBuilder WhereNotIn(string columnName, SelectStatement subquery)
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+            throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        if (subquery == null)
+            throw new ArgumentNullException(nameof(subquery));
+
+        var inCondition = new InNode(new Column(columnName), null, subquery, Negated: true);
+        return Where(inCondition);
+    }
+
+    /// <summary>
+    /// Adds a WHERE NOT IN subquery condition using a SelectBuilder.
+    /// </summary>
+    public SelectBuilder WhereNotIn(string columnName, SelectBuilder subqueryBuilder)
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+            throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        if (subqueryBuilder == null)
+            throw new ArgumentNullException(nameof(subqueryBuilder));
+
+        return WhereNotIn(columnName, subqueryBuilder.Build());
+    }
+
+    /// <summary>
     /// Adds GROUP BY columns.
     /// </summary>
     public SelectBuilder GroupBy(params string[] columnNames)
@@ -548,6 +602,94 @@ public sealed class SelectBuilder
 
         // No direction keyword found, treat entire string as column name
         return (trimmed, null);
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using UNION (removes duplicates).
+    /// </summary>
+    public CompoundSelectStatement Union(SelectStatement other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return new CompoundSelectStatement(Build(), SetOperator.Union, other);
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using UNION (removes duplicates).
+    /// </summary>
+    public CompoundSelectStatement Union(SelectBuilder other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return Union(other.Build());
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using UNION ALL (keeps duplicates).
+    /// </summary>
+    public CompoundSelectStatement UnionAll(SelectStatement other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return new CompoundSelectStatement(Build(), SetOperator.UnionAll, other);
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using UNION ALL (keeps duplicates).
+    /// </summary>
+    public CompoundSelectStatement UnionAll(SelectBuilder other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return UnionAll(other.Build());
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using INTERSECT (returns common rows only).
+    /// </summary>
+    public CompoundSelectStatement Intersect(SelectStatement other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return new CompoundSelectStatement(Build(), SetOperator.Intersect, other);
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using INTERSECT (returns common rows only).
+    /// </summary>
+    public CompoundSelectStatement Intersect(SelectBuilder other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return Intersect(other.Build());
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using EXCEPT (returns rows from left not in right).
+    /// </summary>
+    public CompoundSelectStatement Except(SelectStatement other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return new CompoundSelectStatement(Build(), SetOperator.Except, other);
+    }
+
+    /// <summary>
+    /// Combines this SELECT with another using EXCEPT (returns rows from left not in right).
+    /// </summary>
+    public CompoundSelectStatement Except(SelectBuilder other)
+    {
+        if (other == null)
+            throw new ArgumentNullException(nameof(other));
+
+        return Except(other.Build());
     }
 
     /// <summary>

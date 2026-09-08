@@ -70,11 +70,15 @@ Dialect.Samples/
 │   ├── JoinExamples.cs           # JOIN operations (3 examples)
 │   ├── CteExamples.cs            # Common Table Expressions (2 examples)
 │   ├── WindowFunctionExamples.cs # Analytical functions (3 examples)
-│   └── GroupingExamples.cs       # Aggregation patterns (3 examples)
+│   ├── GroupingExamples.cs       # Aggregation patterns (3 examples)
+│   └── SubqueryExamples.cs       # Subqueries and derived tables (10 examples)
 ├── 03_Advanced/                  # Performance & analysis
 │   ├── OptimizationExamples.cs   # Query analysis (3 examples)
 │   ├── IndexAdvisorExamples.cs   # Index recommendations (3 examples)
 │   └── SchemaValidationExamples.cs # Schema validation (3 examples)
+├── 04_ErrorHandling/             # Error scenarios & debugging
+├── 06_AdvancedQueries/           # Batch operations & set operations
+│   └── BatchOperationsExamples.cs # INSERT/UPDATE/DELETE + UNION/INTERSECT/EXCEPT (15 examples)
 ├── Utilities/                    # Shared utilities
 │   ├── ExampleBase.cs            # Abstract base for all examples
 │   ├── DialectHelper.cs          # Dialect instance management
@@ -89,13 +93,25 @@ Dialect.Samples/
 
 ## Example Categories
 
-### Basic Examples (5 files, 14 examples)
+### Basic Examples (5 files, 21 examples)
 
 **SelectExamples.cs** - SELECT fundamentals
 - Simple SELECT with column projection
 - WHERE clause filtering
 - ORDER BY sorting
 - SKIP/TAKE pagination
+- **WhereExpression Examples** (15 new examples):
+  - Comparison operators: `>`, `<`, `<=`, `>=`, `<>`
+  - AND conditions combining multiple predicates
+  - OR conditions for alternative matching
+  - IN clauses filtering against value lists
+  - NOT IN clauses excluding values
+  - Nested AND/OR conditions for complex logic
+  - LIKE pattern matching and text search
+  - NOT LIKE for pattern exclusion
+  - IS NULL and IS NOT NULL checks
+  - BETWEEN for range filtering (dates and numbers)
+  - Multi-level nested AND/OR combinations
 
 **InsertExamples.cs** - Data insertion
 - Single row insert
@@ -138,6 +154,24 @@ Dialect.Samples/
 - GROUP BY with HAVING filter
 - Multiple aggregate functions (COUNT, SUM, AVG)
 
+**SubqueryExamples.cs** - Subqueries and derived tables (10 examples)
+
+**FROM Subqueries** (4 examples):
+- Basic derived table with aggregation
+- Filtered derived table with WHERE in subquery
+- Nested aggregations (subquery aggregates, outer query processes aggregates)
+- Complex aggregation with HAVING clause
+
+**WHERE IN Subqueries** (5 examples):
+- Basic IN with subquery
+- NOT IN for exclusion patterns
+- Aggregation in subquery with HAVING
+- Chained conditions combining IN subquery with WHERE
+- Multiple conditions using AND logic
+
+**Bonus Example**:
+- Using SelectBuilder directly without calling Build()
+
 ### Advanced Examples (3 files, 9 examples)
 
 **OptimizationExamples.cs** - Query analysis
@@ -154,6 +188,28 @@ Dialect.Samples/
 - Naming convention validation
 - Data type best practices
 - Constraint and referential integrity
+
+### Batch Operations & Set Operations (1 file, 15 examples)
+
+**BatchOperationsExamples.cs** - Bulk operations and set combinations
+
+**Batch Operations** (7 examples):
+- INSERT single record
+- INSERT multiple records
+- UPDATE with WHERE clause
+- UPDATE multiple columns
+- DELETE safe with WHERE clause
+- Soft delete pattern using UPDATE
+
+**Set Operations** (8 examples):
+- UNION - Combine results removing duplicates
+- UNION ALL - Combine all rows including duplicates
+- INTERSECT - Find common rows in two result sets
+- EXCEPT - Find rows in left set not in right set
+- UNION with WHERE clauses - Filter before combining
+- UNION ALL with pagination
+- INTERSECT - Multi-condition matching (e.g., premium members who purchased)
+- EXCEPT - Exclusion queries (e.g., products never ordered)
 
 ## Database Schema
 

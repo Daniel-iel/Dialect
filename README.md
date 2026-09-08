@@ -437,6 +437,149 @@ foreach (var tip in analysis.OptimizationTips)
     Console.WriteLine($"  💡 {tip}");
 ```
 
+### Complex WHERE Expressions (WhereExpression)
+
+Build complex filter conditions using the fluent AST API for AND/OR logic, comparisons, IN clauses, and nested conditions:
+
+```csharp
+// Example: (Price > 100 AND StockQty > 0) OR (Discount > 0 AND IsActive = true)
+var query = SqlBuilder
+    .Select("ProductId", "Name", "Price")
+    .From("Products")
+    .Where(new OrNode(
+        new AndNode(
+            new ComparisonNode(new Column("Price"), ComparisonOperator.GreaterThan, 100m),
+            new ComparisonNode(new Column("StockQty"), ComparisonOperator.GreaterThan, 0)
+        ),
+        new AndNode(
+            new ComparisonNode(new Column("Discount"), ComparisonOperator.GreaterThan, 0m),
+            new ComparisonNode(new Column("IsActive"), ComparisonOperator.Equal, true)
+        )
+    ))
+    .Build()
+    .Compile(SqlProvider.PostgreSQL);
+
+// Supports: ComparisonOperator.Equal, NotEqual, LessThan, GreaterThan, LessThanOrEqual, GreaterThanOrEqual, Like, NotLike, IsNull, IsNotNull, Between, NotBetween
+```
+
+**Common WhereExpression Patterns:**
+
+| Pattern | Usage | Example |
+|---------|-------|---------|
+| **SimpleComparison** | Equality checks | `.Where("Status", "Active")` |
+| **ComparisonNode** | Any comparison operator | `new ComparisonNode(new Column("Price"), ComparisonOperator.GreaterThan, 100m)` |
+| **AndNode** | Combine conditions with AND | `new AndNode(condition1, condition2)` |
+| **OrNode** | Combine conditions with OR | `new OrNode(condition1, condition2)` |
+| **InNode** | Check column in list | `new InNode(new Column("Status"), new[] { "Pending", "Active" })` |
+| **RawNode** | Escape hatch for raw SQL | `new RawNode("CUSTOM_FUNCTION(@value)")` |
+
+### Set Operations: UNION, INTERSECT, EXCEPT
+
+Combine multiple SELECT statements using set operators:
+
+```csharp
+// UNION - Combine results, removing duplicates
+var query = SqlBuilder
+    .Select("Id", "Name", "Email")
+    .From("Employees")
+    .Where("Status", "Active")
+    .Union(
+        SqlBuilder.Select("Id", "Name", "Email")
+            .From("Contractors")
+            .Where("Status", "Active")
+    )
+    .Compile(SqlProvider.PostgreSQL);
+
+// SQL: (SELECT "Id", "Name", "Email" FROM "Employees" WHERE "Status" = 'Active') 
+//      UNION 
+//      (SELECT "Id", "Name", "Email" FROM "Contractors" WHERE "Status" = 'Active')
+```
+
+**All Set Operations:**
+
+| Operation | Method | Result | SQL |
+|-----------|--------|--------|-----|
+| **UNION** | `.Union(other)` | Combines results, removes duplicates | `UNION` |
+| **UNION ALL** | `.UnionAll(other)` | Combines results, keeps all rows | `UNION ALL` |
+| **INTERSECT** | `.Intersect(other)` | Returns only common rows | `INTERSECT` |
+| **EXCEPT** | `.Except(other)` | Returns rows from left not in right | `EXCEPT` |
+
+**Example - Find premium members who made purchases:**
+
+```csharp
+var query = SqlBuilder
+    .Select("UserId")
+    .From("PremiumMembers")
+    .Intersect(
+        SqlBuilder.Select("UserId")
+            .From("Orders")
+            .Where("Amount", ComparisonOperator.GreaterThan, 100m)
+    )
+    .Compile(SqlProvider.MySql);
+```
+
+### Subqueries (Derived Tables & IN Clauses)
+
+Write nested SELECT statements for complex filtering and aggregation patterns:
+
+```csharp
+// FROM Subquery - Derived table with aggregation
+var subquery = SqlBuilder
+    .Select("UserId", "COUNT(*) as OrderCount")
+    .From("Orders")
+    .GroupBy("UserId")
+    .Build();
+
+var query = SqlBuilder
+    .Select("UserId", "OrderCount")
+    .From(subquery, "OrderSummary")
+    .Where("OrderCount", ComparisonOperator.GreaterThan, 5)
+    .Compile(SqlProvider.PostgreSQL);
+```
+
+**WHERE IN Subquery - Filter by subquery results:**
+
+```csharp
+// Find all orders from active users
+var activeUsersSubquery = SqlBuilder
+    .Select("UserId")
+    .From("Users")
+    .Where("Status", "Active")
+    .Build();
+
+var query = SqlBuilder
+    .Select("OrderId", "UserId", "OrderDate", "TotalAmount")
+    .From("Orders")
+    .WhereIn("UserId", activeUsersSubquery)
+    .Compile(SqlProvider.SqlServer);
+```
+
+**WHERE NOT IN Subquery - Exclude subquery results:**
+
+```csharp
+// Find products that have never been ordered
+var orderedProductsSubquery = SqlBuilder
+    .Select("ProductId")
+    .From("OrderItems")
+    .Build();
+
+var query = SqlBuilder
+    .Select("ProductId", "Name", "Price")
+    .From("Products")
+    .WhereNotIn("ProductId", orderedProductsSubquery)
+    .Compile(SqlProvider.MySql);
+```
+
+**Subquery Patterns:**
+
+| Pattern | Use Case | Method |
+|---------|----------|--------|
+| **FROM Subquery** | Derived tables with aggregation | `.From(subquery, "alias")` |
+| **WHERE IN Subquery** | Filter by subquery results | `.WhereIn("column", subquery)` |
+| **WHERE NOT IN Subquery** | Exclude subquery results | `.WhereNotIn("column", subquery)` |
+| **Subquery with Aggregation** | GROUP BY in subquery for outer filtering | `.GroupBy().Having()` in subquery |
+| **Multi-condition Subquery** | Complex WHERE in subquery before outer filter | Combine `.Where()` chains |
+
 ---
 
 ## CLI Tools

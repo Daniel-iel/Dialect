@@ -102,3 +102,21 @@ public enum ComparisonOperator
     Between,
     NotBetween
 }
+
+/// <summary>
+/// Enumerates set operations for combining SELECT statements.
+/// </summary>
+public enum SetOperator
+{
+    /// <summary>UNION — combines results and removes duplicates.</summary>
+    Union,
+
+    /// <summary>UNION ALL — combines results, keeping all rows including duplicates.</summary>
+    UnionAll,
+
+    /// <summary>INTERSECT — returns only rows that appear in both result sets.</summary>
+    Intersect,
+
+    /// <summary>EXCEPT — returns rows from left set that don't appear in right set.</summary>
+    Except
+}

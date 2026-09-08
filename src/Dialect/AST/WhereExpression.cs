@@ -29,11 +29,13 @@ public sealed record ComparisonNode(
     object? Value) : WhereExpression;
 
 /// <summary>
-/// Represents an IN condition (column IN (value1, value2, ...)).
+/// Represents an IN condition (column IN (value1, value2, ...)) or IN with subquery (column IN (SELECT ...)).
+/// Either Values or SubquerySource must be provided, but not both.
 /// </summary>
 public sealed record InNode(
     Column Column,
-    IReadOnlyList<object?> Values,
+    IReadOnlyList<object?>? Values = null,
+    SelectStatement? SubquerySource = null,
     bool Negated = false) : WhereExpression;
 
 /// <summary>

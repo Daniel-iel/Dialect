@@ -73,6 +73,56 @@ public static class SqlCompiler
     }
 
     /// <summary>
+    /// Compiles a compound SELECT statement (UNION, INTERSECT, EXCEPT) to SQL.
+    /// </summary>
+    public static CompiledQuery Compile(this CompoundSelectStatement statement, ISqlDialect dialect)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+        if (dialect == null)
+            throw new ArgumentNullException(nameof(dialect));
+
+        var renderer = dialect.CreateQueryRenderer();
+        return renderer.Render(statement, dialect);
+    }
+
+    /// <summary>
+    /// Compiles a compound SELECT statement to SQL using the configured default dialect.
+    /// Uses the default dialect configured via AddSqlFramework().
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if no default dialect has been configured</exception>
+    public static CompiledQuery Compile(this CompoundSelectStatement statement)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDefault();
+        if (dialect == null)
+            throw new InvalidOperationException(
+                "No default SQL dialect has been configured. " +
+                "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
+    /// Compiles a compound SELECT statement to SQL using a specific dialect by SqlProvider enum.
+    /// </summary>
+    public static CompiledQuery Compile(this CompoundSelectStatement statement, SqlProvider provider)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+
+        var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
+        if (dialect == null)
+            throw new ArgumentException(
+                $"No dialect registered for provider: {provider}. " +
+                $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+
+        return statement.Compile(dialect);
+    }
+
+    /// <summary>
     /// Compiles an INSERT statement to SQL.
     /// </summary>
     public static CompiledQuery Compile(this InsertStatement statement, ISqlDialect dialect)

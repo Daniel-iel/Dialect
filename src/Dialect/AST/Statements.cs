@@ -56,6 +56,16 @@ public sealed record DeleteStatement(
     bool AllowFullTableDelete = false) : QueryNode;
 
 /// <summary>
+/// Represents a compound SELECT statement combining two or more SELECT statements with set operators (UNION, INTERSECT, EXCEPT).
+/// Supports chaining multiple operations: (SELECT ... UNION SELECT ... INTERSECT SELECT ...)
+/// </summary>
+public sealed record CompoundSelectStatement(
+    SelectStatement Left,
+    SetOperator Operator,
+    SelectStatement Right,
+    CompoundSelectStatement? Next = null) : QueryNode;
+
+/// <summary>
 /// Represents a call to a stored procedure or function.
 /// </summary>
 public sealed record RoutineCall(

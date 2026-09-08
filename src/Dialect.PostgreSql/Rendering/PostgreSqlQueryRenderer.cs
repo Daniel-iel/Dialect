@@ -27,6 +27,20 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         return new CompiledQuery(sql, parameters);
     }
 
+    public CompiledQuery Render(CompoundSelectStatement statement, ISqlDialect dialect)
+    {
+        if (statement == null)
+            throw new ArgumentNullException(nameof(statement));
+        if (dialect == null)
+            throw new ArgumentNullException(nameof(dialect));
+
+        _paramCounter = 0;
+        var parameters = new Dictionary<string, object?>();
+        var sql = RenderCompoundSelect(statement, dialect, parameters);
+
+        return new CompiledQuery(sql, parameters);
+    }
+
     public CompiledQuery Render(InsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
@@ -81,6 +95,71 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         var sql = RenderUpsert(statement, dialect, parameters);
 
         return new CompiledQuery(sql, parameters);
+    }
+
+    private string RenderCompoundSelect(CompoundSelectStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
+    {
+        var sb = new StringBuilder();
+
+        // Render the left SELECT wrapped in parentheses
+        sb.Append("(");
+        var leftRenderer = new PostgreSqlQueryRenderer();
+        var leftParams = new Dictionary<string, object?>();
+        var leftSql = leftRenderer.RenderSelect(statement.Left, dialect, leftParams);
+        
+        // Merge left parameters
+        foreach (var kvp in leftParams)
+        {
+            parameters[kvp.Key] = kvp.Value;
+        }
+        sb.Append(leftSql);
+        sb.Append(")");
+
+        // Set operator
+        sb.Append(" ");
+        sb.Append(statement.Operator switch
+        {
+            SetOperator.Union => "UNION",
+            SetOperator.UnionAll => "UNION ALL",
+            SetOperator.Intersect => "INTERSECT",
+            SetOperator.Except => "EXCEPT",
+            _ => throw new InvalidOperationException($"Set operator {statement.Operator} is not supported")
+        });
+
+        sb.Append(" ");
+
+        // Render the right SELECT wrapped in parentheses
+        sb.Append("(");
+        var rightRenderer = new PostgreSqlQueryRenderer();
+        var rightParams = new Dictionary<string, object?>();
+        var rightSql = rightRenderer.RenderSelect(statement.Right, dialect, rightParams);
+        
+        // Merge right parameters
+        foreach (var kvp in rightParams)
+        {
+            parameters[kvp.Key] = kvp.Value;
+        }
+        sb.Append(rightSql);
+        sb.Append(")");
+
+        // If there's another compound operation chained, render it recursively
+        if (statement.Next != null)
+        {
+            sb.Append(" ");
+            var nextRenderer = new PostgreSqlQueryRenderer();
+            var nextParams = new Dictionary<string, object?>();
+            var nextSql = nextRenderer.RenderCompoundSelect(statement.Next, dialect, nextParams);
+            
+            // Merge next parameters
+            foreach (var kvp in nextParams)
+            {
+                parameters[kvp.Key] = kvp.Value;
+            }
+            // Note: nextSql already includes the parentheses, so we don't add them again
+            sb.Append(nextSql);
+        }
+
+        return sb.ToString();
     }
 
     private string RenderSelect(SelectStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
@@ -185,7 +264,29 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
                 _ => throw new InvalidOperationException($"Unknown join type: {join.Type}")
             });
 
-            sb.Append(" ").Append(QuoteIdentifier(join.Table.Name, dialect));
+            sb.Append(" ");
+            
+            // Handle subquery or table name
+            if (join.Table.SubquerySource != null)
+            {
+                // Render subquery wrapped in parentheses
+                var subqueryRenderer = new PostgreSqlQueryRenderer();
+                var subqueryParams = new Dictionary<string, object?>();
+                var subquerySql = subqueryRenderer.RenderSelect(join.Table.SubquerySource, dialect, subqueryParams);
+                
+                // Merge subquery parameters
+                foreach (var kvp in subqueryParams)
+                {
+                    parameters[kvp.Key] = kvp.Value;
+                }
+                
+                sb.Append("(").Append(subquerySql).Append(")");
+            }
+            else
+            {
+                sb.Append(QuoteIdentifier(join.Table.Name, dialect));
+            }
+
             if (!string.IsNullOrEmpty(join.Table.Alias))
                 sb.Append(" AS ").Append(QuoteIdentifier(join.Table.Alias, dialect));
 
@@ -403,9 +504,29 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     private string RenderInNode(InNode node, ISqlDialect dialect, Dictionary<string, object?> parameters)
     {
         var columnName = QuoteIdentifier(node.Column.Name, dialect);
+
+        // Handle subquery case: column IN (SELECT ...)
+        if (node.SubquerySource != null)
+        {
+            var subqueryRenderer = new PostgreSqlQueryRenderer();
+            var subqueryParams = new Dictionary<string, object?>();
+            var subquerySql = subqueryRenderer.RenderSelect(node.SubquerySource, dialect, subqueryParams);
+
+            // Merge subquery parameters
+            foreach (var kvp in subqueryParams)
+            {
+                parameters[kvp.Key] = kvp.Value;
+            }
+
+            return node.Negated
+                ? $"{columnName} NOT IN ({subquerySql})"
+                : $"{columnName} IN ({subquerySql})";
+        }
+
+        // Handle value list case: column IN (val1, val2, ...)
         var paramNames = new List<string>();
 
-        foreach (var value in node.Values)
+        foreach (var value in node.Values ?? Array.Empty<object?>())
         {
             var paramNum = ++_paramCounter;
             var paramName = $"p{paramNum}";

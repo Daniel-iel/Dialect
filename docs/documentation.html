@@ -781,6 +781,106 @@ SqlBuilder.DeleteFrom("Users").Where("Id", Op.Equals, userId).Build();</code></p
       <p>Uma heurística detecta concatenação suspeita (aspas desbalanceadas) no template e lança exceção. Para casos deliberadamente fora do padrão, <code>WhereRawUnsafe()</code> — nomeado assim de propósito, como fricção consciente em revisão de código.</p>
     </section>
 
+    <section class="doc-section" id="subqueries">
+      <h2>Subqueries &amp; Derived Tables</h2>
+      <p>Aninhamento de <code>SELECT</code> em cláusulas <code>FROM</code> (derived tables) e <code>WHERE IN</code> para padrões de filtro complexos e agregações hierárquicas.</p>
+
+      <h3>FROM Subquery — Derived Tables</h3>
+      <p>Use subqueries na cláusula <code>FROM</code> para criar tabelas derivadas com agregação, filtragem ou transformação de dados:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: agregação de pedidos por usuário
+var subquery = SqlBuilder
+    .Select("UserId", "COUNT(*) as OrderCount", "SUM(TotalAmount) as TotalSpent")
+    .From("Orders")
+    .GroupBy("UserId")
+    .Build();
+
+// Query externa: filtrar usuários com mais de 5 pedidos
+var query = SqlBuilder
+    .Select("UserId", "OrderCount", "TotalSpent")
+    .From(subquery, "UserOrders")
+    .Where("OrderCount", Op.GreaterThan, 5)
+    .OrderBy("TotalSpent", false)  // DESC
+    .Build()
+    .Compile(SqlProvider.PostgreSQL);</code></pre>
+      </div>
+
+      <h3>WHERE IN Subquery — Filtro por resultados de subquery</h3>
+      <p>Filtre registros cuja coluna está presente (ou ausente) nos resultados de outra query:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — WHERE IN</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: todos os IDs de usuários com status "Active"
+var activeUsersSubquery = SqlBuilder
+    .Select("UserId")
+    .From("Users")
+    .Where("Status", Op.Equals, "Active")
+    .Build();
+
+// Query: pedidos de usuários ativos
+var query = SqlBuilder
+    .Select("OrderId", "UserId", "OrderDate", "TotalAmount")
+    .From("Orders")
+    .WhereIn("UserId", activeUsersSubquery)
+    .Compile(SqlProvider.SqlServer);</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — WHERE NOT IN</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: produtos que apareceram em algum pedido
+var orderedProductsSubquery = SqlBuilder
+    .Select("ProductId")
+    .From("OrderItems")
+    .Build();
+
+// Query: produtos que NUNCA foram pedidos (descontinuados?)
+var query = SqlBuilder
+    .Select("ProductId", "Name", "Price")
+    .From("Products")
+    .WhereNotIn("ProductId", orderedProductsSubquery)
+    .Compile(SqlProvider.MySql);</code></pre>
+      </div>
+
+      <h3>Subqueries com Agregação &amp; HAVING</h3>
+      <p>Combine agregação na subquery com filtro <code>HAVING</code> na cláusula externa:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: departamentos com média salarial > $50k
+var highPayrollDepts = SqlBuilder
+    .Select("DepartmentId", "AVG(Salary) as AvgSalary")
+    .From("Employees")
+    .GroupBy("DepartmentId")
+    .Having("Salary", Op.GreaterThan, 50000m)
+    .Build();
+
+// Query: listar departamentos de alto custo com contagem de funcionários
+var query = SqlBuilder
+    .Select("DepartmentId", "AvgSalary")
+    .From(highPayrollDepts, "ExpensiveDepts")
+    .OrderBy("AvgSalary", false)
+    .Build()
+    .Compile(SqlProvider.PostgreSQL);</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Padrão</th><th>Uso</th><th>Método</th><th>SQL</th></tr></thead>
+        <tbody>
+          <tr><td><strong>FROM Subquery</strong></td><td>Derived table com agregação</td><td><code>.From(subquery, "alias")</code></td><td><code>FROM (SELECT ...) AS alias</code></td></tr>
+          <tr><td><strong>WHERE IN</strong></td><td>Filtro por resultados</td><td><code>.WhereIn("col", subquery)</code></td><td><code>WHERE col IN (SELECT ...)</code></td></tr>
+          <tr><td><strong>WHERE NOT IN</strong></td><td>Exclusão de resultados</td><td><code>.WhereNotIn("col", subquery)</code></td><td><code>WHERE col NOT IN (SELECT ...)</code></td></tr>
+          <tr><td><strong>Nested Conditions</strong></td><td>Múltiplas cláusulas WHERE</td><td><code>.Where(...).And(...)</code></td><td>Combinar com subqueries</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Compatibilidade</span>
+        <p>Subqueries são suportadas nativamente em SQL Server, PostgreSQL e MySQL. A renderização para cada dialeto é automática — não há mudanças de código necessárias ao trocar de banco.</p>
+      </div>
+    </section>
+
     <section class="doc-section" id="procedures">
       <h2>Procedures &amp; Functions</h2>
       <p>Nenhum dos três bancos alvo tem o conceito de <em>package</em> (isso é exclusivo do Oracle) — o campo correspondente na AST fica reservado para uso futuro.</p>

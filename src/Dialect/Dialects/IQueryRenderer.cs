@@ -13,6 +13,11 @@ public interface IQueryRenderer
     CompiledQuery Render(SelectStatement statement, ISqlDialect dialect);
 
     /// <summary>
+    /// Renders a compound SELECT statement (UNION, INTERSECT, EXCEPT) to SQL text with parameters.
+    /// </summary>
+    CompiledQuery Render(CompoundSelectStatement statement, ISqlDialect dialect);
+
+    /// <summary>
     /// Renders an INSERT statement to SQL text with parameters.
     /// </summary>
     CompiledQuery Render(InsertStatement statement, ISqlDialect dialect);
