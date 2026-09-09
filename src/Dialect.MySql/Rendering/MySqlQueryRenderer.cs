@@ -376,7 +376,7 @@ public sealed class MySqlQueryRenderer : IQueryRenderer
             {
                 overParts.Add("ORDER BY " + string.Join(", ",
                     windowFunction.Over.OrderByItems.Select(o =>
-                        $"{QuoteIdentifier(o.Column.Name, dialect)} {(o.Direction == SortDirection.Descending ? "DESC" : "ASC")}")));
+                        $"{QuoteIdentifier(o.Column.Name, dialect)} {o.Direction.ToString()}")));
             }
 
             // Frame specification (ROWS/RANGE)

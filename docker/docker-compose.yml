@@ -5,7 +5,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: dialect-sqlserver
     environment:
-      SA_PASSWORD: "P@ssw0rd!"
+      SA_PASSWORD: "SqlServer123!"
       ACCEPT_EULA: "Y"
       MSSQL_DATA_DIR: /var/opt/mssql/data
     ports:
@@ -15,10 +15,10 @@ services:
     cap_add:
       - SYS_PTRACE
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "P@ssw0rd!", "-Q", "SELECT 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$$SA_PASSWORD\" -Q \"SELECT 1\" >/dev/null 2>&1 || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 30
     networks:
       - dialect-network
 
@@ -27,7 +27,7 @@ services:
     container_name: dialect-postgresql
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: "Postgres123!"
       POSTGRES_DB: dialect_samples
       POSTGRES_INITDB_ARGS: "-U postgres"
     ports:
@@ -47,7 +47,7 @@ services:
     image: mysql:8.0
     container_name: dialect-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: "MySql123!"
       MYSQL_DATABASE: dialect_samples
     ports:
       - "3306:3306"

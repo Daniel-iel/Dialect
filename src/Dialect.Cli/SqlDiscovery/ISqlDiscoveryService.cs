@@ -2,7 +2,7 @@ namespace Dialect.Cli.SqlDiscovery;
 
 /// <summary>
 /// Result of discovering a SQL string in source code.
-/// Includes location (line, column) and the string content.
+/// Includes location (line, column), content, and metadata about string type.
 /// </summary>
 public sealed class DiscoveredSqlString
 {
@@ -17,7 +17,7 @@ public sealed class DiscoveredSqlString
     public int ColumnNumber { get; init; }
 
     /// <summary>
-    /// The SQL string value (without quotes).
+    /// The SQL string value (without quotes or dynamic markers).
     /// </summary>
     public required string SqlContent { get; init; }
 
@@ -32,8 +32,24 @@ public sealed class DiscoveredSqlString
     /// </summary>
     public double SuspiciouslyLikesSql { get; init; }
 
+    /// <summary>
+    /// Type of string literal: RegularString, VerbatimString, InterpolatedString, etc.
+    /// </summary>
+    public string StringKind { get; init; } = "RegularString";
+
+    /// <summary>
+    /// Whether this string contains interpolations (e.g., $"SELECT {column}").
+    /// </summary>
+    public bool HasInterpolations { get; init; }
+
+    /// <summary>
+    /// Whether this string is concatenated or has dynamic components.
+    /// Indicates manual review may be needed.
+    /// </summary>
+    public bool HasDynamicComponents { get; init; }
+
     public override string ToString() =>
-        $"Line {LineNumber}:{ColumnNumber} - {SqlContent[..Math.Min(50, SqlContent.Length)]}..." +
+        $"Line {LineNumber}:{ColumnNumber} [{StringKind}] - {SqlContent[..Math.Min(50, SqlContent.Length)]}..." +
         $" (Confidence: {SuspiciouslyLikesSql:P})";
 }
 

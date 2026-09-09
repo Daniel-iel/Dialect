@@ -1,5 +1,7 @@
 using Dialect.Cli.CodeGeneration;
 using Dialect.Cli.Commands;
+using Dialect.Cli.FileRewriting;
+using Dialect.Cli.Reporting;
 using Dialect.Cli.Services;
 using Dialect.Cli.SqlDiscovery;
 using Dialect.Core.DI;
@@ -33,6 +35,26 @@ class Program
         services.AddSingleton<ISqlDiscoveryService, RoslynSqlDiscoveryService>();
         services.AddSingleton<IFluentCodeGenerator, DefaultFluentCodeGenerator>();
         services.AddSingleton<SqlConversionService>();
+
+        // Register file rewriting services
+        services.AddSingleton<ISqlStringReplacer, RoslynFileSyntaxRewriter>();
+        services.AddSingleton<BulkFileRewriter>();
+
+        // Register reporting services
+        services.AddSingleton<JsonReportWriter>();
+        services.AddSingleton<MarkdownReportWriter>();
+        services.AddSingleton<HtmlDashboardGenerator>();
+        services.AddSingleton<ReportingService>(sp =>
+        {
+            var writers = new Dictionary<string, IReportWriter>
+            {
+                { "json", sp.GetRequiredService<JsonReportWriter>() },
+                { "md", sp.GetRequiredService<MarkdownReportWriter>() },
+                { "html", sp.GetRequiredService<HtmlDashboardGenerator>() }
+            };
+            var logger = sp.GetRequiredService<ILogger<ReportingService>>();
+            return new ReportingService(writers, logger);
+        });
 
         // Register command infrastructure (Strategy Pattern)
         services.AddSingleton<CommandFactory>();

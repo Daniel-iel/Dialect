@@ -10,6 +10,31 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/atelier-cave-light.min.css">
 <style>
   :root{
+
+    <!-- Security validation summary added for v3.0 -->
+    <section class="doc-section" id="cli-security-validation">
+      <h2>Validação de Segurança (CLI)</h2>
+      <p>O comando <code>translate-files</code> inclui validações para evitar operações inseguras e exposição de segredos em relatórios.</p>
+
+      <h3>Principais regras aplicadas</h3>
+      <ul>
+        <li><strong>Path safety</strong>: caminhos relativos que escapam do diretório base (../) são rejeitados; caminhos absolutos são aceitos apenas se acessíveis e não ocultos.</li>
+        <li><strong>Glob patterns</strong>: padrões contendo <code>..</code> ou caminhos absolutos são filtrados e rejeitados.</li>
+        <li><strong>Diretórios ocultos</strong>: diretórios com atributo <code>Hidden</code> são considerados não acessíveis por padrão.</li>
+        <li><strong>Sanitização de logs/relatórios</strong>: credenciais comuns (ex.: <code>password='...'</code>, <code>api_key='...'</code>) são mascaradas via <code>SecurityValidator.SanitizeSqlForLogging()</code> antes de salvar em JSON/MD/HTML.</li>
+        <li><strong>Relatórios</strong>: os pares antes/depois das traduções têm SQL sanitizado, evitando vazamento de segredos.</li>
+      </ul>
+
+      <h3>Onde foi implementado</h3>
+      <ul>
+        <li><code>src/Dialect.Cli/Security/SecurityValidator.cs</code> — funções utilitárias de validação e sanitização.</li>
+        <li><code>src/Dialect.Cli/Commands/TranslateFilesCommand.cs</code> — chamada de validação inicial (opções e diretórios).</li>
+        <li><code>src/Dialect.Cli/Reporting/JsonReportWriter.cs</code> — aplica sanitização nos pares de tradução antes de serializar.</li>
+        <li><code>tests/Dialect.Tests/Cli/SecurityValidationTests.cs</code> e <code>SecurityIntegrationTests.cs</code> — cobertura unit/integration para cenários comuns.</li>
+      </ul>
+
+      <h3>Exemplo de comportamento</h3>
+      <pre><code class="language-bash"># Rejeita source-dir que tenta escapar do projeto
     --paper:#FAF9F6;
     --paper-raised:#FFFFFF;
     --ink:#1C1D21;
@@ -17,6 +42,12 @@
     --ink-faint:#9294A0;
     --line:#E5E2DC;
     --line-strong:#D3D0C8;
+
+      <div class="callout">
+        <span class="callout-label">Nota de segurança</span>
+        <p>Sanitização em logs e relatórios tem efeito de redução de risco, mas não substitui práticas de gestão de segredos. Nunca coloque credenciais em código-fonte.</p>
+      </div>
+    </section>
     --accent:#4A55C4;
     --accent-soft:#EEF0FC;
     --accent-ink:#33399A;

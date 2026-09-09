@@ -17,6 +17,7 @@ public sealed class CommandFactory
         _commandRegistry = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
         {
             { "convert", typeof(ConvertCommand) },
+            { "translate-files", typeof(TranslateFilesCommand) },
             { "version", typeof(VersionCommand) },
             { "config", typeof(ConfigCommand) }
         };
