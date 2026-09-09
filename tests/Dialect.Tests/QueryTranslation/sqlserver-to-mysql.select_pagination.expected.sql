@@ -1,0 +1,1 @@
+SELECT * FROM `Orders` ORDER BY `CreatedAt` DESC LIMIT 10;

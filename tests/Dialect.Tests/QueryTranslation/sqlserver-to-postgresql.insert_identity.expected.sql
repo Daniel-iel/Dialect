@@ -1,0 +1,1 @@
+INSERT INTO "Users" ("Name", "Email") VALUES ('Alice', 'a@x') RETURNING id;

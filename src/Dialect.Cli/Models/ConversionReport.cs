@@ -1,7 +1,7 @@
 namespace Dialect.Cli.Models;
 
 /// <summary>
-/// Report generated after attempting to convert C# source files.
+/// Report generated after attempting to convert SQL strings in C# source files.
 /// Includes statistics on files processed, SQL strings found, conversions performed/skipped.
 /// </summary>
 public sealed class ConversionReport
@@ -22,7 +22,7 @@ public sealed class ConversionReport
     public int TotalSqlStringsFound { get; init; }
 
     /// <summary>
-    /// SQL strings successfully converted to FluentBuilder equivalents.
+    /// SQL strings successfully converted to the target SQL dialect.
     /// </summary>
     public int SuccessfulConversions { get; init; }
 
@@ -95,7 +95,7 @@ public sealed class FileConversionResult
 }
 
 /// <summary>
-/// Result of converting a single SQL string to FluentBuilder code.
+/// Result of converting a single SQL string to target SQL text.
 /// </summary>
 public sealed class SqlConversionResult
 {
@@ -110,7 +110,7 @@ public sealed class SqlConversionResult
     public required string OriginalSql { get; init; }
 
     /// <summary>
-    /// The FluentBuilder C# code (if conversion succeeded).
+    /// The converted SQL represented as a C# string literal (if conversion succeeded).
     /// </summary>
     public string? ConvertedCode { get; init; }
 

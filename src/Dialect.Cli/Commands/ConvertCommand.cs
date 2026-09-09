@@ -9,8 +9,8 @@ using Dialect.MySql;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Cocona command for SQL-to-FluentBuilder conversion.
-/// Discovers SQL in C# source and converts to fluent API calls.
+/// Command for SQL dialect conversion.
+/// Discovers SQL in C# source and converts SQL text to the target dialect.
 /// </summary>
 public sealed class ConvertCommand : ICommand
 {
@@ -18,7 +18,7 @@ public sealed class ConvertCommand : ICommand
     private readonly ILogger<ConvertCommand> _logger;
 
     public string CommandName => "convert";
-    public string Description => "Convert SQL strings to FluentBuilder C# code";
+    public string Description => "Convert SQL strings to target SQL dialect";
 
     public ConvertCommand(SqlConversionService conversionService, ILogger<ConvertCommand> logger)
     {
@@ -52,7 +52,7 @@ public sealed class ConvertCommand : ICommand
     }
 
     /// <summary>
-    /// Execute SQL-to-FluentBuilder conversion.
+    /// Execute SQL dialect conversion.
     /// </summary>
     private async Task<int> InvokeAsync(
         string path,

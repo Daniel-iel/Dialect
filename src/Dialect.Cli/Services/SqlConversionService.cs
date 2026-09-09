@@ -1,8 +1,10 @@
 namespace Dialect.Cli.Services;
 
-using Dialect.Cli.CodeGeneration;
 using Dialect.Cli.Models;
 using Dialect.Cli.SqlDiscovery;
+using Dialect.Core.AST;
+using Dialect.Core.Dialects;
+using Dialect.Core.QueryTranslation;
 using ErrorOr;
 using Microsoft.Extensions.Logging;
 using System.IO;
@@ -15,16 +17,16 @@ using System.Linq;
 public sealed class SqlConversionService
 {
     private readonly ISqlDiscoveryService _sqlDiscoveryService;
-    private readonly IFluentCodeGenerator _codeGenerator;
+    private readonly ISqlTranslator _sqlTranslator;
     private readonly ILogger<SqlConversionService> _logger;
 
     public SqlConversionService(
         ISqlDiscoveryService sqlDiscoveryService,
-        IFluentCodeGenerator codeGenerator,
+        ISqlTranslator sqlTranslator,
         ILogger<SqlConversionService> logger)
     {
         _sqlDiscoveryService = sqlDiscoveryService ?? throw new ArgumentNullException(nameof(sqlDiscoveryService));
-        _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
+        _sqlTranslator = sqlTranslator ?? throw new ArgumentNullException(nameof(sqlTranslator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -69,7 +71,7 @@ public sealed class SqlConversionService
 
                     totalSqlFound += discoveredSqlStrings.Count;
 
-                    // Convert each SQL string to FluentBuilder code
+                    // Convert each SQL string to target dialect SQL text
                     var sqlResults = new List<SqlConversionResult>();
                     var modifiedSourceCode = sourceCode;
                     var fileSuccessful = 0;
@@ -78,10 +80,10 @@ public sealed class SqlConversionService
 
                     foreach (var sqlString in discoveredSqlStrings)
                     {
-                        var convertedCode = _codeGenerator.GenerateFluentCode(sqlString.SqlContent);
-
-                        if (convertedCode is not null)
+                        var translation = TranslateSql(sqlString.SqlContent, options);
+                        if (translation.HasCompiledResult)
                         {
+                            var convertedCode = ToCSharpStringLiteral(translation.Compiled!.Sql);
                             sqlResults.Add(new SqlConversionResult
                             {
                                 LineNumber = sqlString.LineNumber,
@@ -93,15 +95,21 @@ public sealed class SqlConversionService
                         }
                         else
                         {
-                            var error = _codeGenerator.GetLastConversionError() ?? "Unknown error";
+                            var failureReason = translation.ErrorMessage;
+                            if (string.IsNullOrWhiteSpace(failureReason) && translation.UntranslatableConstructs.Count > 0)
+                            {
+                                failureReason = string.Join("; ", translation.UntranslatableConstructs);
+                            }
+                            failureReason ??= "Unknown translation error";
+
                             sqlResults.Add(new SqlConversionResult
                             {
                                 LineNumber = sqlString.LineNumber,
                                 OriginalSql = sqlString.SqlContent,
-                                FailureReason = error
+                                FailureReason = failureReason
                             });
 
-                            if (error.Contains("not yet implemented", StringComparison.OrdinalIgnoreCase))
+                            if (failureReason.Contains("not yet implemented", StringComparison.OrdinalIgnoreCase))
                             {
                                 fileSkipped++;
                                 skippedConversions++;
@@ -135,10 +143,75 @@ public sealed class SqlConversionService
                                 _logger.LogInformation("Backup created: {BackupPath}", backupPath);
                         }
 
-                        // TODO: Apply conversions to source code and write file
-                        // For now, we just report what would be done
-                        if (options.Verbose)
-                            _logger.LogInformation("Would apply {ConversionCount} conversions", fileSuccessful);
+                        // Apply conversions to source code and write file
+                        // We replace each discovered literal with the generated code snippet.
+                        try
+                        {
+                            // Work on normalized line endings to compute positions reliably
+                            var normalized = modifiedSourceCode.Replace("\r\n", "\n");
+                            var lines = normalized.Split('\n').ToList();
+
+                            // Process discovered strings in reverse order to avoid shifting indices
+                            var ordered = discoveredSqlStrings
+                                .OrderByDescending(d => d.LineNumber)
+                                .ThenByDescending(d => d.ColumnNumber)
+                                .ToList();
+
+                            var applied = 0;
+                            foreach (var ds in ordered)
+                            {
+                                var originalLiteral = ds.OriginalLiteral ?? ds.SqlContent;
+                                var lineIdx = Math.Max(0, ds.LineNumber - 1);
+                                if (lineIdx >= lines.Count) continue;
+
+                                var line = lines[lineIdx];
+                                var startPos = Math.Max(0, ds.ColumnNumber - 1);
+                                var idx = line.IndexOf(originalLiteral, startPos, StringComparison.Ordinal);
+                                if (idx < 0)
+                                {
+                                    // fallback: search anywhere on the line
+                                    idx = line.IndexOf(originalLiteral, StringComparison.Ordinal);
+                                }
+
+                                if (idx < 0)
+                                    continue;
+
+                                var resultMatch = sqlResults.FirstOrDefault(r => r.OriginalSql == ds.SqlContent && !string.IsNullOrEmpty(r.ConvertedCode));
+                                if (resultMatch == null)
+                                    continue;
+
+                                var converted = resultMatch.ConvertedCode!;
+
+                                // Preserve indentation of the original literal's column
+                                var indent = line.Take(idx).Count(c => c == ' ' || c == '\t');
+                                var indentStr = new string(' ', indent);
+                                var convertedIndented = string.Join("\n", converted.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                                                                    .Select((ln, i) => i == 0 ? ln : indentStr + ln));
+
+                                // Replace the literal with the converted snippet
+                                lines[lineIdx] = line.Substring(0, idx) + convertedIndented + line.Substring(idx + originalLiteral.Length);
+                                applied++;
+                            }
+
+                            if (applied > 0)
+                            {
+                                // Restore original line endings style (use Environment.NewLine)
+                                var newContent = string.Join(Environment.NewLine, lines);
+                                System.IO.File.WriteAllText(filePath, newContent);
+                                if (options.Verbose)
+                                    _logger.LogInformation("Applied {Applied} conversions to {FilePath}", applied, filePath);
+                            }
+                            else
+                            {
+                                if (options.Verbose)
+                                    _logger.LogInformation("No applicable conversions found to apply for {FilePath}", filePath);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to apply conversions to {FilePath}", filePath);
+                            conversionErrors++;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -166,6 +239,45 @@ public sealed class SqlConversionService
             _logger.LogError(ex, "Fatal error during conversion");
             return Error.Failure("conversion.fatal", $"Fatal error: {ex.Message}");
         }
+    }
+
+    private TranslationResult TranslateSql(string sqlContent, ConversionOptions options)
+    {
+        if (options.SourceProvider.HasValue)
+        {
+            return _sqlTranslator.Translate(sqlContent, options.SourceProvider.Value, options.TargetDialect);
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.ConnectionString))
+        {
+            return _sqlTranslator.Translate(sqlContent, options.ConnectionString, options.TargetDialect);
+        }
+
+        return _sqlTranslator.Translate(
+            sqlContent,
+            sourceProvider: null,
+            targetProvider: ResolveTargetProvider(options.TargetDialect));
+    }
+
+    private static SqlProvider ResolveTargetProvider(ISqlDialect targetDialect)
+    {
+        if (targetDialect.ParameterPrefix == ":" || targetDialect.IdentifierQuote == '"')
+            return SqlProvider.PostgreSql;
+
+        if (targetDialect.ParameterPrefix == "?" || targetDialect.IdentifierQuote == '`')
+            return SqlProvider.MySql;
+
+        return SqlProvider.SqlServer;
+    }
+
+    private static string ToCSharpStringLiteral(string sql)
+    {
+        var escaped = sql
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal)
+            .Replace("\r", "\\r", StringComparison.Ordinal)
+            .Replace("\n", "\\n", StringComparison.Ordinal);
+        return $"\"{escaped}\"";
     }
 
     /// <summary>

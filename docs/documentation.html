@@ -1438,7 +1438,7 @@ var r3 = translator.Translate(sql, SqlProvider.SqlServer, SqlDialects.PostgreSql
 
     <section class="doc-section" id="cli">
       <h2>CLI de conversão de projeto</h2>
-      <p>Diferente da tradução (que sempre produz SQL), esta CLI existe para quando o objetivo é <strong>converter um projeto C# existente para usar o FluentBuilder</strong> — encontrando SQL cru embutido no código e gerando o código equivalente em builder.</p>
+      <p>Esta CLI existe para <strong>migrar SQL embutido em projetos C# entre dialetos</strong> (SQL Server, PostgreSQL e MySQL), convertendo o texto SQL dos literais para o banco de destino.</p>
 
       <div class="code-block">
         <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
@@ -1455,9 +1455,9 @@ dialect --scope method --path ./Repositories/UserRepository.cs \
 
       <ul>
         <li><strong>Descoberta</strong> via Roslyn — localiza SQL em Dapper, ADO.NET e EF Core raw SQL.</li>
-        <li><strong>Parsing</strong> por dialeto de origem (ScriptDom / PgQuery / ANTLR).</li>
-        <li><strong>Geração de código</strong> — trechos sem mapeamento direto viram <code>Raw()</code> comentado com <code>// TODO: revisar</code>, em vez de falhar a conversão inteira.</li>
-        <li><strong>Dry-run por padrão</strong> — sobrescrever arquivos exige <code>--apply</code> explícito.</li>
+        <li><strong>Parsing</strong> por dialeto de origem (ScriptDom / PgQuery / ANTLR) — quando o parser não consegue produzir AST, a CLI aplica um <em>fallback</em> textual heurístico (regex-based) para transformar instruções comuns (ex: TOP → LIMIT, ISNULL → COALESCE, OUTPUT/SCOPE_IDENTITY → RETURNING/LAST_INSERT_ID). Esse fallback é prático, porém frágil para SQL complexo; revise as mudanças manualmente.</li>
+        <li><strong>Reescrita de literal C#</strong> — o SQL convertido é escrito de volta no literal de string do arquivo-fonte, preservando o fluxo da aplicação sem trocar para builder API.</li>
+        <li><strong>Dry-run por padrão</strong> — sobrescrever arquivos exige <code>--apply</code> explícito. Ao aplicar, backups <code>.bak</code> são criados por padrão; use <code>--no-backup</code> para pular backups.</li>
       </ul>
 
       <div class="callout">
@@ -1468,10 +1468,10 @@ dialect --scope method --path ./Repositories/UserRepository.cs \
 
     <section class="doc-section" id="cli-commands">
       <h2>Comandos da CLI (Detalhado)</h2>
-      <p>A CLI de conversão automatiza a transformação de SQL strings embutidas em C# para o padrão FluentBuilder. Funciona via discovery (Roslyn) → parsing → translation → code generation.</p>
+      <p>A CLI de conversão automatiza a transformação de SQL strings embutidas em C# para o dialeto SQL de destino. Funciona via discovery (Roslyn) → parsing/heurística → tradução SQL → apply/backup.</p>
 
       <h3 id="comando-convert">Comando: convert</h3>
-      <p>Principal comando — descobre SQL strings em `.cs` files e gera código FluentBuilder equivalente. Suporta <strong>dry-run por padrão</strong> (sem modificar arquivos), opção <code>--apply</code> para aplicar mudanças com backup automático.</p>
+      <p>Principal comando — descobre SQL strings em `.cs` files e gera SQL compatível com o dialeto de destino. Suporta <strong>dry-run por padrão</strong> (sem modificar arquivos), opção <code>--apply</code> para aplicar mudanças com backup automático.</p>
 
       <div class="code-block">
         <div class="code-block-head"><span>Sintaxe</span><button class="copy-btn" data-copy>copiar</button></div>
@@ -1486,7 +1486,7 @@ dialect --scope method --path ./Repositories/UserRepository.cs \
           <tr><td><code>-tp, --target-provider</code></td><td>string</td><td>Provider de destino: <code>SqlServer</code> | <code>PostgreSql</code> | <code>MySql</code>. Default: <code>SqlServer</code>.</td></tr>
           <tr><td><code>-d, --dry-run</code></td><td>flag</td><td>Visualiza mudanças SEM aplicar (DEFAULT).</td></tr>
           <tr><td><code>-a, --apply</code></td><td>flag</td><td>Aplica conversões nos arquivos. Cria backup automático <code>.bak</code>.</td></tr>
-          <tr><td><code>-v, --verbose</code></td><td>flag</td><td>Logs detalhados de discovery, parsing, generation.</td></tr>
+          <tr><td><code>-v, --verbose</code></td><td>flag</td><td>Logs detalhados de discovery, parsing e tradução.</td></tr>
           <tr><td><code>--no-backup</code></td><td>flag</td><td>Skip backup ao usar <code>--apply</code>.</td></tr>
         </tbody>
       </table>
@@ -1508,7 +1508,7 @@ dialect convert ./src -cs "Host=localhost;Port=5432;..." --apply</code></pre>
 
       <div class="callout">
         <span class="callout-label">Fluxo Interno</span>
-        <p><strong>1. Discovery</strong> — RoslynSqlDiscoveryService escaneia `.cs` procurando SQL strings (Dapper, ADO.NET, EF Core). <strong>2. Parse</strong> — Parser específico do provider de origem converte texto SQL → AST. <strong>3. Translate</strong> — AST → AST de destino (se providers forem diferentes). <strong>4. Generate</strong> — AST → código C# FluentBuilder com `SqlBuilder`. <strong>5. Apply/Backup</strong> — Escreve no arquivo original ou visualiza em stdout.</p>
+        <p><strong>1. Discovery</strong> — RoslynSqlDiscoveryService escaneia `.cs` procurando SQL strings (Dapper, ADO.NET, EF Core). <strong>2. Parse</strong> — parser específico do provider de origem tenta converter SQL para AST; quando não há AST, entra fallback textual heurístico. <strong>3. Translate</strong> — SQL origem → SQL destino (SQL Server, PostgreSQL ou MySQL). <strong>4. Apply/Backup</strong> — escreve o literal convertido no arquivo original (ou apenas reporta no dry-run), com backup opcional.</p>
       </div>
 
       <h3 id="comando-config">Comando: config</h3>
@@ -1540,6 +1540,7 @@ dialect config set target-provider PostgreSql</code></pre>
       <div class="callout">
         <span class="callout-label">Limitações da CLI</span>
         <p><strong>Não suporta:</strong> DDL (CREATE TABLE, ALTER TABLE), Stored Procedures complexas, Triggers, Views. <strong>Perde:</strong> Comments e formatação de SQL original. <strong>Limite de profundidade:</strong> Subqueries aninhadas muito profundas podem não ser parseadas corretamente.</p>
+        <p>Nota: quando o parser de origem não consegue produzir AST, a CLI usa um <em>fallback</em> textual (heurístico, baseado em regex) para traduzir padrões comuns (ex: TOP → LIMIT, ISNULL → COALESCE, OUTPUT/SCOPE_IDENTITY → RETURNING/LAST_INSERT_ID). Esse fallback é útil para cobertura inicial, mas é frágil — todas as mudanças aplicadas devem passar por revisão humana.</p>
       </div>
     </section>
 

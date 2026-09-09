@@ -4,19 +4,18 @@ using Dialect.Core.AST;
 
 /// <summary>
 /// SQL Server (T-SQL) parser adapter.
-/// Currently a placeholder returning null for parsing (reserved for future ScriptDom integration).
+/// Uses a lightweight AST parser for common DML and SELECT patterns.
 /// Detects T-SQL specific constructs that may not translate to other dialects.
 /// </summary>
 public sealed class SqlServerParserAdapter : SqlParserAdapter
 {
     /// <summary>
-    /// Parses T-SQL source to SelectStatement.
-    /// Currently not implemented; reserved for future ScriptDom parser integration.
+    /// Parses T-SQL source to a query AST.
+    /// Uses lightweight parser coverage; complex statements still require richer parser integration.
     /// </summary>
-    public override SelectStatement? ParseToAst(string sql)
+    public override QueryNode? ParseToAst(string sql)
     {
-        // Placeholder: Future implementation will use Microsoft.SqlServer.Management.SqlParser.SqlCodeObject
-        return null;
+        return SimpleDmlAstParser.Parse(sql, SqlProvider.SqlServer);
     }
 
     /// <summary>

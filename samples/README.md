@@ -570,6 +570,30 @@ To add new examples:
 - [Database Design Patterns](https://en.wikipedia.org/wiki/Relational_database)
 - [SQL Optimization Basics](https://www.postgresql.org/docs/current/using-explain.html)
 
+## Usando a CLI de conversão (exemplos)
+
+Os samples incluem trechos que demonstram como executar a CLI de conversão para migrar SQL embutido em C# entre dialetos (SQL Server, PostgreSQL e MySQL).
+
+Exemplos:
+
+```bash
+# Dry-run (visualiza antes de aplicar) - padrão
+dialect convert ./src --target-provider PostgreSql --verbose
+
+# Aplicar as mudanças (cria backup .bak por padrão)
+dialect convert ./src --target-provider PostgreSql --apply
+
+# Aplicar sem criar backup (use com cautela)
+dialect convert ./src --target-provider MySql --apply --no-backup
+```
+
+Notas importantes:
+
+- Dry-run é o comportamento padrão — sempre reveja as mudanças propostas antes de usar --apply.
+- Ao aplicar, a ferramenta cria backups com extensão `.bak` por padrão; use `--no-backup` para pular essa etapa.
+- Quando o parser específico do dialeto não consegue produzir AST, a CLI aplica um fallback textual heurístico (baseado em regex) para traduzir padrões comuns (ex: TOP → LIMIT, ISNULL → COALESCE, OUTPUT/SCOPE_IDENTITY → RETURNING/LAST_INSERT_ID). Esse fallback é útil para cobertura inicial, mas é frágil para SQL complexo; revisão humana é obrigatória.
+- SQL construído dinamicamente por concatenação de strings (ex: "..." + id) não é convertido e é sinalizado como risco de segurança.
+
 ## License
 
 Samples are provided as-is for educational purposes.

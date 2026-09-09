@@ -4,19 +4,18 @@ using Dialect.Core.AST;
 
 /// <summary>
 /// MySQL parser adapter.
-/// Currently a placeholder returning null for parsing (reserved for future ANTLR parser integration).
+/// Uses a lightweight AST parser for common DML and SELECT patterns.
 /// Detects MySQL specific constructs that may not translate to other dialects.
 /// </summary>
 public sealed class MySqlParserAdapter : SqlParserAdapter
 {
     /// <summary>
-    /// Parses MySQL SQL source to SelectStatement.
-    /// Currently not implemented; reserved for future ANTLR MySQL parser integration.
+    /// Parses MySQL SQL source to a query AST.
+    /// Uses lightweight parser coverage; complex statements still require richer parser integration.
     /// </summary>
-    public override SelectStatement? ParseToAst(string sql)
+    public override QueryNode? ParseToAst(string sql)
     {
-        // Placeholder: Future implementation will use ANTLR MySQL grammar
-        return null;
+        return SimpleDmlAstParser.Parse(sql, SqlProvider.MySql);
     }
 
     /// <summary>

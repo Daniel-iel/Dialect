@@ -1,0 +1,1 @@
+SELECT IFNULL(`Phone`, 'N/A') AS `PhoneOrDefault` FROM `Contacts`;

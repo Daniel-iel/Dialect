@@ -1,4 +1,3 @@
-using Dialect.Cli.CodeGeneration;
 using Dialect.Cli.Commands;
 using Dialect.Cli.Services;
 using Dialect.Cli.SqlDiscovery;
@@ -9,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Dialect.Cli;
 
 /// <summary>
-/// SQL-to-FluentBuilder C# converter CLI.
+/// SQL dialect converter CLI.
 /// Uses Strategy Pattern (ICommand) to manage extensible command execution.
 /// </summary>
 class Program
@@ -31,7 +30,6 @@ class Program
 
         // Register CLI services
         services.AddSingleton<ISqlDiscoveryService, RoslynSqlDiscoveryService>();
-        services.AddSingleton<IFluentCodeGenerator, DefaultFluentCodeGenerator>();
         services.AddSingleton<SqlConversionService>();
 
         // Register command infrastructure (Strategy Pattern)
@@ -45,4 +43,3 @@ class Program
         return await dispatcher.DispatchAsync(args);
     }
 }
-

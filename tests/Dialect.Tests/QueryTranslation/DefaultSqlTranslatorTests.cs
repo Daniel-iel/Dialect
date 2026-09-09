@@ -59,16 +59,17 @@ public class DefaultSqlTranslatorTests
     public void Translate_WithSqlServerConnectionString_DetectsSqlServer(string connectionString)
     {
         // Arrange
-        var mockDialect = new MockSqlDialect();
-        var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
+        var targetDialect = new Dialect.SqlServer.SqlServerDialect();
+        var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, targetDialect);
         const string sourceSql = "SELECT id FROM users";
 
         // Act
-        var result = translator.Translate(sourceSql, connectionString, mockDialect);
+        var result = translator.Translate(sourceSql, connectionString, targetDialect);
 
         // Assert
         result.DetectedSourceProvider.Should().Be(SqlProvider.SqlServer);
-        result.ErrorMessage.Should().NotBeNullOrEmpty(); // Because parser not implemented
+        result.HasCompiledResult.Should().BeTrue();
+        result.Compiled.Should().NotBeNull();
     }
 
     [Theory]
@@ -77,16 +78,17 @@ public class DefaultSqlTranslatorTests
     public void Translate_WithPostgresConnectionString_DetectsPostgres(string connectionString)
     {
         // Arrange
-        var mockDialect = new MockSqlDialect();
-        var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
+        var targetDialect = new Dialect.SqlServer.SqlServerDialect();
+        var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, targetDialect);
         const string sourceSql = "SELECT id FROM users";
 
         // Act
-        var result = translator.Translate(sourceSql, connectionString, mockDialect);
+        var result = translator.Translate(sourceSql, connectionString, targetDialect);
 
         // Assert
         result.DetectedSourceProvider.Should().Be(SqlProvider.PostgreSql);
-        result.ErrorMessage.Should().NotBeNullOrEmpty(); // Because parser not implemented
+        result.HasCompiledResult.Should().BeTrue();
+        result.Compiled.Should().NotBeNull();
     }
 
     [Theory]
@@ -95,16 +97,17 @@ public class DefaultSqlTranslatorTests
     public void Translate_WithMySqlConnectionString_DetectsMySql(string connectionString)
     {
         // Arrange
-        var mockDialect = new MockSqlDialect();
-        var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, mockDialect);
+        var targetDialect = new Dialect.SqlServer.SqlServerDialect();
+        var translator = new DefaultSqlTranslator(_providerDetector, _parserAdapters, targetDialect);
         const string sourceSql = "SELECT id FROM users";
 
         // Act
-        var result = translator.Translate(sourceSql, connectionString, mockDialect);
+        var result = translator.Translate(sourceSql, connectionString, targetDialect);
 
         // Assert
         result.DetectedSourceProvider.Should().Be(SqlProvider.MySql);
-        result.ErrorMessage.Should().NotBeNullOrEmpty(); // Because parser not implemented
+        result.HasCompiledResult.Should().BeTrue();
+        result.Compiled.Should().NotBeNull();
     }
 
     [Fact]
@@ -156,7 +159,7 @@ public class DefaultSqlTranslatorTests
         // Assert
         result.DetectedSourceProvider.Should().Be(SqlProvider.SqlServer);
         result.UntranslatableConstructs.Should().Contain("MERGE statement not supported in target dialect");
-        result.ErrorMessage.Should().NotBeNullOrEmpty(); // Parser not implemented
+        result.HasCompiledResult.Should().BeTrue();
     }
 
     [Fact]
@@ -173,7 +176,7 @@ public class DefaultSqlTranslatorTests
         // Assert
         result.DetectedSourceProvider.Should().Be(SqlProvider.PostgreSql);
         result.UntranslatableConstructs.Should().Contain("JSON operators are PostgreSQL specific");
-        result.ErrorMessage.Should().NotBeNullOrEmpty(); // Parser not implemented
+        result.HasCompiledResult.Should().BeTrue();
     }
 
     [Fact]
@@ -190,7 +193,7 @@ public class DefaultSqlTranslatorTests
         // Assert
         result.DetectedSourceProvider.Should().Be(SqlProvider.MySql);
         result.UntranslatableConstructs.Should().Contain("GROUP_CONCAT() is MySQL specific");
-        result.ErrorMessage.Should().NotBeNullOrEmpty(); // Parser not implemented
+        result.HasCompiledResult.Should().BeTrue();
     }
 
     [Fact]

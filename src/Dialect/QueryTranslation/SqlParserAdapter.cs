@@ -10,12 +10,12 @@ using Dialect.Core.AST;
 public abstract class SqlParserAdapter
 {
     /// <summary>
-    /// Parses SQL source string into an abstract syntax tree (SelectStatement).
+    /// Parses SQL source string into an abstract syntax tree (query node).
     /// Returns null if parsing fails or is not implemented for this dialect.
     /// </summary>
     /// <param name="sql">The SQL source to parse.</param>
-    /// <returns>Parsed SelectStatement, or null if parsing fails.</returns>
-    public abstract SelectStatement? ParseToAst(string sql);
+    /// <returns>Parsed QueryNode, or null if parsing fails.</returns>
+    public abstract QueryNode? ParseToAst(string sql);
 
     /// <summary>
     /// Detects SQL constructs that cannot be translated to other dialects.

@@ -1,0 +1,1 @@
+INSERT INTO [Users] ([Name], [Email]) OUTPUT INSERTED.Id VALUES ('Alice', 'a@x');

@@ -1,0 +1,1 @@
+SELECT COALESCE("Phone", 'N/A') AS "PhoneOrDefault" FROM "Contacts";

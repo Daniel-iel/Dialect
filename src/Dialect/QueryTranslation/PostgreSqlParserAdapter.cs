@@ -4,19 +4,18 @@ using Dialect.Core.AST;
 
 /// <summary>
 /// PostgreSQL parser adapter.
-/// Currently a placeholder returning null for parsing (reserved for future libpq parser integration).
+/// Uses a lightweight AST parser for common DML and SELECT patterns.
 /// Detects PostgreSQL specific constructs that may not translate to other dialects.
 /// </summary>
 public sealed class PostgreSqlParserAdapter : SqlParserAdapter
 {
     /// <summary>
-    /// Parses PostgreSQL SQL source to SelectStatement.
-    /// Currently not implemented; reserved for future libpq/pg_query_go integration.
+    /// Parses PostgreSQL SQL source to a query AST.
+    /// Uses lightweight parser coverage; complex statements still require richer parser integration.
     /// </summary>
-    public override SelectStatement? ParseToAst(string sql)
+    public override QueryNode? ParseToAst(string sql)
     {
-        // Placeholder: Future implementation will use libpq or pg_query_go parser
-        return null;
+        return SimpleDmlAstParser.Parse(sql, SqlProvider.PostgreSql);
     }
 
     /// <summary>

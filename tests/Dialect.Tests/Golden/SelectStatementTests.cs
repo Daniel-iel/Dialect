@@ -429,13 +429,13 @@ public class SelectStatementTests
         var mysql = query.Compile(new MySqlDialect());
 
         // Assert - Verify window function rendering
-        sqlServer.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY [DepartmentId] ORDER BY [Salary] Descending)");
+        sqlServer.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY [DepartmentId] ORDER BY [Salary] DESC)");
         sqlServer.Sql.Should().Contain("AS [rank]");
 
-        postgreSql.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY \"DepartmentId\" ORDER BY \"Salary\" Descending)");
+        postgreSql.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY \"DepartmentId\" ORDER BY \"Salary\" DESC)");
         postgreSql.Sql.Should().Contain("AS \"rank\"");
 
-        mysql.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY `DepartmentId` ORDER BY `Salary` Descending)");
+        mysql.Sql.Should().Contain("ROW_NUMBER() OVER (PARTITION BY `DepartmentId` ORDER BY `Salary` DESC)");
         mysql.Sql.Should().Contain("AS `rank`");
     }
 
