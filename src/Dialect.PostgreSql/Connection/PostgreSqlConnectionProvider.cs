@@ -25,7 +25,9 @@ public class PostgreSqlConnectionProvider : IDbConnectionProvider
     public object OpenConnection(string connectionString)
     {
         if (!ValidateConnectionString(connectionString))
+        {
             throw new ArgumentException("Invalid PostgreSQL connection string", nameof(connectionString));
+        }
 
         var connection = new NpgsqlConnection(connectionString);
         connection.Open();
@@ -44,7 +46,9 @@ public class PostgreSqlConnectionProvider : IDbConnectionProvider
     public string ExecuteScalar(object connection, string query)
     {
         if (connection is not NpgsqlConnection npgsqlConnection)
+        {
             throw new ArgumentException("Expected NpgsqlConnection", nameof(connection));
+        }
 
         using (var command = new NpgsqlCommand(query, npgsqlConnection))
         {
@@ -57,7 +61,9 @@ public class PostgreSqlConnectionProvider : IDbConnectionProvider
     public IReadOnlyList<Dictionary<string, object>> ExecuteQuery(object connection, string query)
     {
         if (connection is not NpgsqlConnection npgsqlConnection)
+        {
             throw new ArgumentException("Expected NpgsqlConnection", nameof(connection));
+        }
 
         var results = new List<Dictionary<string, object>>();
         using (var command = new NpgsqlCommand(query, npgsqlConnection))
@@ -89,7 +95,9 @@ public class PostgreSqlConnectionProvider : IDbConnectionProvider
     public DatabaseVersion? ParseVersion(string versionString)
     {
         if (string.IsNullOrWhiteSpace(versionString))
+        {
             return null;
+        }
 
         // Parse PostgreSQL version format
         // Examples:
@@ -115,7 +123,9 @@ public class PostgreSqlConnectionProvider : IDbConnectionProvider
     public bool ValidateConnectionString(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             return false;
+        }
 
         try
         {

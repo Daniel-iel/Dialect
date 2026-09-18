@@ -13,7 +13,10 @@ public sealed record FrameSpec(
     public string ToSql()
     {
         if (EndBound == null)
+        {
             return $"{FrameType} {StartBound}";
+        }
+
         return $"{FrameType} BETWEEN {StartBound} AND {EndBound}";
     }
 }
@@ -51,11 +54,15 @@ public sealed record WindowFunction(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(FunctionName))
+        {
             throw new ArgumentException("Function name cannot be empty", nameof(FunctionName));
+        }
 
         // Over clause is required for window functions
         if (Over == null || Over.IsEmpty)
+        {
             throw new ArgumentException($"Window function '{FunctionName}' requires an OVER clause", nameof(Over));
+        }
     }
 }
 

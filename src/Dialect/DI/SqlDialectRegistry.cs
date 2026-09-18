@@ -37,7 +37,9 @@ public sealed class SqlDialectRegistry
     public void SetDefault(ISqlDialect dialect)
     {
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect), "Default dialect cannot be null");
+        }
 
         _lock.EnterWriteLock();
         try
@@ -77,7 +79,9 @@ public sealed class SqlDialectRegistry
     public void RegisterDialect(SqlProvider provider, ISqlDialect dialect)
     {
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect), "Dialect cannot be null");
+        }
 
         _lock.EnterWriteLock();
         try

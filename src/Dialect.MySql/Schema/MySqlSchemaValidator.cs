@@ -30,12 +30,16 @@ public class MySqlSchemaValidator : SchemaValidator
     public override ValidationResult Validate(Migration migration, ISqlDialect dialect)
     {
         if (string.IsNullOrWhiteSpace(migration.Name))
+        {
             return ValidationResult.WithErrors(
                 new ValidationError("MIGRATION_NAME_EMPTY", "Migration name cannot be empty", "Migration"));
+        }
 
         if (migration.Steps.Count == 0)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError("MIGRATION_NO_STEPS", "Migration must contain at least one step", migration.Name));
+        }
 
         var results = new List<ValidationResult>
         {
@@ -103,10 +107,13 @@ public class MySqlSchemaValidator : SchemaValidator
     private static ValidationResult ValidateMigrationName(string name)
     {
         if (ReservedKeywords.Contains(name))
+        {
             return ValidationResult.WithWarnings(
                 new ValidationWarning(ValidationRules.ReservedKeywordUsed,
                     $"Migration name '{name}' is a reserved MySQL keyword",
                     name));
+        }
+
         return ValidationResult.Success();
     }
 
@@ -129,10 +136,12 @@ public class MySqlSchemaValidator : SchemaValidator
             foreach (var pkColumn in step.PrimaryKeyColumns)
             {
                 if (!columnNames.Contains(pkColumn))
+                {
                     results.Add(ValidationResult.WithErrors(
                         new ValidationError("PK_COLUMN_NOT_FOUND",
                             $"Primary key column '{pkColumn}' not found in table definition",
                             pkColumn)));
+                }
             }
         }
 

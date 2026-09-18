@@ -14,9 +14,14 @@ public sealed class PostgreSqlRoutineRenderer : IRoutineRenderer
     public CompiledQuery Render(RoutineCall routine, ISqlDialect dialect)
     {
         if (routine == null)
+        {
             throw new ArgumentNullException(nameof(routine));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sb = new StringBuilder();
@@ -25,7 +30,9 @@ public sealed class PostgreSqlRoutineRenderer : IRoutineRenderer
         sb.Append(routine.Kind == RoutineKind.Procedure ? "CALL " : "SELECT ");
 
         if (!string.IsNullOrEmpty(routine.Schema))
+        {
             sb.Append($"\"{routine.Schema}\".");
+        }
 
         sb.Append($"\"{routine.Name}\"");
 

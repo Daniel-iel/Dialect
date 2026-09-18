@@ -74,16 +74,25 @@ public sealed class SqlDiagnostic
         parts.Add(prefix);
 
         if (!string.IsNullOrEmpty(Code))
+        {
             parts.Add($"[{Code}]");
+        }
 
         var location = FilePath ?? "";
         if (LineNumber.HasValue)
+        {
             location += $":{LineNumber}";
+        }
+
         if (ColumnNumber.HasValue)
+        {
             location += $":{ColumnNumber}";
+        }
 
         if (!string.IsNullOrEmpty(location))
+        {
             parts.Add(location);
+        }
 
         return $"{string.Join(" ", parts)} {Message}";
     }
@@ -263,7 +272,9 @@ public sealed class DiagnosticService
     public string GetSummary()
     {
         if (_diagnostics.Count == 0)
+        {
             return "✅ No issues detected";
+        }
 
         var errorCount = Errors.Count;
         var warningCount = Warnings.Count;
@@ -271,11 +282,19 @@ public sealed class DiagnosticService
 
         var parts = new List<string>();
         if (errorCount > 0)
+        {
             parts.Add($"❌ {errorCount} error(s)");
+        }
+
         if (warningCount > 0)
+        {
             parts.Add($"⚠️  {warningCount} warning(s)");
+        }
+
         if (infoCount > 0)
+        {
             parts.Add($"ℹ️  {infoCount} info(s)");
+        }
 
         return string.Join(" | ", parts);
     }

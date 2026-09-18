@@ -25,7 +25,9 @@ public static class ParameterConverter
         string dialectName)
     {
         if (compiledQuery?.Parameters == null || compiledQuery.Parameters.Count == 0)
+        {
             return new Dictionary<string, object?>();
+        }
 
         return dialectName.ToLower() switch
         {

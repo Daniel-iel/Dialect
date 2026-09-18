@@ -89,7 +89,9 @@ public class SqlServerIndexAdvisor : IndexCandidateAdvisorBase
 
         var options = "";
         if (candidate.DialectOptions.ContainsKey("FILLFACTOR"))
+        {
             options += $" WITH (FILLFACTOR = {candidate.DialectOptions["FILLFACTOR"]})";
+        }
 
         return $"CREATE {candidate.IndexType.ToUpper()} INDEX [IX_{candidate.TableName}_{string.Join("_", candidate.Columns)}] " +
                $"ON [{candidate.TableName}] ({columnList}){includeClause}{options};";

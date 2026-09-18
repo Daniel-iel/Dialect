@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using Dialect.Cli.FileRewriting;
+using Dialect.Cli.Security;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Dialect.Cli.FileRewriting;
 
 namespace Dialect.Cli.Reporting
 {
@@ -31,10 +27,14 @@ namespace Dialect.Cli.Reporting
             string outputPath)
         {
             if (result == null)
+            {
                 throw new ArgumentNullException(nameof(result));
+            }
 
             if (string.IsNullOrWhiteSpace(outputPath))
+            {
                 throw new ArgumentException("Output path cannot be empty", nameof(outputPath));
+            }
 
             try
             {
@@ -76,7 +76,7 @@ namespace Dialect.Cli.Reporting
             }
         }
 
-        private List<FileTranslationDetail> BuildFileDetails(BulkFileRewriteResult result)
+        private static List<FileTranslationDetail> BuildFileDetails(BulkFileRewriteResult result)
         {
             return result.FileResults
                 .Select(fr => new FileTranslationDetail
@@ -88,8 +88,8 @@ namespace Dialect.Cli.Reporting
                     BackupPath = fr.BackupPath,
                     TranslationPairs = fr.ReplacedStrings
                         .Select(p => (
-                            Before: Dialect.Cli.Security.SecurityValidator.SanitizeSqlForLogging(p.Original),
-                            After: Dialect.Cli.Security.SecurityValidator.SanitizeSqlForLogging(p.Translated)
+                            Before: SecurityValidator.SanitizeSqlForLogging(p.Original),
+                            After: SecurityValidator.SanitizeSqlForLogging(p.Translated)
                         ))
                         .ToList()
                 })
@@ -99,7 +99,9 @@ namespace Dialect.Cli.Reporting
         private List<ErrorSummary> BuildErrorSummaries(BulkFileRewriteResult result)
         {
             if (!result.Errors.Any())
+            {
                 return new List<ErrorSummary>();
+            }
 
             var errorGroups = new Dictionary<string, List<string>>();
 
@@ -107,7 +109,9 @@ namespace Dialect.Cli.Reporting
             {
                 var category = ExtractErrorCategory(error);
                 if (!errorGroups.ContainsKey(category))
+                {
                     errorGroups[category] = new List<string>();
+                }
 
                 errorGroups[category].Add(error);
             }
@@ -122,18 +126,32 @@ namespace Dialect.Cli.Reporting
                 .ToList();
         }
 
-        private string ExtractErrorCategory(string error)
+        private static string ExtractErrorCategory(string error)
         {
             if (error.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
                 return "File Not Found";
+            }
+
             if (error.Contains("parse", StringComparison.OrdinalIgnoreCase))
+            {
                 return "Parse Error";
+            }
+
             if (error.Contains("translation", StringComparison.OrdinalIgnoreCase))
+            {
                 return "Translation Error";
+            }
+
             if (error.Contains("backup", StringComparison.OrdinalIgnoreCase))
+            {
                 return "Backup Error";
+            }
+
             if (error.Contains("permission", StringComparison.OrdinalIgnoreCase))
+            {
                 return "Permission Error";
+            }
 
             return "Other Error";
         }

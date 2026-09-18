@@ -43,10 +43,14 @@ namespace Dialect.Cli.FileRewriting
             bool createBackup = true)
         {
             if (string.IsNullOrWhiteSpace(sourceFilePath))
+            {
                 return new FileRewriteResult { Success = false, Error = "File path cannot be empty" };
+            }
 
             if (!File.Exists(sourceFilePath))
+            {
                 return new FileRewriteResult { Success = false, Error = $"File not found: {sourceFilePath}" };
+            }
 
             try
             {
@@ -58,11 +62,13 @@ namespace Dialect.Cli.FileRewriting
                 var tree = CSharpSyntaxTree.ParseText(originalContent, encoding: Encoding.UTF8);
                 var root = (CompilationUnitSyntax?)tree.GetRoot();
                 if (root == null)
+                {
                     return new FileRewriteResult
                     {
                         Success = false,
                         Error = "Failed to parse C# file syntax"
                     };
+                }
 
                 // If the syntax tree contains parse errors, return an error result
                 var parseErrors = tree.GetDiagnostics()
@@ -152,7 +158,9 @@ namespace Dialect.Cli.FileRewriting
         public async Task<bool> RestoreFromBackupAsync(string backupPath)
         {
             if (string.IsNullOrWhiteSpace(backupPath))
+            {
                 return false;
+            }
 
             if (!File.Exists(backupPath))
             {
@@ -185,7 +193,9 @@ namespace Dialect.Cli.FileRewriting
         public void DeleteBackup(string backupPath)
         {
             if (string.IsNullOrWhiteSpace(backupPath) || !File.Exists(backupPath))
+            {
                 return;
+            }
 
             try
             {
@@ -240,13 +250,17 @@ namespace Dialect.Cli.FileRewriting
         {
             // Only process string literals
             if (node.Kind() != SyntaxKind.StringLiteralExpression)
+            {
                 return base.VisitLiteralExpression(node);
+            }
 
             var stringValue = node.Token.ValueText;
 
             // Check if string looks like SQL
             if (!LooksLikeSql(stringValue))
+            {
                 return base.VisitLiteralExpression(node);
+            }
 
             // Attempt translation
             var result = _translator.Translate(stringValue, _sourceDialect, _targetDialect);
@@ -277,7 +291,9 @@ namespace Dialect.Cli.FileRewriting
         private static bool LooksLikeSql(string text)
         {
             if (string.IsNullOrWhiteSpace(text) || text.Length < 4)
+            {
                 return false;
+            }
 
             var normalized = text.Trim().ToUpperInvariant();
 

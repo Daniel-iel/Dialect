@@ -76,7 +76,11 @@ public abstract class IndexCandidateAdvisor
     /// </summary>
     protected decimal CalculateRoiScore(decimal improvement, int complexity)
     {
-        if (complexity == 0) return 0;
+        if (complexity == 0)
+        {
+            return 0;
+        }
+
         return Math.Round(improvement / complexity, 2);
     }
 
@@ -111,12 +115,20 @@ public abstract class IndexCandidateAdvisor
             queryText, joinPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         foreach (System.Text.RegularExpressions.Match match in fromMatches)
+        {
             if (match.Groups.Count > 1)
+            {
                 tables.Add(match.Groups[1].Value);
+            }
+        }
 
         foreach (System.Text.RegularExpressions.Match match in joinMatches)
+        {
             if (match.Groups.Count > 1)
+            {
                 tables.Add(match.Groups[1].Value);
+            }
+        }
 
         return tables.Distinct().ToList();
     }
@@ -140,8 +152,12 @@ public abstract class IndexCandidateAdvisor
             var columnMatches = System.Text.RegularExpressions.Regex.Matches(whereClause, columnPattern);
 
             foreach (System.Text.RegularExpressions.Match colMatch in columnMatches)
+            {
                 if (colMatch.Groups.Count > 1)
+                {
                     columns.Add(colMatch.Groups[1].Value);
+                }
+            }
         }
 
         return columns.Distinct().ToList();

@@ -18,7 +18,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddSqlServerFramework(this IServiceCollection services)
     {
         if (services == null)
+        {
             throw new ArgumentNullException(nameof(services));
+        }
 
         var dialect = CreateSqlServerDialectFactory();
         
@@ -47,7 +49,9 @@ public static class ServiceCollectionExtensions
         TimeSpan? cacheTtl = null)
     {
         if (services == null)
+        {
             throw new ArgumentNullException(nameof(services));
+        }
 
         var dialect = CreateSqlServerDialectFactory();
         

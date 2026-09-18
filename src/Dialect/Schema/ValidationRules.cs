@@ -32,8 +32,10 @@ public static class ValidationRules
     public static ValidationResult ValidateColumnName(string columnName, NamingConvention convention)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(ColumnNameEmpty, "Column name cannot be empty", columnName));
+        }
 
         return convention switch
         {
@@ -50,8 +52,10 @@ public static class ValidationRules
     public static ValidationResult ValidateTableName(string tableName, NamingConvention convention)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(TableNameEmpty, "Table name cannot be empty", tableName));
+        }
 
         return convention switch
         {
@@ -68,10 +72,13 @@ public static class ValidationRules
     public static ValidationResult ValidateIdentifierLength(string identifier, int maxLength)
     {
         if (identifier.Length > maxLength)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(IdentifierTooLong,
                     $"Identifier '{identifier}' exceeds maximum length of {maxLength} characters",
                     identifier));
+        }
+
         return ValidationResult.Success();
     }
 
@@ -92,10 +99,12 @@ public static class ValidationRules
         var isStringType = dataType is DataType.Char or DataType.Varchar or DataType.NChar or DataType.NVarchar or DataType.Varbinary;
 
         if (isStringType && !length.HasValue)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(LengthRequiredForStringType,
                     $"Data type {dataType} requires length specification",
                     dataType.ToString()));
+        }
 
         return ValidationResult.Success();
     }
@@ -106,10 +115,12 @@ public static class ValidationRules
     public static ValidationResult ValidateDecimalPrecision(DataType dataType, int? precision)
     {
         if ((dataType is DataType.Decimal or DataType.Money) && !precision.HasValue)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(PrecisionRequiredForDecimal,
                     $"Data type {dataType} requires precision specification",
                     dataType.ToString()));
+        }
 
         return ValidationResult.Success();
     }
@@ -120,10 +131,12 @@ public static class ValidationRules
     public static ValidationResult ValidateAutoIncrementNotNullable(ColumnDef column)
     {
         if (column.IsAutoIncrement && column.Nullable)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(AutoIncrementOnNullable,
                     $"Auto-increment column '{column.Name}' cannot be nullable",
                     column.Name));
+        }
 
         return ValidationResult.Success();
     }
@@ -134,10 +147,12 @@ public static class ValidationRules
     public static ValidationResult ValidatePrimaryKeyNotNullable(ColumnDef column)
     {
         if (column.IsPrimaryKey && column.Nullable)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(PrimaryKeyOnNullable,
                     $"Primary key column '{column.Name}' cannot be nullable",
                     column.Name));
+        }
 
         return ValidationResult.Success();
     }
@@ -148,7 +163,9 @@ public static class ValidationRules
     public static ValidationResult ValidateDefaultValueType(ColumnDef column)
     {
         if (column.DefaultValue is null)
+        {
             return ValidationResult.Success();
+        }
 
         // Simple type-compatibility check based on DataType and default value format
         var defaultStr = column.DefaultValue.ToString() ?? "";
@@ -180,10 +197,12 @@ public static class ValidationRules
         };
 
         if (!isCompatible)
+        {
             return ValidationResult.WithErrors(
                 new ValidationError(DefaultValueTypeMismatch,
                     $"Default value '{defaultStr}' is incompatible with column type {column.Type}",
                     column.Name));
+        }
 
         return ValidationResult.Success();
     }
@@ -208,10 +227,13 @@ public static class ValidationRules
     {
         var pascalPattern = new Regex(@"^[A-Z][a-zA-Z0-9]*$");
         if (!pascalPattern.IsMatch(identifier))
+        {
             return ValidationResult.WithWarnings(
                 new ValidationWarning(ruleId,
                     $"{entityType} '{identifier}' does not follow PascalCase convention",
                     identifier));
+        }
+
         return ValidationResult.Success();
     }
 
@@ -219,10 +241,13 @@ public static class ValidationRules
     {
         var snakePattern = new Regex(@"^[a-z][a-z0-9_]*$");
         if (!snakePattern.IsMatch(identifier))
+        {
             return ValidationResult.WithWarnings(
                 new ValidationWarning(ruleId,
                     $"{entityType} '{identifier}' does not follow snake_case convention",
                     identifier));
+        }
+
         return ValidationResult.Success();
     }
 
@@ -230,8 +255,12 @@ public static class ValidationRules
     {
         // Tables: PascalCase, Columns: camelCase
         if (entityType == "Table")
+        {
             return ValidatePascalCase(identifier, entityType, ruleId);
+        }
         else
+        {
             return new ValidationResult(true, new List<ValidationError>(), new List<ValidationWarning>()); // Columns can be any reasonable format
+        }
     }
 }

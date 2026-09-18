@@ -19,7 +19,9 @@ public sealed class ColumnBuilder
     internal ColumnBuilder(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(name));
+        }
 
         _name = name;
     }

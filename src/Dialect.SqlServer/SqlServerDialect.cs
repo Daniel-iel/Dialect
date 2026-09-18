@@ -35,7 +35,9 @@ public sealed class SqlServerDialect : ISqlDialect
     public string RenderFunction(string functionName, IReadOnlyList<string> argumentPlaceholders)
     {
         if (string.IsNullOrWhiteSpace(functionName))
+        {
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
+        }
 
         // Standard SQL functions that work across all dialects
         return functionName.ToUpperInvariant() switch

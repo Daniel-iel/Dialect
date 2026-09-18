@@ -25,7 +25,9 @@ public class SqlServerConnectionProvider : IDbConnectionProvider
     public object OpenConnection(string connectionString)
     {
         if (!ValidateConnectionString(connectionString))
+        {
             throw new ArgumentException("Invalid SQL Server connection string", nameof(connectionString));
+        }
 
         var connection = new SqlConnection(connectionString);
         connection.Open();
@@ -44,7 +46,9 @@ public class SqlServerConnectionProvider : IDbConnectionProvider
     public string ExecuteScalar(object connection, string query)
     {
         if (connection is not SqlConnection sqlConnection)
+        {
             throw new ArgumentException("Expected SqlConnection", nameof(connection));
+        }
 
         using (var command = new SqlCommand(query, sqlConnection))
         {
@@ -57,7 +61,9 @@ public class SqlServerConnectionProvider : IDbConnectionProvider
     public IReadOnlyList<Dictionary<string, object>> ExecuteQuery(object connection, string query)
     {
         if (connection is not SqlConnection sqlConnection)
+        {
             throw new ArgumentException("Expected SqlConnection", nameof(connection));
+        }
 
         var results = new List<Dictionary<string, object>>();
         using (var command = new SqlCommand(query, sqlConnection))
@@ -89,7 +95,9 @@ public class SqlServerConnectionProvider : IDbConnectionProvider
     public DatabaseVersion? ParseVersion(string versionString)
     {
         if (string.IsNullOrWhiteSpace(versionString))
+        {
             return null;
+        }
 
         // Parse SQL Server version format
         // Examples:
@@ -125,7 +133,9 @@ public class SqlServerConnectionProvider : IDbConnectionProvider
     public bool ValidateConnectionString(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             return false;
+        }
 
         try
         {

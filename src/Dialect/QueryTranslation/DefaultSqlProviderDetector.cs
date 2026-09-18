@@ -16,7 +16,9 @@ public sealed class DefaultSqlProviderDetector : ISqlProviderDetector
     public SqlProvider? Detect(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             return null;
+        }
 
         var connStr = connectionString.ToLowerInvariant();
 

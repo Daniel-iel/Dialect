@@ -77,7 +77,9 @@ public abstract class ExecutionPlanAnalyzer
     protected double CalculateSelectivity(long rowsProduced, long rowsExamined)
     {
         if (rowsExamined == 0)
+        {
             return 1.0;
+        }
 
         return Math.Min(1.0, (double)rowsProduced / rowsExamined);
     }

@@ -35,7 +35,9 @@ public sealed class SqlConversionService
     public async Task<ErrorOr<ConversionReport>> ConvertAsync(ConversionOptions options)
     {
         if (options == null)
+        {
             return Error.Validation("options", "Conversion options cannot be null");
+        }
 
         try
         {
@@ -56,7 +58,9 @@ public sealed class SqlConversionService
                     totalFilesScanned++;
 
                     if (options.Verbose)
+                    {
                         _logger.LogInformation("Processing: {FilePath}", filePath);
+                    }
 
                     // Read source file
                     var sourceCode = await System.IO.File.ReadAllTextAsync(filePath);
@@ -65,7 +69,9 @@ public sealed class SqlConversionService
                     var discoveredSqlStrings = _sqlDiscoveryService.DiscoverSqlStrings(sourceCode, filePath);
 
                     if (discoveredSqlStrings.Count == 0)
+                    {
                         continue;
+                    }
 
                     totalSqlFound += discoveredSqlStrings.Count;
 
@@ -132,13 +138,17 @@ public sealed class SqlConversionService
                             var backupPath = filePath + ".bak";
                             System.IO.File.Copy(filePath, backupPath, overwrite: true);
                             if (options.Verbose)
+                            {
                                 _logger.LogInformation("Backup created: {BackupPath}", backupPath);
+                            }
                         }
 
                         // TODO: Apply conversions to source code and write file
                         // For now, we just report what would be done
                         if (options.Verbose)
+                        {
                             _logger.LogInformation("Would apply {ConversionCount} conversions", fileSuccessful);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -205,7 +215,9 @@ public sealed class SqlConversionService
     private static IReadOnlyList<string> GetFilesFromProject(string projectFilePath)
     {
         if (!System.IO.File.Exists(projectFilePath))
+        {
             throw new FileNotFoundException($"Project file not found: {projectFilePath}");
+        }
 
         // TODO: Parse .csproj XML and extract Compile items
         // For now, return all .cs files in project directory
@@ -222,7 +234,9 @@ public sealed class SqlConversionService
     private static IReadOnlyList<string> GetFilesFromSolution(string solutionFilePath)
     {
         if (!System.IO.File.Exists(solutionFilePath))
+        {
             throw new FileNotFoundException($"Solution file not found: {solutionFilePath}");
+        }
 
         // TODO: Parse .sln file and extract project references
         // For now, return all .cs files in solution directory

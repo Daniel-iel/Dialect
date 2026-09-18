@@ -30,11 +30,31 @@ public class JoinAnalyzer
 
     private static string DetermineJoinType(string clause)
     {
-        if (clause.Contains("inner join")) return "INNER_JOIN";
-        if (clause.Contains("left join") || clause.Contains("left outer join")) return "LEFT_JOIN";
-        if (clause.Contains("right join") || clause.Contains("right outer join")) return "RIGHT_JOIN";
-        if (clause.Contains("full join") || clause.Contains("full outer join")) return "FULL_JOIN";
-        if (clause.Contains("cross join")) return "CROSS_JOIN";
+        if (clause.Contains("inner join"))
+        {
+            return "INNER_JOIN";
+        }
+
+        if (clause.Contains("left join") || clause.Contains("left outer join"))
+        {
+            return "LEFT_JOIN";
+        }
+
+        if (clause.Contains("right join") || clause.Contains("right outer join"))
+        {
+            return "RIGHT_JOIN";
+        }
+
+        if (clause.Contains("full join") || clause.Contains("full outer join"))
+        {
+            return "FULL_JOIN";
+        }
+
+        if (clause.Contains("cross join"))
+        {
+            return "CROSS_JOIN";
+        }
+
         return "UNKNOWN_JOIN";
     }
 
@@ -50,8 +70,16 @@ public class JoinAnalyzer
         {
             if (words[i].ToLower().EndsWith("join"))
             {
-                if (i > 0) leftTable = words[i - 1];
-                if (i + 1 < words.Length) rightTable = words[i + 1];
+                if (i > 0)
+                {
+                    leftTable = words[i - 1];
+                }
+
+                if (i + 1 < words.Length)
+                {
+                    rightTable = words[i + 1];
+                }
+
                 break;
             }
         }
@@ -59,13 +87,18 @@ public class JoinAnalyzer
         return (leftTable, rightTable);
     }
 
-    private (string column, string condition) ExtractJoinCondition(string clause)
+    private static (string column, string condition) ExtractJoinCondition(string clause)
     {
         if (!clause.Contains("on", StringComparison.OrdinalIgnoreCase))
+        {
             return (string.Empty, string.Empty);
+        }
 
         var parts = clause.Split(new[] { "on", "ON" }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2) return (string.Empty, string.Empty);
+        if (parts.Length < 2)
+        {
+            return (string.Empty, string.Empty);
+        }
 
         var condition = parts[1].Trim();
         var column = ExtractColumnFromCondition(condition);
@@ -76,7 +109,10 @@ public class JoinAnalyzer
     {
         var parts = condition.Split('=');
         if (parts.Length >= 1)
+        {
             return parts[0].Trim();
+        }
+
         return string.Empty;
     }
 
@@ -92,13 +128,19 @@ public class JoinAnalyzer
     private static string GenerateRecommendation(string joinType, bool isOptimal)
     {
         if (isOptimal)
+        {
             return "Join is well-optimized. Ensure join columns are indexed.";
+        }
 
         if (joinType == "FULL_JOIN")
+        {
             return "FULL JOIN is less efficient. Consider rewriting with UNION of LEFT and RIGHT joins.";
+        }
 
         if (joinType == "CROSS_JOIN")
+        {
             return "CROSS JOIN can be very expensive. Verify it's necessary.";
+        }
 
         return "Consider adding indexes on join columns to improve performance.";
     }

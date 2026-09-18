@@ -21,9 +21,14 @@ public sealed class MigrationBuilder
     public MigrationBuilder(string name, string version, DateTime? timestamp = null)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException("Migration name cannot be empty", nameof(name));
+        }
+
         if (string.IsNullOrWhiteSpace(version))
+        {
             throw new ArgumentException("Migration version cannot be empty", nameof(version));
+        }
 
         _name = name;
         _version = version;
@@ -45,7 +50,9 @@ public sealed class MigrationBuilder
     public MigrationBuilder WithTable(TableBuilder tableBuilder)
     {
         if (tableBuilder == null)
+        {
             throw new ArgumentNullException(nameof(tableBuilder));
+        }
 
         var step = tableBuilder.Build();
         _steps.Add(step);
@@ -58,7 +65,9 @@ public sealed class MigrationBuilder
     public MigrationBuilder DropTable(string tableName, bool cascade = false)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         var step = new DropTableStep(tableName, cascade);
         step.Validate();
@@ -72,7 +81,9 @@ public sealed class MigrationBuilder
     public AddColumnContext AddColumn(string tableName, string columnName)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         var columnBuilder = new ColumnBuilder(columnName);
         return new AddColumnContext(this, tableName, columnBuilder);
@@ -95,9 +106,14 @@ public sealed class MigrationBuilder
     public MigrationBuilder DropColumn(string tableName, string columnName, bool cascade = false)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
+
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
 
         var step = new DropColumnStep(tableName, columnName, cascade);
         step.Validate();
@@ -132,9 +148,14 @@ public sealed class MigrationBuilder
     private MigrationBuilder AddIndex(string tableName, bool isUnique, string? indexName, params string[] columnNames)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
+
         if (columnNames == null || columnNames.Length == 0)
+        {
             throw new ArgumentException("At least one column must be specified", nameof(columnNames));
+        }
 
         var step = new AddIndexStep(tableName, columnNames, indexName, isUnique);
         step.Validate();
@@ -148,9 +169,14 @@ public sealed class MigrationBuilder
     public MigrationBuilder DropIndex(string tableName, string indexName)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
+
         if (string.IsNullOrWhiteSpace(indexName))
+        {
             throw new ArgumentException("Index name cannot be empty", nameof(indexName));
+        }
 
         var step = new DropIndexStep(tableName, indexName);
         step.Validate();
@@ -164,7 +190,9 @@ public sealed class MigrationBuilder
     public MigrationBuilder AddForeignKey(string tableName, string columnName, string referencedTable, string referencedColumn)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         var step = new AddForeignKeyStep(tableName, columnName, referencedTable, referencedColumn);
         step.Validate();
@@ -178,7 +206,9 @@ public sealed class MigrationBuilder
     public MigrationBuilder DropForeignKey(string tableName, string constraintName)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         var step = new DropForeignKeyStep(tableName, constraintName);
         step.Validate();

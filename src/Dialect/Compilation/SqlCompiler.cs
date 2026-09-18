@@ -22,9 +22,14 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this SelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         ValidateStatement(statement, dialect);
 
@@ -40,13 +45,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this SelectStatement statement)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return statement.Compile(dialect);
     }
@@ -61,13 +70,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this SelectStatement statement, SqlProvider provider)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return statement.Compile(dialect);
     }
@@ -78,9 +91,14 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this CompoundSelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var renderer = dialect.CreateQueryRenderer();
         return renderer.Render(statement, dialect);
@@ -94,13 +112,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this CompoundSelectStatement statement)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return statement.Compile(dialect);
     }
@@ -111,13 +133,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this CompoundSelectStatement statement, SqlProvider provider)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return statement.Compile(dialect);
     }
@@ -128,9 +154,14 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this InsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         ValidateStatement(statement, dialect);
 
@@ -145,13 +176,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this InsertStatement statement)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return statement.Compile(dialect);
     }
@@ -162,13 +197,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this InsertStatement statement, SqlProvider provider)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return statement.Compile(dialect);
     }
@@ -179,9 +218,14 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this UpdateStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         ValidateStatement(statement, dialect);
 
@@ -196,13 +240,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this UpdateStatement statement)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return statement.Compile(dialect);
     }
@@ -213,13 +261,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this UpdateStatement statement, SqlProvider provider)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return statement.Compile(dialect);
     }
@@ -230,9 +282,14 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this DeleteStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         ValidateStatement(statement, dialect);
 
@@ -247,13 +304,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this DeleteStatement statement)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return statement.Compile(dialect);
     }
@@ -264,13 +325,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this DeleteStatement statement, SqlProvider provider)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return statement.Compile(dialect);
     }
@@ -281,9 +346,14 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this RoutineCall routine, ISqlDialect dialect)
     {
         if (routine == null)
+        {
             throw new ArgumentNullException(nameof(routine));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         ValidateRoutine(routine, dialect);
 
@@ -298,13 +368,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this RoutineCall routine)
     {
         if (routine == null)
+        {
             throw new ArgumentNullException(nameof(routine));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return routine.Compile(dialect);
     }
@@ -315,13 +389,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this RoutineCall routine, SqlProvider provider)
     {
         if (routine == null)
+        {
             throw new ArgumentNullException(nameof(routine));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return routine.Compile(dialect);
     }
@@ -332,13 +410,20 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this UpsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         if (!dialect.Supports(SqlFeature.Upsert))
+        {
             throw new SqlCompilationException(
                 $"UPSERT is not supported by {dialect.GetType().Name}");
+        }
 
         ValidateUpsertStatement(statement, dialect);
 
@@ -353,13 +438,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this UpsertStatement statement)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDefault();
         if (dialect == null)
+        {
             throw new InvalidOperationException(
                 "No default SQL dialect has been configured. " +
                 "Call AddSqlFramework() in your Program.cs or use Compile(dialect) with an explicit dialect.");
+        }
 
         return statement.Compile(dialect);
     }
@@ -370,13 +459,17 @@ public static class SqlCompiler
     public static CompiledQuery Compile(this UpsertStatement statement, SqlProvider provider)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
 
         var dialect = SqlDialectRegistry.Instance.GetDialect(provider);
         if (dialect == null)
+        {
             throw new ArgumentException(
                 $"No dialect registered for provider: {provider}. " +
                 $"Ensure AddSqlFramework({provider}) has been called.", nameof(provider));
+        }
 
         return statement.Compile(dialect);
     }
@@ -390,9 +483,11 @@ public static class SqlCompiler
         foreach (var join in statement.Joins)
         {
             if (join.Type == JoinType.Full && !dialect.Supports(SqlFeature.FullJoin))
+            {
                 throw new SqlCompilationException(
                     $"FULL OUTER JOIN is not supported by {dialect.GetType().Name}. " +
                     "Consider using UNION or changing your join strategy.");
+            }
         }
 
         // Validate identifiers
@@ -404,7 +499,9 @@ public static class SqlCompiler
         {
             // Validate subquery
             if (string.IsNullOrWhiteSpace(statement.From.Alias))
+            {
                 throw new SqlCompilationException("Subqueries in FROM clause must have an alias.");
+            }
 
             // Recursively validate and compile the subquery
             ValidateStatement(statement.From.SubquerySource, dialect);
@@ -422,7 +519,9 @@ public static class SqlCompiler
             {
                 // Validate subquery in JOIN
                 if (string.IsNullOrWhiteSpace(join.Table.Alias))
+                {
                     throw new SqlCompilationException("Subqueries in JOIN clauses must have an alias.");
+                }
 
                 ValidateStatement(join.Table.SubquerySource, dialect);
             }
@@ -433,8 +532,10 @@ public static class SqlCompiler
         if (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0)
         {
             if (statement.OrderByClauses == null || statement.OrderByClauses.Count == 0)
+            {
                 throw new SqlCompilationException(
                     "OFFSET requires ORDER BY clause. Cannot page without ordering.");
+            }
         }
 
         // Validate columns in GROUP BY
@@ -453,7 +554,9 @@ public static class SqlCompiler
         ValidateIdentifier(statement.Table.Schema);
 
         if (statement.Columns.Count == 0)
+        {
             throw new SqlCompilationException("INSERT must specify at least one column.");
+        }
     }
 
     /// <summary>
@@ -465,8 +568,10 @@ public static class SqlCompiler
         ValidateIdentifier(statement.Table.Schema);
 
         if (statement.Where == null && !statement.AllowFullTableUpdate)
+        {
             throw new SqlCompilationException(
                 "UPDATE without WHERE is dangerous. Use AllowFullTableUpdate() if intentional.");
+        }
     }
 
     /// <summary>
@@ -478,8 +583,10 @@ public static class SqlCompiler
         ValidateIdentifier(statement.Table.Schema);
 
         if (statement.Where == null && !statement.AllowFullTableDelete)
+        {
             throw new SqlCompilationException(
                 "DELETE without WHERE is dangerous. Use AllowFullTableOperation() if intentional.");
+        }
     }
 
     /// <summary>
@@ -488,12 +595,16 @@ public static class SqlCompiler
     private static void ValidateRoutine(RoutineCall routine, ISqlDialect dialect)
     {
         if (routine.Kind == RoutineKind.Procedure && !dialect.Supports(SqlFeature.StoredProcedures))
+        {
             throw new SqlCompilationException(
                 $"Stored procedures are not supported by {dialect.GetType().Name}.");
+        }
 
         if (routine.Kind == RoutineKind.Function && !dialect.Supports(SqlFeature.Functions))
+        {
             throw new SqlCompilationException(
                 $"Functions are not supported by {dialect.GetType().Name}.");
+        }
 
         ValidateIdentifier(routine.Name);
         ValidateIdentifier(routine.Schema);
@@ -503,13 +614,17 @@ public static class SqlCompiler
     private static void ValidateUpsertStatement(UpsertStatement statement, ISqlDialect dialect)
     {
         if (statement.Table == null)
+        {
             throw new SqlCompilationException("UPSERT must specify a target table");
+        }
 
         ValidateIdentifier(statement.Table.Name);
         ValidateIdentifier(statement.Table.Alias);
 
         if (statement.Columns.Count == 0)
+        {
             throw new SqlCompilationException("UPSERT must specify at least one column");
+        }
 
         foreach (var column in statement.Columns)
         {
@@ -517,16 +632,22 @@ public static class SqlCompiler
         }
 
         if (statement.Values == null || statement.Values.Count == 0)
+        {
             throw new SqlCompilationException("UPSERT must specify values");
+        }
 
         if (statement.Values.Count != statement.Columns.Count)
+        {
             throw new SqlCompilationException(
                 $"UPSERT column count ({statement.Columns.Count}) must match value count ({statement.Values.Count})");
+        }
 
         if (statement.ConflictClause != null)
         {
             if (statement.ConflictClause.UpdateClauses == null || statement.ConflictClause.UpdateClauses.Count == 0)
+            {
                 throw new SqlCompilationException("UPSERT conflict clause must specify at least one update column");
+            }
 
             foreach (var updateClause in statement.ConflictClause.UpdateClauses)
             {
@@ -542,12 +663,16 @@ public static class SqlCompiler
     private static void ValidateIdentifier(string? identifier)
     {
         if (string.IsNullOrWhiteSpace(identifier))
+        {
             return;
+        }
 
         if (!IdentifierPattern.IsMatch(identifier))
+        {
             throw new SqlCompilationException(
                 $"Invalid SQL identifier '{identifier}'. Identifiers must start with a letter or underscore " +
                 "and contain only alphanumeric characters and underscores.");
+        }
     }
 }
 

@@ -100,7 +100,9 @@ class Program
         {
             Console.WriteLine($"\nError during batch execution: {ex.Message}");
             if (ex.StackTrace != null)
+            {
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
         }
     }
 

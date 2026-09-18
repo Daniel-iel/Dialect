@@ -17,10 +17,14 @@ public sealed record CreateTableStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (Columns == null || Columns.Count == 0)
+        {
             throw new ArgumentException("At least one column must be specified");
+        }
 
         foreach (var col in Columns)
         {
@@ -33,7 +37,9 @@ public sealed record CreateTableStep(
             foreach (var pkCol in PrimaryKeyColumns)
             {
                 if (!Columns.Any(c => c.Name == pkCol))
+                {
                     throw new ArgumentException($"Primary key column '{pkCol}' does not exist in table definition");
+                }
             }
         }
     }
@@ -50,7 +56,9 @@ public sealed record DropTableStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
     }
 }
 
@@ -65,7 +73,9 @@ public sealed record AddColumnStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         Column.Validate();
     }
@@ -83,10 +93,14 @@ public sealed record DropColumnStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(ColumnName))
+        {
             throw new ArgumentException("Column name cannot be empty");
+        }
     }
 }
 
@@ -104,14 +118,20 @@ public sealed record AlterColumnStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(ColumnName))
+        {
             throw new ArgumentException("Column name cannot be empty");
+        }
 
         // At least one modification should be specified
         if (NewType == null && Nullable == null && DefaultValue == null)
+        {
             throw new ArgumentException("At least one column attribute must be modified");
+        }
     }
 }
 
@@ -128,15 +148,21 @@ public sealed record AddIndexStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (ColumnNames == null || ColumnNames.Count == 0)
+        {
             throw new ArgumentException("At least one column must be specified for index");
+        }
 
         foreach (var col in ColumnNames)
         {
             if (string.IsNullOrWhiteSpace(col))
+            {
                 throw new ArgumentException("Column names cannot be empty");
+            }
         }
     }
 }
@@ -152,10 +178,14 @@ public sealed record DropIndexStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(IndexName))
+        {
             throw new ArgumentException("Index name cannot be empty");
+        }
     }
 }
 
@@ -174,16 +204,24 @@ public sealed record AddForeignKeyStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(ColumnName))
+        {
             throw new ArgumentException("Column name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(ReferencedTable))
+        {
             throw new ArgumentException("Referenced table name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(ReferencedColumn))
+        {
             throw new ArgumentException("Referenced column name cannot be empty");
+        }
     }
 }
 
@@ -198,9 +236,13 @@ public sealed record DropForeignKeyStep(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(TableName))
+        {
             throw new ArgumentException("Table name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(ConstraintName))
+        {
             throw new ArgumentException("Constraint name cannot be empty");
+        }
     }
 }

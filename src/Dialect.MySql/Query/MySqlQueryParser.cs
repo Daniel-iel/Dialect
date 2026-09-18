@@ -48,7 +48,10 @@ public class MySqlQueryParser : QueryParser
 
     private static string[] ExtractColumns(string clause)
     {
-        if (string.IsNullOrEmpty(clause)) return Array.Empty<string>();
+        if (string.IsNullOrEmpty(clause))
+        {
+            return Array.Empty<string>();
+        }
 
         return clause.Split(',')
             .Select(c => c.Trim())
@@ -65,7 +68,10 @@ public class MySqlQueryParser : QueryParser
 
     private static string[] ExtractTables(string fromClause)
     {
-        if (string.IsNullOrEmpty(fromClause)) return Array.Empty<string>();
+        if (string.IsNullOrEmpty(fromClause))
+        {
+            return Array.Empty<string>();
+        }
 
         return fromClause.Split(',', ' ')
             .Where(t => !string.IsNullOrEmpty(t) && !t.Contains("("))
@@ -73,10 +79,13 @@ public class MySqlQueryParser : QueryParser
             .ToArray();
     }
 
-    private ParsedClause[] ExtractWhereClauses(string sql)
+    private static ParsedClause[] ExtractWhereClauses(string sql)
     {
         var match = Regex.Match(sql, @"WHERE\s+(.*?)(?:GROUP BY|ORDER BY|$)", RegexOptions.IgnoreCase);
-        if (!match.Success) return Array.Empty<ParsedClause>();
+        if (!match.Success)
+        {
+            return Array.Empty<ParsedClause>();
+        }
 
         var whereText = match.Groups[1].Value;
         var predicates = whereText.Split(" AND ", StringSplitOptions.None).SelectMany(x => x.Split(" OR ", StringSplitOptions.None));
@@ -116,7 +125,10 @@ public class MySqlQueryParser : QueryParser
     private static ParsedClause[] ExtractGroupByClauses(string sql)
     {
         var match = Regex.Match(sql, @"GROUP BY\s+(.*?)(?:HAVING|ORDER BY|$)", RegexOptions.IgnoreCase);
-        if (!match.Success) return Array.Empty<ParsedClause>();
+        if (!match.Success)
+        {
+            return Array.Empty<ParsedClause>();
+        }
 
         var columns = match.Groups[1].Value.Split(',').Select(c => c.Trim()).ToArray();
 
@@ -135,7 +147,10 @@ public class MySqlQueryParser : QueryParser
     private static ParsedClause[] ExtractOrderByClauses(string sql)
     {
         var match = Regex.Match(sql, @"ORDER BY\s+(.*?)$", RegexOptions.IgnoreCase);
-        if (!match.Success) return Array.Empty<ParsedClause>();
+        if (!match.Success)
+        {
+            return Array.Empty<ParsedClause>();
+        }
 
         var orderText = match.Groups[1].Value;
         var columns = orderText.Split(',').Select(c => c.Trim()).ToArray();

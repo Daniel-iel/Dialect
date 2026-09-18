@@ -214,13 +214,17 @@ public abstract class OptimizationEngine
     private static string? ExtractTableNameFromNode(ExecutionPlanNode node)
     {
         if (!string.IsNullOrWhiteSpace(node.ObjectName))
+        {
             return node.ObjectName;
+        }
 
         foreach (var child in node.Children)
         {
             var name = ExtractTableNameFromNode(child);
             if (!string.IsNullOrWhiteSpace(name))
+            {
                 return name;
+            }
         }
 
         return null;
@@ -236,10 +240,14 @@ public abstract class OptimizationEngine
     private static void CollectTableNames(ExecutionPlanNode node, HashSet<string> tables)
     {
         if (!string.IsNullOrWhiteSpace(node.ObjectName))
+        {
             tables.Add(node.ObjectName);
+        }
 
         foreach (var child in node.Children)
+        {
             CollectTableNames(child, tables);
+        }
     }
 
     protected virtual decimal CalculateIndexImprovementPercentage(PerformanceMetrics metrics)
@@ -251,7 +259,10 @@ public abstract class OptimizationEngine
 
     protected virtual decimal CalculateIndexRoiScore(PerformanceMetrics metrics)
     {
-        if (metrics.TotalCost == 0) return 0;
+        if (metrics.TotalCost == 0)
+        {
+            return 0;
+        }
 
         var improvement = CalculateIndexImprovementPercentage(metrics);
         const int implementationCost = 15;
@@ -276,7 +287,10 @@ public abstract class OptimizationEngine
 
     protected virtual decimal CalculateSortRoiScore(PerformanceMetrics metrics)
     {
-        if (metrics.TotalRowsProduced == 0) return 0;
+        if (metrics.TotalRowsProduced == 0)
+        {
+            return 0;
+        }
 
         var improvement = Math.Min(40, (decimal)Math.Log10(metrics.TotalRowsProduced) * 5);
         return Math.Round(improvement / 35, 2);

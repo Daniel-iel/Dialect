@@ -24,7 +24,9 @@ public sealed record UpsertConflictClause(
     public void Validate()
     {
         if (UpdateClauses == null || UpdateClauses.Count == 0)
+        {
             throw new ArgumentException("At least one update clause must be specified for UPSERT", nameof(UpdateClauses));
+        }
     }
 }
 
@@ -56,13 +58,24 @@ public sealed record UpsertStatement(
     public void Validate()
     {
         if (Table == null)
+        {
             throw new ArgumentNullException(nameof(Table));
+        }
+
         if (Columns == null || Columns.Count == 0)
+        {
             throw new ArgumentException("At least one column must be specified", nameof(Columns));
+        }
+
         if (Values == null || Values.Count == 0)
+        {
             throw new ArgumentException("Values must be provided for UPSERT", nameof(Values));
+        }
+
         if (Values.Count != Columns.Count)
+        {
             throw new ArgumentException("Column count must match value count", nameof(Values));
+        }
 
         ConflictClause?.Validate();
     }

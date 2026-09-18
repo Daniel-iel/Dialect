@@ -68,7 +68,9 @@ public sealed class ConvertCommand : ICommand
         {
             // --apply overrides --dry-run
             if (apply)
+            {
                 dryRun = false;
+            }
 
             _logger.LogInformation("Starting SQL-to-FluentBuilder conversion");
 
@@ -127,21 +129,31 @@ public sealed class ConvertCommand : ICommand
     private static ConversionScope ParseConversionScope(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
+        {
             throw new ArgumentException("Path cannot be empty");
+        }
 
         path = System.IO.Path.GetFullPath(path);
 
         if (path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase))
+        {
             return new ConversionScope.Solution(path);
+        }
 
         if (path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+        {
             return new ConversionScope.Project(path);
+        }
 
         if (System.IO.Directory.Exists(path))
+        {
             return new ConversionScope.Directory(path);
+        }
 
         if (System.IO.File.Exists(path))
+        {
             return new ConversionScope.SingleFile(path);
+        }
 
         throw new FileNotFoundException($"Path not found: {path}");
     }
@@ -180,13 +192,25 @@ public sealed class ConvertCommand : ICommand
             switch (args[i].ToLowerInvariant())
             {
                 case "-sp" or "--source-provider":
-                    if (i + 1 < args.Length) sourceProvider = args[++i];
+                    if (i + 1 < args.Length)
+                    {
+                        sourceProvider = args[++i];
+                    }
+
                     break;
                 case "-cs" or "--connection-string":
-                    if (i + 1 < args.Length) connectionString = args[++i];
+                    if (i + 1 < args.Length)
+                    {
+                        connectionString = args[++i];
+                    }
+
                     break;
                 case "-tp" or "--target-provider":
-                    if (i + 1 < args.Length) targetProvider = args[++i];
+                    if (i + 1 < args.Length)
+                    {
+                        targetProvider = args[++i];
+                    }
+
                     break;
                 case "-d" or "--dry-run":
                     dryRun = true;
@@ -202,7 +226,11 @@ public sealed class ConvertCommand : ICommand
                     noBackup = true;
                     break;
                 default:
-                    if (!args[i].StartsWith("-")) path = args[i];
+                    if (!args[i].StartsWith("-"))
+                    {
+                        path = args[i];
+                    }
+
                     break;
             }
         }

@@ -243,7 +243,9 @@ namespace Dialect.Tests.Cli
             try
             {
                 if (Directory.Exists(_tempDir))
+                {
                     Directory.Delete(_tempDir, recursive: true);
+                }
             }
             catch
             {

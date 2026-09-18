@@ -31,15 +31,51 @@ public class PredicateAnalyzer
 
     private static string DetermineOperatorType(string predicate)
     {
-        if (predicate.Contains(" = ")) return "EQUALITY";
-        if (predicate.Contains(" <> ") || predicate.Contains(" != ")) return "INEQUALITY";
-        if (predicate.Contains(" < ") || predicate.Contains(" > ")) return "COMPARISON";
-        if (predicate.Contains(" <= ") || predicate.Contains(" >= ")) return "RANGE";
-        if (predicate.Contains(" between ")) return "BETWEEN";
-        if (predicate.Contains(" in ")) return "IN_LIST";
-        if (predicate.Contains(" like ")) return "LIKE";
-        if (predicate.Contains(" is null")) return "IS_NULL";
-        if (predicate.Contains(" is not null")) return "IS_NOT_NULL";
+        if (predicate.Contains(" = "))
+        {
+            return "EQUALITY";
+        }
+
+        if (predicate.Contains(" <> ") || predicate.Contains(" != "))
+        {
+            return "INEQUALITY";
+        }
+
+        if (predicate.Contains(" < ") || predicate.Contains(" > "))
+        {
+            return "COMPARISON";
+        }
+
+        if (predicate.Contains(" <= ") || predicate.Contains(" >= "))
+        {
+            return "RANGE";
+        }
+
+        if (predicate.Contains(" between "))
+        {
+            return "BETWEEN";
+        }
+
+        if (predicate.Contains(" in "))
+        {
+            return "IN_LIST";
+        }
+
+        if (predicate.Contains(" like "))
+        {
+            return "LIKE";
+        }
+
+        if (predicate.Contains(" is null"))
+        {
+            return "IS_NULL";
+        }
+
+        if (predicate.Contains(" is not null"))
+        {
+            return "IS_NOT_NULL";
+        }
+
         return "UNKNOWN";
     }
 
@@ -94,7 +130,10 @@ public class PredicateAnalyzer
 
     private static int CalculateIndexPriority(bool isIndexable, decimal selectivity)
     {
-        if (!isIndexable) return 0;
+        if (!isIndexable)
+        {
+            return 0;
+        }
 
         // Scale selectivity to priority (1-10)
         // Higher selectivity = higher priority for index

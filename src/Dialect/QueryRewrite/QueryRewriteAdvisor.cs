@@ -30,7 +30,11 @@ public abstract class QueryRewriteAdvisor
         decimal improvement,
         int complexity)
     {
-        if (complexity == 0) return 0;
+        if (complexity == 0)
+        {
+            return 0;
+        }
+
         return Math.Round(improvement / complexity, 2);
     }
 
@@ -123,17 +127,34 @@ public abstract class QueryRewriteAdvisor
         var components = new List<string>();
 
         if (queryText.Contains("WHERE", StringComparison.OrdinalIgnoreCase))
+        {
             components.Add("WHERE");
+        }
+
         if (queryText.Contains("JOIN", StringComparison.OrdinalIgnoreCase))
+        {
             components.Add("JOIN");
+        }
+
         if (queryText.Contains("SELECT", StringComparison.OrdinalIgnoreCase))
+        {
             components.Add("SELECT");
+        }
+
         if (queryText.Contains("ORDER BY", StringComparison.OrdinalIgnoreCase))
+        {
             components.Add("ORDER BY");
+        }
+
         if (queryText.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase))
+        {
             components.Add("GROUP BY");
+        }
+
         if (queryText.Contains("HAVING", StringComparison.OrdinalIgnoreCase))
+        {
             components.Add("HAVING");
+        }
 
         return components;
     }

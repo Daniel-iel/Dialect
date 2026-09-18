@@ -286,17 +286,25 @@ public sealed class TranslateFilesCommand : ICommand
         if (!string.IsNullOrWhiteSpace(fromArg))
         {
             if (Enum.TryParse<SqlProvider>(fromArg, ignoreCase: true, out var source))
+            {
                 options.SourceDialect = source;
+            }
             else
+            {
                 _logger.LogWarning("Invalid source dialect: {Dialect}", fromArg);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(toArg))
         {
             if (Enum.TryParse<SqlProvider>(toArg, ignoreCase: true, out var target))
+            {
                 options.TargetDialect = target;
+            }
             else
+            {
                 _logger.LogWarning("Invalid target dialect: {Dialect}", toArg);
+            }
         }
 
         // Parse file patterns
@@ -329,7 +337,9 @@ public sealed class TranslateFilesCommand : ICommand
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (names.Any(n => args[i].Equals(n, StringComparison.OrdinalIgnoreCase)))
+            {
                 return args[i + 1];
+            }
         }
         return null;
     }

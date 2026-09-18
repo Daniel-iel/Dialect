@@ -27,7 +27,9 @@ public class QueryVersionDetector
     public DatabaseVersion? DetectVersion(string connectionString)
     {
         if (!_provider.ValidateConnectionString(connectionString))
+        {
             return null;
+        }
 
         object? connection = null;
         try
@@ -37,7 +39,9 @@ public class QueryVersionDetector
             var versionString = _provider.ExecuteScalar(connection, versionQuery);
 
             if (string.IsNullOrWhiteSpace(versionString))
+            {
                 return null;
+            }
 
             return _provider.ParseVersion(versionString);
         }
@@ -72,11 +76,15 @@ public class QueryVersionDetector
         VersionDetector versionDetector)
     {
         if (versionDetector == null)
+        {
             throw new ArgumentNullException(nameof(versionDetector));
+        }
 
         var version = DetectVersion(connectionString);
         if (version == null)
+        {
             return null;
+        }
 
         return versionDetector.GetCapabilities(version);
     }

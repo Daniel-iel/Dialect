@@ -17,7 +17,9 @@ public sealed class UpsertBuilder
     internal UpsertBuilder(string tableName, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         _table = new TableReference(tableName, null, schema);
     }
@@ -28,12 +30,17 @@ public sealed class UpsertBuilder
     public UpsertBuilder Columns(params string[] columnNames)
     {
         if (columnNames == null || columnNames.Length == 0)
+        {
             throw new ArgumentException("At least one column must be specified", nameof(columnNames));
+        }
 
         foreach (var column in columnNames)
         {
             if (string.IsNullOrWhiteSpace(column))
+            {
                 throw new ArgumentException("Column name cannot be empty");
+            }
+
             _columns.Add(new Column(column));
         }
 
@@ -47,11 +54,16 @@ public sealed class UpsertBuilder
     public UpsertBuilder Values(params object?[] values)
     {
         if (values == null)
+        {
             throw new ArgumentNullException(nameof(values));
+        }
+
         if (values.Length != _columns.Count)
+        {
             throw new ArgumentException(
                 $"Value count ({values.Length}) must match column count ({_columns.Count})",
                 nameof(values));
+        }
 
         _values = new List<object?>(values);
         return this;
@@ -63,7 +75,9 @@ public sealed class UpsertBuilder
     public UpsertBuilder OnConflict(params string[] columnNames)
     {
         if (columnNames == null || columnNames.Length == 0)
+        {
             throw new ArgumentException("At least one conflict column must be specified", nameof(columnNames));
+        }
 
         _conflictColumns = new List<string>(columnNames);
         return this;
@@ -76,7 +90,9 @@ public sealed class UpsertBuilder
     public UpsertBuilder UpdateSet(string columnName, object? value)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
 
         _updateClauses.Add(new UpsertUpdateClause(columnName, value));
         return this;
@@ -88,13 +104,19 @@ public sealed class UpsertBuilder
     public UpsertStatement Build()
     {
         if (_columns.Count == 0)
+        {
             throw new InvalidOperationException("At least one column must be specified");
+        }
 
         if (_values == null || _values.Count == 0)
+        {
             throw new InvalidOperationException("Values must be specified");
+        }
 
         if (_updateClauses.Count == 0)
+        {
             throw new InvalidOperationException("At least one update clause must be specified");
+        }
 
         var conflictClause = _conflictColumns != null && _conflictColumns.Count > 0
             ? new UpsertConflictClause(_conflictColumns, _updateClauses)

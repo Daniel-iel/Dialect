@@ -37,17 +37,23 @@ namespace Dialect.Cli.FileRewriting
             SqlProvider? targetDialect = null)
         {
             if (options == null)
+            {
                 throw new ArgumentNullException(nameof(options));
+            }
 
             if (!Directory.Exists(options.SourceDirectory))
+            {
                 return new BulkFileRewriteResult
                 {
                     Success = false,
                     Error = $"Directory not found: {options.SourceDirectory}"
                 };
+            }
 
             if (!targetDialect.HasValue)
+            {
                 targetDialect = SqlProvider.PostgreSql; // Default target
+            }
 
             _logger.LogInformation(
                 "Starting bulk file rewrite in: {Directory}",
@@ -58,11 +64,13 @@ namespace Dialect.Cli.FileRewriting
             _logger.LogInformation("Discovered {FileCount} C# files to process", filesToProcess.Count);
 
             if (filesToProcess.Count == 0)
+            {
                 return new BulkFileRewriteResult
                 {
                     Success = true,
                     Error = "No files found matching patterns"
                 };
+            }
 
             // Process files in parallel
             var results = new List<FileRewriteResult>();
@@ -113,7 +121,10 @@ namespace Dialect.Cli.FileRewriting
                     {
                         _logger.LogError(ex, "Exception processing {File}: {Message}", filePath, ex.Message);
                         if (!options.ContinueOnError)
+                        {
                             throw;
+                        }
+
                         errors.Add($"{filePath}: {ex.Message}");
                         return null;
                     }
@@ -152,7 +163,7 @@ namespace Dialect.Cli.FileRewriting
         /// <summary>
         /// Discovers C# files matching the specified patterns and options.
         /// </summary>
-        private IEnumerable<string> DiscoverFiles(FileRewriteOptions options)
+        private static IEnumerable<string> DiscoverFiles(FileRewriteOptions options)
         {
             var baseDir = new DirectoryInfo(options.SourceDirectory);
             var patterns = options.FilePatterns.Any() ? options.FilePatterns : new[] { "**/*.cs" };

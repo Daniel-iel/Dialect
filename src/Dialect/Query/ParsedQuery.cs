@@ -33,11 +33,27 @@ public record ParsedQuery(
     public string[] GetAllColumns()
     {
         var columns = new HashSet<string>();
-        foreach (var col in SelectColumns) columns.Add(col);
+        foreach (var col in SelectColumns)
+        {
+            columns.Add(col);
+        }
+
         foreach (var clause in WhereClauses)
-            foreach (var col in clause.Columns) columns.Add(col);
+        {
+            foreach (var col in clause.Columns)
+            {
+                columns.Add(col);
+            }
+        }
+
         foreach (var clause in JoinClauses)
-            foreach (var col in clause.Columns) columns.Add(col);
+        {
+            foreach (var col in clause.Columns)
+            {
+                columns.Add(col);
+            }
+        }
+
         return columns.ToArray();
     }
 
@@ -47,9 +63,19 @@ public record ParsedQuery(
     public string[] GetAllTables()
     {
         var tables = new HashSet<string>();
-        foreach (var tbl in FromTables) tables.Add(tbl);
+        foreach (var tbl in FromTables)
+        {
+            tables.Add(tbl);
+        }
+
         foreach (var clause in JoinClauses)
-            foreach (var tbl in clause.Tables) tables.Add(tbl);
+        {
+            foreach (var tbl in clause.Tables)
+            {
+                tables.Add(tbl);
+            }
+        }
+
         return tables.ToArray();
     }
 };

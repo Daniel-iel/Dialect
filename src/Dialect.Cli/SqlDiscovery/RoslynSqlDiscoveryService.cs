@@ -59,11 +59,15 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
     public IReadOnlyList<DiscoveredSqlString> DiscoverSqlStrings(string sourceCode, string? filePath = null)
     {
         if (string.IsNullOrWhiteSpace(sourceCode))
+        {
             return [];
+        }
 
         // Return cached result for identical source to improve repeat discovery performance
         if (_cache.TryGetValue(sourceCode, out var cached))
+        {
             return cached;
+        }
 
         try
         {
@@ -103,13 +107,17 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
     public double IsSuspiciouslyLikesSql(string potentialSql)
     {
         if (string.IsNullOrWhiteSpace(potentialSql))
+        {
             return 0.0;
+        }
 
         var sql = potentialSql.ToUpperInvariant().Trim();
 
         // Minimum length check
         if (sql.Length < 10)
+        {
             return 0.0;
+        }
 
         var score = 0.0;
 
@@ -122,18 +130,26 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
 
         // Check for common SQL patterns
         if (Regex.IsMatch(sql, @"\bFROM\s+\w+", RegexOptions.IgnoreCase))
+        {
             score += 0.1;
+        }
 
         if (Regex.IsMatch(sql, @"\bWHERE\s+\w+\s*=", RegexOptions.IgnoreCase))
+        {
             score += 0.1;
+        }
 
         if (Regex.IsMatch(sql, @"@\w+|\?|\$\w+")) // Parameters
+        {
             score += 0.1;
+        }
 
         // Check for SQL-like structure (word patterns)
         var words = Regex.Split(sql, @"\s+");
         if (words.Length > 5)
+        {
             score += 0.05;
+        }
 
         return Math.Min(1.0, score);
     }
@@ -277,7 +293,9 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
                 CollectConcatenationParts(node, parts);
 
                 if (parts.Count < 2)
+                {
                     return null;
+                }
 
                 // Filter out obvious non-string parts and reconstruct
                 var sb = new StringBuilder();
@@ -316,7 +334,7 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
         /// <summary>
         /// Recursively collects parts of a concatenation expression.
         /// </summary>
-        private void CollectConcatenationParts(BinaryExpressionSyntax node, List<string> parts)
+        private static void CollectConcatenationParts(BinaryExpressionSyntax node, List<string> parts)
         {
             if (node.Left is BinaryExpressionSyntax leftBinary && leftBinary.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.AddExpression)
             {
@@ -340,26 +358,36 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
         /// <summary>
         /// Determines if a string looks like a literal value or identifier.
         /// </summary>
-        private bool IsLiteralOrIdentifier(string value)
+        private static bool IsLiteralOrIdentifier(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
+            {
                 return false;
+            }
 
             // String literals start with quotes
             if (value.StartsWith("\"") || value.StartsWith("@\""))
+            {
                 return true;
+            }
 
             // Numeric literals
             if (double.TryParse(value, out _) || int.TryParse(value, out _))
+            {
                 return true;
+            }
 
             // Identifiers (variable names)
             if (Regex.IsMatch(value, @"^[a-zA-Z_][a-zA-Z0-9_]*$"))
+            {
                 return false; // It's an identifier, not a literal
+            }
 
             // Other expressions that are dynamic
             if (value.Contains("(") || value.Contains("[") || value.Contains("."))
+            {
                 return false; // Method calls, indexers, member access
+            }
 
             return true;
         }
@@ -367,14 +395,23 @@ public sealed class RoslynSqlDiscoveryService : ISqlDiscoveryService
         /// <summary>
         /// Determines the kind of string literal based on its syntax.
         /// </summary>
-        private string DetermineStringKind(string literalText)
+        private static string DetermineStringKind(string literalText)
         {
             if (literalText.StartsWith("@\""))
+            {
                 return "VerbatimString";
+            }
+
             if (literalText.StartsWith("$\""))
+            {
                 return "InterpolatedString";
+            }
+
             if (literalText.StartsWith("$@\"") || literalText.StartsWith("@$\""))
+            {
                 return "InterpolatedVerbatimString";
+            }
+
             return "RegularString";
         }
     }

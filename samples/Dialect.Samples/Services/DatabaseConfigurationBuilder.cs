@@ -59,13 +59,19 @@ public class DatabaseConfigurationBuilder
     private void LoadFromEnvironment()
     {
         if (Environment.GetEnvironmentVariable(EnvironmentVariables.SqlServer) is string sqlServerEnv)
+        {
             _sqlServerConnectionString = sqlServerEnv;
+        }
 
         if (Environment.GetEnvironmentVariable(EnvironmentVariables.PostgreSQL) is string pgEnv)
+        {
             _postgreSqlConnectionString = pgEnv;
+        }
 
         if (Environment.GetEnvironmentVariable(EnvironmentVariables.MySQL) is string mysqlEnv)
+        {
             _mySqlConnectionString = mysqlEnv;
+        }
     }
 
     /// <summary>
@@ -112,13 +118,19 @@ public class DatabaseConfigurationBuilder
     public DatabaseConfiguration Build()
     {
         if (string.IsNullOrWhiteSpace(_sqlServerConnectionString))
+        {
             throw new InvalidOperationException("SQL Server connection string not configured");
+        }
 
         if (string.IsNullOrWhiteSpace(_postgreSqlConnectionString))
+        {
             throw new InvalidOperationException("PostgreSQL connection string not configured");
+        }
 
         if (string.IsNullOrWhiteSpace(_mySqlConnectionString))
+        {
             throw new InvalidOperationException("MySQL connection string not configured");
+        }
 
         return new DatabaseConfiguration
         {

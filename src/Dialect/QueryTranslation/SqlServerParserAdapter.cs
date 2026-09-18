@@ -31,28 +31,42 @@ public sealed class SqlServerParserAdapter : SqlParserAdapter
     public override IReadOnlyList<string> DetectUntranslatableConstructs(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))
+        {
             return [];
+        }
 
         var sql_lower = sql.ToLowerInvariant();
         var issues = new List<string>();
 
         if (sql_lower.Contains("merge "))
+        {
             issues.Add("MERGE statement not supported in target dialect");
+        }
 
         if (sql_lower.Contains("format("))
+        {
             issues.Add("FORMAT() function is SQL Server specific");
+        }
 
         if (sql_lower.Contains(".nodes(") || sql_lower.Contains(".value(") || sql_lower.Contains(".query("))
+        {
             issues.Add("XML processing (nodes/value/query) not supported");
+        }
 
         if (sql_lower.Contains(" top ") && !sql_lower.Contains("order by"))
+        {
             issues.Add("TOP clause without ORDER BY may not translate correctly");
+        }
 
         if (sql_lower.Contains("output "))
+        {
             issues.Add("OUTPUT clause is SQL Server specific");
+        }
 
         if (System.Text.RegularExpressions.Regex.IsMatch(sql, @"@\w+"))
+        {
             issues.Add("Variable references (@variable) may not translate");
+        }
 
         return issues;
     }

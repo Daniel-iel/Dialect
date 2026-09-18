@@ -18,7 +18,9 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services)
     {
         if (services == null)
+        {
             throw new ArgumentNullException(nameof(services));
+        }
 
         // Register the provider detector for connection string analysis
         services.AddSingleton<ISqlProviderDetector, DefaultSqlProviderDetector>();
@@ -47,9 +49,14 @@ public static class ServiceCollectionExtensions
         ISqlDialect defaultTargetDialect)
     {
         if (services == null)
+        {
             throw new ArgumentNullException(nameof(services));
+        }
+
         if (defaultTargetDialect == null)
+        {
             throw new ArgumentNullException(nameof(defaultTargetDialect));
+        }
 
         // Register the provider detector
         services.AddSingleton<ISqlProviderDetector, DefaultSqlProviderDetector>();

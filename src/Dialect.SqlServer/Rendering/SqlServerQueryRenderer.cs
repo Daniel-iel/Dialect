@@ -14,9 +14,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     public CompiledQuery Render(SelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sql = RenderSelect(statement, dialect, parameters);
@@ -27,9 +32,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     public CompiledQuery Render(CompoundSelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sql = RenderCompoundSelect(statement, dialect, parameters);
@@ -40,9 +50,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     public CompiledQuery Render(InsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sql = RenderInsert(statement, dialect, parameters);
@@ -53,9 +68,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     public CompiledQuery Render(UpdateStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sql = RenderUpdate(statement, dialect, parameters);
@@ -66,9 +86,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     public CompiledQuery Render(DeleteStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sql = RenderDelete(statement, dialect, parameters);
@@ -79,9 +104,14 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     public CompiledQuery Render(UpsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sql = RenderUpsert(statement, dialect, parameters);
@@ -89,7 +119,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         return new CompiledQuery(sql, parameters);
     }
 
-    private string RenderCompoundSelect(CompoundSelectStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
+    private static string RenderCompoundSelect(CompoundSelectStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
     {
         var sb = new StringBuilder();
 
@@ -191,14 +221,18 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         // SELECT [DISTINCT] [TOP n]
         sb.Append("SELECT");
         if (statement.IsDistinct)
+        {
             sb.Append(" DISTINCT");
+        }
 
         // Use TOP syntax when Offset is null/0 AND Count has a value
         if ((statement.RowLimit?.Offset == null || statement.RowLimit.Offset == 0) && statement.RowLimit?.Count.HasValue == true)
         {
             sb.Append($" TOP {statement.RowLimit.Count}");
             if (statement.RowLimit.WithTies)
+            {
                 sb.Append(" WITH TIES");
+            }
         }
 
         sb.Append(" ");
@@ -210,11 +244,17 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         foreach (var c in statement.Columns)
         {
             if (c.Name == "*")
+            {
                 selectItems.Add("*");
+            }
             else if (c.IsRawExpression)
+            {
                 selectItems.Add(c.Name);
+            }
             else
+            {
                 selectItems.Add(QuoteIdentifier(c.Name, dialect));
+            }
         }
 
         // Window functions
@@ -248,7 +288,9 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             }
 
             if (!string.IsNullOrEmpty(statement.From.Alias))
+            {
                 sb.Append(" AS ").Append(QuoteIdentifier(statement.From.Alias, dialect));
+            }
         }
 
         // JOINs
@@ -289,7 +331,9 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             }
 
             if (!string.IsNullOrEmpty(join.Table.Alias))
+            {
                 sb.Append(" AS ").Append(QuoteIdentifier(join.Table.Alias, dialect));
+            }
 
             if (join.OnCondition != null)
             {
@@ -341,14 +385,16 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
                 sb.Append($" OFFSET {statement.RowLimit.Offset} ROWS");
                 // FETCH NEXT is optional; only include if Count has a value
                 if (statement.RowLimit?.Count.HasValue == true)
+                {
                     sb.Append($" FETCH NEXT {statement.RowLimit.Count} ROWS ONLY");
+                }
             }
         }
 
         return sb.ToString();
     }
 
-    private string RenderWindowFunction(WindowFunction windowFunction, ISqlDialect dialect)
+    private static string RenderWindowFunction(WindowFunction windowFunction, ISqlDialect dialect)
     {
         var sb = new StringBuilder();
 
@@ -401,7 +447,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         return sb.ToString();
     }
 
-    private string RenderInsert(InsertStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
+    private static string RenderInsert(InsertStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
     {
         var sb = new StringBuilder();
         var paramCounter = 1;
@@ -495,7 +541,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         };
     }
 
-    private string RenderComparison(ComparisonNode node, ISqlDialect dialect, Dictionary<string, object?> parameters, ref int paramCounter)
+    private static string RenderComparison(ComparisonNode node, ISqlDialect dialect, Dictionary<string, object?> parameters, ref int paramCounter)
     {
         var columnName = QuoteIdentifier(node.Column.Name, dialect);
         var paramName = $"{dialect.ParameterPrefix}p{paramCounter++}";
@@ -518,7 +564,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
         };
     }
 
-    private string RenderInNode(InNode node, ISqlDialect dialect, Dictionary<string, object?> parameters, ref int paramCounter)
+    private static string RenderInNode(InNode node, ISqlDialect dialect, Dictionary<string, object?> parameters, ref int paramCounter)
     {
         var columnName = QuoteIdentifier(node.Column.Name, dialect);
 
@@ -556,7 +602,7 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
             : $"{columnName} IN ({inList})";
     }
 
-    private string RenderUpsert(UpsertStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
+    private static string RenderUpsert(UpsertStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
     {
         // UPSERT implementation for SQL Server using MERGE
         var sb = new StringBuilder();
@@ -617,7 +663,9 @@ public sealed class SqlServerQueryRenderer : IQueryRenderer
     private static string QuoteIdentifier(string identifier, ISqlDialect dialect)
     {
         if (string.IsNullOrEmpty(identifier))
+        {
             return identifier;
+        }
 
         // SQL Server uses [ and ] for identifier quoting
         return $"[{identifier}]";

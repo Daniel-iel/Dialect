@@ -17,7 +17,10 @@ public abstract class QueryParser
     /// </summary>
     protected decimal EstimateSelectivity(string[] predicates)
     {
-        if (predicates.Length == 0) return 1.0m;
+        if (predicates.Length == 0)
+        {
+            return 1.0m;
+        }
 
         // MVP: Simple heuristic
         // Each equality predicate reduces by ~10%
@@ -28,13 +31,21 @@ public abstract class QueryParser
         {
             var lower = pred.ToLower();
             if (lower.Contains("=") && !lower.Contains("<") && !lower.Contains(">"))
+            {
                 selectivity *= 0.1m;  // Equality: high selectivity
+            }
             else if (lower.Contains("between"))
+            {
                 selectivity *= 0.2m;  // Range: moderate selectivity
+            }
             else if (lower.Contains("in"))
+            {
                 selectivity *= 0.3m;  // IN list: lower selectivity
+            }
             else
+            {
                 selectivity *= 0.5m;  // Other: unknown
+            }
         }
 
         return Math.Max(selectivity, 0.001m);  // Minimum 0.1%
@@ -52,7 +63,10 @@ public abstract class QueryParser
         foreach (var ch in sql)
         {
             if (ch == '(') { depth++; maxDepth = Math.Max(maxDepth, depth); }
-            else if (ch == ')') depth--;
+            else if (ch == ')')
+            {
+                depth--;
+            }
         }
 
         return maxDepth;

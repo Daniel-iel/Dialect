@@ -33,7 +33,9 @@ public sealed class SelectBuilder
     public SelectBuilder With(string cteName, SelectStatement query, IReadOnlyList<string>? columnNames = null)
     {
         if (string.IsNullOrWhiteSpace(cteName))
+        {
             throw new ArgumentException("CTE name cannot be empty", nameof(cteName));
+        }
 
         _withClauses.Add(new WithClause(cteName, query, columnNames));
         return this;
@@ -45,7 +47,9 @@ public sealed class SelectBuilder
     public SelectBuilder With(string cteName, SelectBuilder queryBuilder, IReadOnlyList<string>? columnNames = null)
     {
         if (string.IsNullOrWhiteSpace(cteName))
+        {
             throw new ArgumentException("CTE name cannot be empty", nameof(cteName));
+        }
 
         var query = queryBuilder.Build();
         _withClauses.Add(new WithClause(cteName, query, columnNames));
@@ -59,7 +63,9 @@ public sealed class SelectBuilder
     public SelectBuilder From(string tableName, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         // If no explicit alias is provided, try to parse it from tableName
         if (string.IsNullOrEmpty(alias))
@@ -88,9 +94,14 @@ public sealed class SelectBuilder
     public SelectBuilder From(SelectStatement subquery, string alias)
     {
         if (subquery == null)
+        {
             throw new ArgumentNullException(nameof(subquery));
+        }
+
         if (string.IsNullOrWhiteSpace(alias))
+        {
             throw new ArgumentException("Subquery alias cannot be empty", nameof(alias));
+        }
 
         _from = new TableReference("query", alias, null, subquery);
         return this;
@@ -102,9 +113,14 @@ public sealed class SelectBuilder
     public SelectBuilder From(SelectBuilder subqueryBuilder, string alias)
     {
         if (subqueryBuilder == null)
+        {
             throw new ArgumentNullException(nameof(subqueryBuilder));
+        }
+
         if (string.IsNullOrWhiteSpace(alias))
+        {
             throw new ArgumentException("Subquery alias cannot be empty", nameof(alias));
+        }
 
         var subquery = subqueryBuilder.Build();
         _from = new TableReference("query", alias, null, subquery);
@@ -118,7 +134,9 @@ public sealed class SelectBuilder
     public SelectBuilder InnerJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         // If no explicit alias is provided, try to parse it from tableName
         if (string.IsNullOrEmpty(alias))
@@ -140,7 +158,9 @@ public sealed class SelectBuilder
     public SelectBuilder LeftJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         // If no explicit alias is provided, try to parse it from tableName
         if (string.IsNullOrEmpty(alias))
@@ -162,7 +182,9 @@ public sealed class SelectBuilder
     public SelectBuilder RightJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         // If no explicit alias is provided, try to parse it from tableName
         if (string.IsNullOrEmpty(alias))
@@ -185,7 +207,9 @@ public sealed class SelectBuilder
     public SelectBuilder FullJoin(string tableName, WhereExpression onCondition, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         // If no explicit alias is provided, try to parse it from tableName
         if (string.IsNullOrEmpty(alias))
@@ -207,7 +231,9 @@ public sealed class SelectBuilder
     public SelectBuilder CrossJoin(string tableName, string? alias = null, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         // If no explicit alias is provided, try to parse it from tableName
         if (string.IsNullOrEmpty(alias))
@@ -228,7 +254,9 @@ public sealed class SelectBuilder
     public SelectBuilder Where(WhereExpression condition)
     {
         if (condition == null)
+        {
             throw new ArgumentNullException(nameof(condition));
+        }
 
         _where = _where == null ? condition : new AndNode(_where, condition);
         return this;
@@ -258,10 +286,14 @@ public sealed class SelectBuilder
     public SelectBuilder OrWhere(WhereExpression condition)
     {
         if (condition == null)
+        {
             throw new ArgumentNullException(nameof(condition));
+        }
 
         if (_where == null)
+        {
             throw new InvalidOperationException("Cannot use OrWhere() without an existing Where() condition.");
+        }
 
         _where = new OrNode(_where, condition);
         return this;
@@ -273,7 +305,9 @@ public sealed class SelectBuilder
     public SelectBuilder WhereRaw(string sqlFragment, Dictionary<string, object?>? parameters = null)
     {
         if (string.IsNullOrWhiteSpace(sqlFragment))
+        {
             throw new ArgumentException("SQL fragment cannot be empty", nameof(sqlFragment));
+        }
 
         var rawCondition = new RawNode(sqlFragment, parameters);
         return Where(rawCondition);
@@ -285,9 +319,14 @@ public sealed class SelectBuilder
     public SelectBuilder WhereIn(string columnName, SelectStatement subquery)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
+
         if (subquery == null)
+        {
             throw new ArgumentNullException(nameof(subquery));
+        }
 
         var inCondition = new InNode(new Column(columnName), null, subquery, Negated: false);
         return Where(inCondition);
@@ -299,9 +338,14 @@ public sealed class SelectBuilder
     public SelectBuilder WhereIn(string columnName, SelectBuilder subqueryBuilder)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
+
         if (subqueryBuilder == null)
+        {
             throw new ArgumentNullException(nameof(subqueryBuilder));
+        }
 
         return WhereIn(columnName, subqueryBuilder.Build());
     }
@@ -312,9 +356,14 @@ public sealed class SelectBuilder
     public SelectBuilder WhereNotIn(string columnName, SelectStatement subquery)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
+
         if (subquery == null)
+        {
             throw new ArgumentNullException(nameof(subquery));
+        }
 
         var inCondition = new InNode(new Column(columnName), null, subquery, Negated: true);
         return Where(inCondition);
@@ -326,9 +375,14 @@ public sealed class SelectBuilder
     public SelectBuilder WhereNotIn(string columnName, SelectBuilder subqueryBuilder)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
+
         if (subqueryBuilder == null)
+        {
             throw new ArgumentNullException(nameof(subqueryBuilder));
+        }
 
         return WhereNotIn(columnName, subqueryBuilder.Build());
     }
@@ -339,7 +393,9 @@ public sealed class SelectBuilder
     public SelectBuilder GroupBy(params string[] columnNames)
     {
         if (columnNames == null || columnNames.Length == 0)
+        {
             throw new ArgumentException("At least one column must be specified", nameof(columnNames));
+        }
 
         _groupByColumns.AddRange(columnNames.Select(c => new Column(c)));
         return this;
@@ -351,7 +407,9 @@ public sealed class SelectBuilder
     public SelectBuilder Having(WhereExpression condition)
     {
         if (condition == null)
+        {
             throw new ArgumentNullException(nameof(condition));
+        }
 
         _having = condition;
         return this;
@@ -367,7 +425,9 @@ public sealed class SelectBuilder
         string? alias = null)
     {
         if (string.IsNullOrWhiteSpace(functionName))
+        {
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
+        }
 
         var windowFunc = new WindowFunction(functionName, args, overClause, alias);
         windowFunc.Validate();
@@ -386,7 +446,9 @@ public sealed class SelectBuilder
         string? alias = null)
     {
         if (string.IsNullOrWhiteSpace(functionName))
+        {
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
+        }
 
         var overClause = new OverClause(partitionByColumns, orderByItems);
         var windowFunc = new WindowFunction(functionName, null, overClause, alias);
@@ -407,9 +469,14 @@ public sealed class SelectBuilder
         string? alias = null)
     {
         if (string.IsNullOrWhiteSpace(functionName))
+        {
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
+        }
+
         if (string.IsNullOrWhiteSpace(columnArg))
+        {
             throw new ArgumentException("Column argument cannot be empty", nameof(columnArg));
+        }
 
         var overClause = new OverClause(partitionByColumns, orderByItems);
         var windowFunc = new WindowFunction(functionName, new[] { columnArg }, overClause, alias);
@@ -426,7 +493,9 @@ public sealed class SelectBuilder
     public SelectBuilder SelectAggregate(string rawExpression)
     {
         if (string.IsNullOrWhiteSpace(rawExpression))
+        {
             throw new ArgumentException("Raw expression cannot be empty", nameof(rawExpression));
+        }
 
         _columns.Add(new Column(rawExpression, null, null, true));
         return this;
@@ -438,12 +507,17 @@ public sealed class SelectBuilder
     public SelectBuilder SelectAggregate(params string[] rawExpressions)
     {
         if (rawExpressions == null || rawExpressions.Length == 0)
+        {
             throw new ArgumentException("At least one raw expression must be specified", nameof(rawExpressions));
+        }
 
         foreach (var expr in rawExpressions)
         {
             if (string.IsNullOrWhiteSpace(expr))
+            {
                 throw new ArgumentException("Raw expression cannot be empty", nameof(rawExpressions));
+            }
+
             _columns.Add(new Column(expr, null, null, true));
         }
         return this;
@@ -456,7 +530,9 @@ public sealed class SelectBuilder
     public SelectBuilder OrderBy(string columnName, SortDirection? direction = null)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
 
         // Parse column name and direction from string (e.g., "Price DESC" -> column="Price", direction=Descending)
         var (parsedColumn, parsedDirection) = ParseOrderByString(columnName);
@@ -491,12 +567,16 @@ public sealed class SelectBuilder
     public SelectBuilder Take(int count, int? offset = null)
     {
         if (count <= 0)
+        {
             throw new ArgumentException("Count must be greater than 0", nameof(count));
+        }
 
         // Preserve existing offset if present, otherwise use the provided offset
         var currentOffset = _rowLimit?.Offset;
         if (offset.HasValue)
+        {
             currentOffset = offset;
+        }
 
         _rowLimit = new RowLimit(count, currentOffset);
         return this;
@@ -510,7 +590,9 @@ public sealed class SelectBuilder
     public SelectBuilder Skip(int offset)
     {
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
+        }
 
         // If _rowLimit doesn't exist, create one with null Count (offset-only)
         // If _rowLimit exists, preserve Count and update Offset
@@ -541,10 +623,12 @@ public sealed class SelectBuilder
     /// Parses a table name string to extract table name and alias.
     /// Supports formats: "tableName", "tableName alias", "tableName AS alias"
     /// </summary>
-    private (string tableName, string? alias) ParseTableAlias(string input)
+    private static (string tableName, string? alias) ParseTableAlias(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+        {
             return (input, null);
+        }
 
         var trimmed = input.Trim();
         var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
@@ -573,10 +657,12 @@ public sealed class SelectBuilder
     /// Parses an ORDER BY string to extract column name and sort direction.
     /// Supports formats: "columnName", "columnName ASC", "columnName DESC"
     /// </summary>
-    private (string columnName, SortDirection? direction) ParseOrderByString(string input)
+    private static (string columnName, SortDirection? direction) ParseOrderByString(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+        {
             return (input, null);
+        }
 
         var trimmed = input.Trim();
         var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
@@ -610,7 +696,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement Union(SelectStatement other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return new CompoundSelectStatement(Build(), SetOperator.Union, other);
     }
@@ -621,7 +709,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement Union(SelectBuilder other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return Union(other.Build());
     }
@@ -632,7 +722,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement UnionAll(SelectStatement other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return new CompoundSelectStatement(Build(), SetOperator.UnionAll, other);
     }
@@ -643,7 +735,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement UnionAll(SelectBuilder other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return UnionAll(other.Build());
     }
@@ -654,7 +748,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement Intersect(SelectStatement other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return new CompoundSelectStatement(Build(), SetOperator.Intersect, other);
     }
@@ -665,7 +761,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement Intersect(SelectBuilder other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return Intersect(other.Build());
     }
@@ -676,7 +774,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement Except(SelectStatement other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return new CompoundSelectStatement(Build(), SetOperator.Except, other);
     }
@@ -687,7 +787,9 @@ public sealed class SelectBuilder
     public CompoundSelectStatement Except(SelectBuilder other)
     {
         if (other == null)
+        {
             throw new ArgumentNullException(nameof(other));
+        }
 
         return Except(other.Build());
     }
@@ -698,7 +800,9 @@ public sealed class SelectBuilder
     public SelectStatement Build()
     {
         if (_columns.Count == 0)
+        {
             throw new InvalidOperationException("At least one column must be selected.");
+        }
 
         return new SelectStatement(
             _columns,

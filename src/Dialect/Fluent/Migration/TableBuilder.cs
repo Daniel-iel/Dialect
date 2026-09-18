@@ -14,7 +14,9 @@ public sealed class TableBuilder
     internal TableBuilder(string tableName)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         _tableName = tableName;
     }
@@ -42,7 +44,9 @@ public sealed class TableBuilder
     public TableBuilder PrimaryKey(params string[] columnNames)
     {
         if (columnNames == null || columnNames.Length == 0)
+        {
             throw new ArgumentException("At least one column must be specified for primary key", nameof(columnNames));
+        }
 
         _primaryKeyColumns = new List<string>(columnNames);
         return this;

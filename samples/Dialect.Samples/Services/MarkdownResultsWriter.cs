@@ -226,7 +226,7 @@ public class MarkdownResultsWriter
     /// <summary>
     /// Extract column names from a dynamic object.
     /// </summary>
-    private IEnumerable<string> GetColumnNames(dynamic row)
+    private static IEnumerable<string> GetColumnNames(dynamic row)
     {
         try
         {
@@ -252,7 +252,7 @@ public class MarkdownResultsWriter
     /// <summary>
     /// Get a property value from a dynamic object.
     /// </summary>
-    private object? GetDynamicProperty(dynamic row, string propertyName)
+    private static object? GetDynamicProperty(dynamic row, string propertyName)
     {
         try
         {
@@ -377,7 +377,7 @@ public class MarkdownResultsWriter
     /// <summary>
     /// Get or create the results directory.
     /// </summary>
-    private string GetResultsDirectory()
+    private static string GetResultsDirectory()
     {
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;
         

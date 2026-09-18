@@ -53,7 +53,9 @@ public sealed class VersionCommand : ICommand
         var versionAttribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 
         if (versionAttribute?.InformationalVersion is not null)
+        {
             return versionAttribute.InformationalVersion;
+        }
 
         // Fallback to assembly version
         return assembly.GetName().Version?.ToString() ?? "1.0.0";

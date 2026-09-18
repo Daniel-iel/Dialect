@@ -13,9 +13,14 @@ public sealed class SqlServerRoutineRenderer : IRoutineRenderer
     public CompiledQuery Render(RoutineCall routine, ISqlDialect dialect)
     {
         if (routine == null)
+        {
             throw new ArgumentNullException(nameof(routine));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var parameters = new Dictionary<string, object?>();
         var sb = new StringBuilder();
@@ -24,7 +29,9 @@ public sealed class SqlServerRoutineRenderer : IRoutineRenderer
         sb.Append("EXEC ");
 
         if (!string.IsNullOrEmpty(routine.Schema))
+        {
             sb.Append($"[{routine.Schema}].");
+        }
 
         sb.Append($"[{routine.Name}]");
 
@@ -33,16 +40,22 @@ public sealed class SqlServerRoutineRenderer : IRoutineRenderer
         {
             var paramName = $"@{param.Name}";
             if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
+            {
                 paramName += " OUTPUT";
+            }
 
             if (param.Value != null)
+            {
                 parameters[param.Name] = param.Value;
+            }
 
             paramList.Add(paramName);
         }
 
         if (paramList.Count > 0)
+        {
             sb.Append(" ").Append(string.Join(", ", paramList));
+        }
 
         return new CompiledQuery(sb.ToString(), parameters);
     }

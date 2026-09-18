@@ -329,7 +329,9 @@ public class Queries
             var fullPath = Path.Combine(_tempDir, relativePath);
             var directory = Path.GetDirectoryName(fullPath);
             if (directory != null)
+            {
                 Directory.CreateDirectory(directory);
+            }
 
             File.WriteAllText(fullPath, content);
             return fullPath;

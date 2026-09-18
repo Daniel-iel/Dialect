@@ -82,7 +82,7 @@ public class SqlServerPlanAnalyzer : ExecutionPlanAnalyzer
         );
     }
 
-    private ExecutionPlanNode ParseNode(JsonElement nodeElement)
+    private static ExecutionPlanNode ParseNode(JsonElement nodeElement)
     {
         var operationType = nodeElement.TryGetProperty("RelOp", out var opProp)
             ? opProp.GetString() ?? "Unknown"

@@ -27,7 +27,10 @@ public class AggregationAnalyzer
 
     private static string[] ExtractGroupByColumns(string clause)
     {
-        if (string.IsNullOrEmpty(clause)) return Array.Empty<string>();
+        if (string.IsNullOrEmpty(clause))
+        {
+            return Array.Empty<string>();
+        }
 
         return clause.Split(',')
             .Select(c => c.Trim())
@@ -35,7 +38,7 @@ public class AggregationAnalyzer
             .ToArray();
     }
 
-    private AggregateFunction[] ParseAggregateFunctions(string[] functions)
+    private static AggregateFunction[] ParseAggregateFunctions(string[] functions)
     {
         return functions.Select(f =>
         {
@@ -53,12 +56,36 @@ public class AggregationAnalyzer
 
     private static string DetermineFunctionType(string function)
     {
-        if (function.StartsWith("sum")) return "SUM";
-        if (function.StartsWith("count")) return "COUNT";
-        if (function.StartsWith("avg")) return "AVG";
-        if (function.StartsWith("min")) return "MIN";
-        if (function.StartsWith("max")) return "MAX";
-        if (function.StartsWith("string_agg") || function.StartsWith("group_concat")) return "STRING_AGG";
+        if (function.StartsWith("sum"))
+        {
+            return "SUM";
+        }
+
+        if (function.StartsWith("count"))
+        {
+            return "COUNT";
+        }
+
+        if (function.StartsWith("avg"))
+        {
+            return "AVG";
+        }
+
+        if (function.StartsWith("min"))
+        {
+            return "MIN";
+        }
+
+        if (function.StartsWith("max"))
+        {
+            return "MAX";
+        }
+
+        if (function.StartsWith("string_agg") || function.StartsWith("group_concat"))
+        {
+            return "STRING_AGG";
+        }
+
         return "UNKNOWN";
     }
 
@@ -99,13 +126,19 @@ public class AggregationAnalyzer
     private static string GenerateRecommendation(string[] columns, AggregateFunction[] aggregates, bool canUseIndex)
     {
         if (!canUseIndex)
+        {
             return "Consider indexing GROUP BY columns for faster grouping.";
+        }
 
         if (aggregates.Any(a => a.Type == "STRING_AGG"))
+        {
             return "STRING_AGG is expensive. Consider partitioning or using a separate aggregation step.";
+        }
 
         if (columns.Length > 3)
+        {
             return "Grouping by many columns can be expensive. Review if all are necessary.";
+        }
 
         return "GROUP BY appears well-optimized.";
     }

@@ -27,8 +27,15 @@ namespace Dialect.Cli.Reporting
 
         public async Task<bool> WriteReportAsync(BulkFileRewriteResult result, string title, string outputPath)
         {
-            if (result == null) throw new ArgumentNullException(nameof(result));
-            if (string.IsNullOrWhiteSpace(outputPath)) throw new ArgumentException("Output path cannot be empty", nameof(outputPath));
+            if (result == null)
+            {
+                throw new ArgumentNullException(nameof(result));
+            }
+
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                throw new ArgumentException("Output path cannot be empty", nameof(outputPath));
+            }
 
             try
             {
@@ -143,7 +150,7 @@ namespace Dialect.Cli.Reporting
             return sb.ToString();
         }
 
-        private void RenderStyles(StringBuilder sb)
+        private static void RenderStyles(StringBuilder sb)
         {
             sb.AppendLine(@"/* Base styling adapted from docs/documentation.html */");
             sb.AppendLine(@":root {" );
@@ -196,7 +203,7 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("    </div>");
         }
 
-        private void RenderSummaryCards(StringBuilder sb, TranslationReport report)
+        private static void RenderSummaryCards(StringBuilder sb, TranslationReport report)
         {
             sb.AppendLine("    <div class=\"summary-cards\">");
             sb.AppendLine("      <div class=\"card\">");
@@ -224,7 +231,7 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("    </div>");
         }
 
-        private void RenderSuccessChart(StringBuilder sb, TranslationReport report)
+        private static void RenderSuccessChart(StringBuilder sb, TranslationReport report)
         {
             sb.AppendLine("      <div class=\"chart-container\">");
             sb.AppendLine("        <h3>Success Rate</h3>");
@@ -232,7 +239,7 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("      </div>");
         }
 
-        private void RenderTranslationsChart(StringBuilder sb, TranslationReport report)
+        private static void RenderTranslationsChart(StringBuilder sb, TranslationReport report)
         {
             sb.AppendLine("      <div class=\"chart-container\">");
             sb.AppendLine("        <h3>Translations by File</h3>");
@@ -240,7 +247,7 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("      </div>");
         }
 
-        private void Render3DVisualization(StringBuilder sb, TranslationReport report)
+        private static void Render3DVisualization(StringBuilder sb, TranslationReport report)
         {
             sb.AppendLine("      <div class=\"chart-container\">");
             sb.AppendLine("        <h3>3D Visualization</h3>");
@@ -275,7 +282,7 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("      </aside>");
         }
 
-        private void RenderPageContents(StringBuilder sb, TranslationReport report)
+        private static void RenderPageContents(StringBuilder sb, TranslationReport report)
         {
             sb.AppendLine("      <aside id=\"page-contents\"> ");
             sb.AppendLine("        <div class=\"contents-block\"> ");
@@ -283,7 +290,11 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("          <ul id=\"contents-list\"> ");
             sb.AppendLine("            <li><a href=\"#overview\" class=\"active\">Overview</a></li>");
             sb.AppendLine("            <li><a href=\"#files\">Files</a></li>");
-            if (report.ErrorSummaries != null && report.ErrorSummaries.Any()) sb.AppendLine("            <li><a href=\"#error-summary\">Errors</a></li>");
+            if (report.ErrorSummaries != null && report.ErrorSummaries.Any())
+            {
+                sb.AppendLine("            <li><a href=\"#error-summary\">Errors</a></li>");
+            }
+
             sb.AppendLine("          </ul>");
             sb.AppendLine("        </div>");
             sb.AppendLine("      </aside>");
@@ -291,7 +302,10 @@ namespace Dialect.Cli.Reporting
 
         private void RenderFileDetailsTable(StringBuilder sb, TranslationReport report)
         {
-            if (report.FileDetails == null || !report.FileDetails.Any()) return;
+            if (report.FileDetails == null || !report.FileDetails.Any())
+            {
+                return;
+            }
 
             sb.AppendLine("    <h2>File Details</h2>");
             sb.AppendLine("    <table>");
@@ -389,7 +403,7 @@ namespace Dialect.Cli.Reporting
             sb.AppendLine("  </script>");
         }
 
-        private List<FileTranslationDetail> BuildFileDetails(BulkFileRewriteResult result)
+        private static List<FileTranslationDetail> BuildFileDetails(BulkFileRewriteResult result)
         {
             return result.FileResults?.Select(fr => new FileTranslationDetail
             {
@@ -404,30 +418,62 @@ namespace Dialect.Cli.Reporting
 
         private List<ErrorSummary> BuildErrorSummaries(BulkFileRewriteResult result)
         {
-            if (result.Errors == null || !result.Errors.Any()) return new List<ErrorSummary>();
+            if (result.Errors == null || !result.Errors.Any())
+            {
+                return new List<ErrorSummary>();
+            }
+
             var groups = result.Errors.GroupBy(e => ExtractErrorCategory(e)).ToList();
             return groups.Select(g => new ErrorSummary { Category = g.Key, Count = g.Count(), Examples = g.Take(3).ToList() }).ToList();
         }
 
-        private string ExtractErrorCategory(string error)
+        private static string ExtractErrorCategory(string error)
         {
-            if (error.Contains("not found", StringComparison.OrdinalIgnoreCase)) return "File Not Found";
-            if (error.Contains("parse", StringComparison.OrdinalIgnoreCase)) return "Parse Error";
-            if (error.Contains("translation", StringComparison.OrdinalIgnoreCase)) return "Translation Error";
-            if (error.Contains("backup", StringComparison.OrdinalIgnoreCase)) return "Backup Error";
-            if (error.Contains("permission", StringComparison.OrdinalIgnoreCase)) return "Permission Error";
+            if (error.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return "File Not Found";
+            }
+
+            if (error.Contains("parse", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Parse Error";
+            }
+
+            if (error.Contains("translation", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Translation Error";
+            }
+
+            if (error.Contains("backup", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Backup Error";
+            }
+
+            if (error.Contains("permission", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Permission Error";
+            }
+
             return "Other Error";
         }
 
-        private string EscapeHtml(string? text)
+        private static string EscapeHtml(string? text)
         {
-            if (string.IsNullOrEmpty(text)) return string.Empty;
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
             return text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&#39;");
         }
 
-        private string MakeId(string name)
+        private static string MakeId(string name)
         {
-            if (string.IsNullOrEmpty(name)) return "file";
+            if (string.IsNullOrEmpty(name))
+            {
+                return "file";
+            }
+
             var id = new string(name.Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
             return string.IsNullOrEmpty(id) ? "file" : id.ToLowerInvariant();
         }

@@ -97,7 +97,9 @@ public class MySqlPlanAnalyzer : ExecutionPlanAnalyzer
 
         // Fallback to defaults
         if (rowsExamined == 0)
+        {
             rowsExamined = rowsProduced;
+        }
 
         var children = new List<ExecutionPlanNode>();
 

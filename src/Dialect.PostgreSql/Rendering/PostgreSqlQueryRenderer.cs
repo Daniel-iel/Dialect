@@ -16,9 +16,14 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     public CompiledQuery Render(SelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         _paramCounter = 0;
         var parameters = new Dictionary<string, object?>();
@@ -30,9 +35,14 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     public CompiledQuery Render(CompoundSelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         _paramCounter = 0;
         var parameters = new Dictionary<string, object?>();
@@ -44,9 +54,14 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     public CompiledQuery Render(InsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         _paramCounter = 0;
         var parameters = new Dictionary<string, object?>();
@@ -58,9 +73,14 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     public CompiledQuery Render(UpdateStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         _paramCounter = 0;
         var parameters = new Dictionary<string, object?>();
@@ -72,9 +92,14 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     public CompiledQuery Render(DeleteStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         _paramCounter = 0;
         var parameters = new Dictionary<string, object?>();
@@ -86,9 +111,14 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     public CompiledQuery Render(UpsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         _paramCounter = 0;
         var parameters = new Dictionary<string, object?>();
@@ -97,7 +127,7 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         return new CompiledQuery(sql, parameters);
     }
 
-    private string RenderCompoundSelect(CompoundSelectStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
+    private static string RenderCompoundSelect(CompoundSelectStatement statement, ISqlDialect dialect, Dictionary<string, object?> parameters)
     {
         var sb = new StringBuilder();
 
@@ -198,7 +228,9 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         // SELECT [DISTINCT]
         sb.Append("SELECT");
         if (statement.IsDistinct)
+        {
             sb.Append(" DISTINCT");
+        }
 
         sb.Append(" ");
 
@@ -209,11 +241,17 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         foreach (var c in statement.Columns)
         {
             if (c.Name == "*")
+            {
                 selectItems.Add("*");
+            }
             else if (c.IsRawExpression)
+            {
                 selectItems.Add(c.Name);
+            }
             else
+            {
                 selectItems.Add(QuoteIdentifier(c.Name, dialect));
+            }
         }
 
         // Window functions
@@ -247,7 +285,9 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
             }
 
             if (!string.IsNullOrEmpty(statement.From.Alias))
+            {
                 sb.Append(" AS ").Append(QuoteIdentifier(statement.From.Alias, dialect));
+            }
         }
 
         // JOINs
@@ -288,7 +328,9 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
             }
 
             if (!string.IsNullOrEmpty(join.Table.Alias))
+            {
                 sb.Append(" AS ").Append(QuoteIdentifier(join.Table.Alias, dialect));
+            }
 
             if (join.OnCondition != null)
             {
@@ -329,15 +371,19 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
         // LIMIT / OFFSET (PostgreSQL syntax, end of query)
         // PostgreSQL supports LIMIT without OFFSET and OFFSET without LIMIT
         if (statement.RowLimit?.Count.HasValue == true && statement.RowLimit.Count > 0)
+        {
             sb.Append($" LIMIT {statement.RowLimit.Count}");
+        }
 
         if (statement.RowLimit?.Offset.HasValue == true && statement.RowLimit.Offset > 0)
+        {
             sb.Append($" OFFSET {statement.RowLimit.Offset}");
+        }
 
         return sb.ToString();
     }
 
-    private string RenderWindowFunction(WindowFunction windowFunction, ISqlDialect dialect)
+    private static string RenderWindowFunction(WindowFunction windowFunction, ISqlDialect dialect)
     {
         var sb = new StringBuilder();
 
@@ -585,7 +631,9 @@ public sealed class PostgreSqlQueryRenderer : IQueryRenderer
     private static string QuoteIdentifier(string identifier, ISqlDialect dialect)
     {
         if (string.IsNullOrEmpty(identifier))
+        {
             return identifier;
+        }
 
         // PostgreSQL uses double quotes for identifier quoting
         return $"\"{identifier}\"";

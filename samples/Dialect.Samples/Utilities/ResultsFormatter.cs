@@ -85,7 +85,9 @@ public static class ResultsFormatter
     private static string Indent(string text, int spaces)
     {
         if (string.IsNullOrEmpty(text))
+        {
             return text;
+        }
 
         var indent = new string(' ', spaces);
         return indent + text.Replace("\n", "\n" + indent);

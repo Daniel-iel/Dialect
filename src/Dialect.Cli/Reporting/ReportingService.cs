@@ -38,10 +38,14 @@ namespace Dialect.Cli.Reporting
             string? title = null)
         {
             if (result == null)
+            {
                 throw new ArgumentNullException(nameof(result));
+            }
 
             if (string.IsNullOrWhiteSpace(outputDirectory))
+            {
                 throw new ArgumentException("Output directory cannot be empty", nameof(outputDirectory));
+            }
 
             // Create output directory if needed
             Directory.CreateDirectory(outputDirectory);

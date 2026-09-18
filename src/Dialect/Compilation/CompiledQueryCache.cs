@@ -47,7 +47,9 @@ public sealed class CompiledQueryCache
     public CompiledQueryCache(int maxEntries = 1000, CacheEvictionStrategy strategy = CacheEvictionStrategy.None, TimeSpan? ttl = null)
     {
         if (maxEntries <= 0)
+        {
             throw new ArgumentException("Max entries must be greater than 0", nameof(maxEntries));
+        }
 
         _maxEntries = maxEntries;
         _evictionStrategy = strategy;
@@ -62,9 +64,14 @@ public sealed class CompiledQueryCache
     public string GetOrAdd(QueryShapeKey key, Func<QueryShapeKey, string> factory)
     {
         if (key == null)
+        {
             throw new ArgumentNullException(nameof(key));
+        }
+
         if (factory == null)
+        {
             throw new ArgumentNullException(nameof(factory));
+        }
 
         // Check for expired entries and remove them
         CleanupExpiredEntries();
@@ -123,7 +130,9 @@ public sealed class CompiledQueryCache
     private void CleanupExpiredEntries()
     {
         if (_ttl == null)
+        {
             return;
+        }
 
         var expiration = DateTime.UtcNow - _ttl.Value;
         var expiredKeys = _cache

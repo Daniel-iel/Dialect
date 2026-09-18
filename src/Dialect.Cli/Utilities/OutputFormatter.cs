@@ -16,10 +16,14 @@ public static class OutputFormatter
     public static void RenderReport(ConversionReport report, ILogger logger, bool verbose = false)
     {
         if (report == null)
+        {
             throw new ArgumentNullException(nameof(report));
+        }
 
         if (logger == null)
+        {
             throw new ArgumentNullException(nameof(logger));
+        }
 
         // Header
         logger.LogInformation(@"

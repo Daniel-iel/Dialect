@@ -277,7 +277,10 @@ var sql2 = ""INVALID SQL SYNTAX"";
             {
                 callCount++;
                 if (callCount == 1)
+                {
                     return new TranslationResult { Compiled = new CompiledQuery("TRANSLATED", new Dictionary<string, object?>()) };
+                }
+
                 return new TranslationResult { ErrorMessage = "Parse error" };
             });
 
@@ -469,7 +472,10 @@ public class BulkFileRewriterTests : IAsyncLifetime
             {
                 callCount++;
                 if (callCount == 1)
+                {
                     return Task.FromResult(new FileRewriteResult { Success = false, Error = "Translation error" });
+                }
+
                 return Task.FromResult(new FileRewriteResult { Success = true, ReplacedCount = 1 });
             });
 

@@ -19,7 +19,9 @@ public sealed class UpdateBuilder
     public UpdateBuilder Table(string tableName, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         _table = new TableReference(tableName, null, schema);
         return this;
@@ -31,7 +33,9 @@ public sealed class UpdateBuilder
     public UpdateBuilder Set(string columnName, object? value)
     {
         if (string.IsNullOrWhiteSpace(columnName))
+        {
             throw new ArgumentException("Column name cannot be empty", nameof(columnName));
+        }
 
         _setClauses[new Column(columnName)] = value;
         return this;
@@ -61,7 +65,9 @@ public sealed class UpdateBuilder
     public UpdateBuilder From(string tableName, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         _fromTable = new TableReference(tableName, null, schema);
         return this;
@@ -82,13 +88,19 @@ public sealed class UpdateBuilder
     public UpdateStatement Build()
     {
         if (_table == null)
+        {
             throw new InvalidOperationException("Table must be specified via Table().");
+        }
 
         if (_setClauses.Count == 0)
+        {
             throw new InvalidOperationException("At least one SET clause must be specified via Set().");
+        }
 
         if (_where == null && !_allowFullTableUpdate)
+        {
             throw new InvalidOperationException("WHERE clause is required for UPDATE. Use AllowFullTableUpdate() if you intentionally want to update all rows.");
+        }
 
         return new UpdateStatement(_table, _setClauses, _where, _fromTable, _allowFullTableUpdate);
     }

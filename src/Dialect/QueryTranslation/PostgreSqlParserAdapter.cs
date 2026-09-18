@@ -32,7 +32,9 @@ public sealed class PostgreSqlParserAdapter : SqlParserAdapter
     public override IReadOnlyList<string> DetectUntranslatableConstructs(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))
+        {
             return [];
+        }
 
         var sql_lower = sql.ToLowerInvariant();
         var issues = new List<string>();
@@ -40,27 +42,39 @@ public sealed class PostgreSqlParserAdapter : SqlParserAdapter
         // JSON operators
         if (sql_lower.Contains("->>") || sql_lower.Contains("#>") ||
             sql_lower.Contains("@>") || sql_lower.Contains("@?"))
+        {
             issues.Add("JSON operators are PostgreSQL specific");
+        }
 
         // ARRAY type
         if (sql_lower.Contains("array[") || sql_lower.Contains("::array"))
+        {
             issues.Add("ARRAY type and operations are PostgreSQL specific");
+        }
 
         // JSONB type
         if (sql_lower.Contains("jsonb"))
+        {
             issues.Add("JSONB type is PostgreSQL specific");
+        }
 
         // CUBE aggregation
         if (sql_lower.Contains("cube("))
+        {
             issues.Add("CUBE aggregation function is PostgreSQL specific");
+        }
 
         // Dollar-quoted strings
         if (System.Text.RegularExpressions.Regex.IsMatch(sql, @"\$\w*\$"))
+        {
             issues.Add("Dollar-quoted strings are PostgreSQL specific syntax");
+        }
 
         // Window FILTER clause
         if (sql_lower.Contains("filter(where"))
+        {
             issues.Add("FILTER clause in window functions is PostgreSQL specific");
+        }
 
         return issues;
     }

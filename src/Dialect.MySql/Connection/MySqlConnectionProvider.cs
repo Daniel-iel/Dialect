@@ -25,7 +25,9 @@ public class MySqlConnectionProvider : IDbConnectionProvider
     public object OpenConnection(string connectionString)
     {
         if (!ValidateConnectionString(connectionString))
+        {
             throw new ArgumentException("Invalid MySQL connection string", nameof(connectionString));
+        }
 
         var connection = new MySqlConnection(connectionString);
         connection.Open();
@@ -44,7 +46,9 @@ public class MySqlConnectionProvider : IDbConnectionProvider
     public string ExecuteScalar(object connection, string query)
     {
         if (connection is not MySqlConnection mysqlConnection)
+        {
             throw new ArgumentException("Expected MySqlConnection", nameof(connection));
+        }
 
         using (var command = new MySqlCommand(query, mysqlConnection))
         {
@@ -57,7 +61,9 @@ public class MySqlConnectionProvider : IDbConnectionProvider
     public IReadOnlyList<Dictionary<string, object>> ExecuteQuery(object connection, string query)
     {
         if (connection is not MySqlConnection mysqlConnection)
+        {
             throw new ArgumentException("Expected MySqlConnection", nameof(connection));
+        }
 
         var results = new List<Dictionary<string, object>>();
         using (var command = new MySqlCommand(query, mysqlConnection))
@@ -89,7 +95,9 @@ public class MySqlConnectionProvider : IDbConnectionProvider
     public DatabaseVersion? ParseVersion(string versionString)
     {
         if (string.IsNullOrWhiteSpace(versionString))
+        {
             return null;
+        }
 
         // Parse MySQL version format
         // Examples:
@@ -117,7 +125,9 @@ public class MySqlConnectionProvider : IDbConnectionProvider
     public bool ValidateConnectionString(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             return false;
+        }
 
         try
         {

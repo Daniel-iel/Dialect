@@ -20,7 +20,9 @@ public sealed class SecurityValidator
     public static bool IsPathSafe(string path, string baseDirectory)
     {
         if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(baseDirectory))
+        {
             return false;
+        }
 
         try
         {
@@ -30,16 +32,22 @@ public sealed class SecurityValidator
 
             // Ensure base directory ends with separator for proper comparison
             if (!fullBase.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
                 fullBase += Path.DirectorySeparatorChar;
+            }
 
             // Path must start with base directory
             if (!fullPath.StartsWith(fullBase, StringComparison.OrdinalIgnoreCase))
+            {
                 return false;
+            }
 
             // Additional check: no ".." sequences in the resolved path
             if (fullPath.Contains(".." + Path.DirectorySeparatorChar) ||
                 fullPath.EndsWith(".."))
+            {
                 return false;
+            }
 
             return true;
         }
@@ -56,7 +64,9 @@ public sealed class SecurityValidator
     public static bool IsDirectoryAccessible(string directory)
     {
         if (string.IsNullOrWhiteSpace(directory))
+        {
             return false;
+        }
 
         try
         {
@@ -75,7 +85,9 @@ public sealed class SecurityValidator
     public static bool IsFileAccessible(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
+        {
             return false;
+        }
 
         try
         {
@@ -96,7 +108,9 @@ public sealed class SecurityValidator
     public static string SanitizeSqlForLogging(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))
+        {
             return string.Empty;
+        }
 
         // Remove potentially sensitive parts for logging
         var sanitized = sql;
@@ -118,7 +132,9 @@ public sealed class SecurityValidator
 
         // Truncate if too long (prevent log flooding)
         if (sanitized.Length > 500)
+        {
             sanitized = sanitized.Substring(0, 497) + "...";
+        }
 
         return sanitized;
     }
@@ -129,20 +145,26 @@ public sealed class SecurityValidator
     public static bool IsFileNameSafe(string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
+        {
             return false;
+        }
 
         // Check for path separators
         if (fileName.Contains(Path.DirectorySeparatorChar.ToString()) ||
             fileName.Contains(Path.AltDirectorySeparatorChar.ToString()) ||
             fileName.Contains(".."))
+        {
             return false;
+        }
 
         // Check for invalid characters
         var invalidChars = Path.GetInvalidFileNameChars();
         foreach (var c in fileName)
         {
             if (Array.IndexOf(invalidChars, c) >= 0)
+            {
                 return false;
+            }
         }
 
         return true;
@@ -154,15 +176,21 @@ public sealed class SecurityValidator
     public static bool IsGlobPatternSafe(string pattern)
     {
         if (string.IsNullOrWhiteSpace(pattern))
+        {
             return false;
+        }
 
         // Glob patterns should not contain path traversal
         if (pattern.Contains(".."))
+        {
             return false;
+        }
 
         // Should not contain absolute paths
         if (Path.IsPathRooted(pattern))
+        {
             return false;
+        }
 
         return true;
     }
@@ -174,7 +202,9 @@ public sealed class SecurityValidator
     public static IReadOnlyList<string> GetSafeGlobPatterns(string patternsInput)
     {
         if (string.IsNullOrWhiteSpace(patternsInput))
+        {
             return Array.Empty<string>();
+        }
 
         var patterns = new List<string>();
         var parts = patternsInput.Split(',');

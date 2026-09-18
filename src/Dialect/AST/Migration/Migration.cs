@@ -16,13 +16,19 @@ public sealed record Migration(
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
+        {
             throw new ArgumentException("Migration name cannot be empty");
+        }
 
         if (string.IsNullOrWhiteSpace(Version))
+        {
             throw new ArgumentException("Migration version cannot be empty");
+        }
 
         if (Steps == null || Steps.Count == 0)
+        {
             throw new ArgumentException("Migration must contain at least one step");
+        }
 
         // Validate each step
         foreach (var step in Steps)

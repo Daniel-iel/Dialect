@@ -12,9 +12,14 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
     public CompiledQuery Render(Migration migration, ISqlDialect dialect)
     {
         if (migration == null)
+        {
             throw new ArgumentNullException(nameof(migration));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var sqlLines = new List<string>();
 
@@ -61,9 +66,13 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         {
             sql.Append("    " + columnDefs[i]);
             if (i < columnDefs.Count - 1 || (step.PrimaryKeyColumns != null && step.PrimaryKeyColumns.Count > 0))
+            {
                 sql.AppendLine(",");
+            }
             else
+            {
                 sql.AppendLine();
+            }
         }
 
         if (step.PrimaryKeyColumns != null && step.PrimaryKeyColumns.Count > 0)
@@ -77,7 +86,7 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         return sql.ToString();
     }
 
-    private string RenderDropTable(DropTableStep step, ISqlDialect dialect)
+    private static string RenderDropTable(DropTableStep step, ISqlDialect dialect)
     {
         var tableName = QuoteIdentifier(step.TableName);
         var cascade = step.Cascade ? " CASCADE" : "";
@@ -91,14 +100,14 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         return $"ALTER TABLE {tableName} ADD COLUMN {columnDef}";
     }
 
-    private string RenderDropColumn(DropColumnStep step, ISqlDialect dialect)
+    private static string RenderDropColumn(DropColumnStep step, ISqlDialect dialect)
     {
         var tableName = QuoteIdentifier(step.TableName);
         var columnName = QuoteIdentifier(step.ColumnName);
         return $"ALTER TABLE {tableName} DROP COLUMN {columnName}";
     }
 
-    private string RenderAlterColumn(AlterColumnStep step, ISqlDialect dialect)
+    private static string RenderAlterColumn(AlterColumnStep step, ISqlDialect dialect)
     {
         var tableName = QuoteIdentifier(step.TableName);
         var columnName = QuoteIdentifier(step.ColumnName);
@@ -125,7 +134,7 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         return string.Join("\n", statements);
     }
 
-    private string RenderAddIndex(AddIndexStep step, ISqlDialect dialect)
+    private static string RenderAddIndex(AddIndexStep step, ISqlDialect dialect)
     {
         var indexName = QuoteIdentifier(step.IndexName ?? $"ix_{step.TableName}_{string.Join("_", step.ColumnNames)}");
         var tableName = QuoteIdentifier(step.TableName);
@@ -135,13 +144,13 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         return $"CREATE {unique}INDEX {indexName} ON {tableName} ({columns})";
     }
 
-    private string RenderDropIndex(DropIndexStep step, ISqlDialect dialect)
+    private static string RenderDropIndex(DropIndexStep step, ISqlDialect dialect)
     {
         var indexName = QuoteIdentifier(step.IndexName);
         return $"DROP INDEX IF EXISTS {indexName}";
     }
 
-    private string RenderAddForeignKey(AddForeignKeyStep step, ISqlDialect dialect)
+    private static string RenderAddForeignKey(AddForeignKeyStep step, ISqlDialect dialect)
     {
         var tableName = QuoteIdentifier(step.TableName);
         var columnName = QuoteIdentifier(step.ColumnName);
@@ -153,14 +162,14 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
         return $"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} FOREIGN KEY ({columnName}) REFERENCES {refTable}({refColumn}){cascade}";
     }
 
-    private string RenderDropForeignKey(DropForeignKeyStep step, ISqlDialect dialect)
+    private static string RenderDropForeignKey(DropForeignKeyStep step, ISqlDialect dialect)
     {
         var tableName = QuoteIdentifier(step.TableName);
         var constraintName = QuoteIdentifier(step.ConstraintName);
         return $"ALTER TABLE {tableName} DROP CONSTRAINT {constraintName}";
     }
 
-    private string RenderColumnDefinition(ColumnDef column, ISqlDialect dialect)
+    private static string RenderColumnDefinition(ColumnDef column, ISqlDialect dialect)
     {
         var columnName = QuoteIdentifier(column.Name);
         var type = GetDataTypeSql(column.Type, dialect);
@@ -212,11 +221,20 @@ public sealed class PostgreSqlMigrationRenderer : IMigrationRenderer
     private static string FormatValue(object? value)
     {
         if (value == null)
+        {
             return "NULL";
+        }
+
         if (value is string str)
+        {
             return $"'{str.Replace("'", "''")}'";
+        }
+
         if (value is bool b)
+        {
             return b ? "true" : "false";
+        }
+
         return value.ToString() ?? "NULL";
     }
 }

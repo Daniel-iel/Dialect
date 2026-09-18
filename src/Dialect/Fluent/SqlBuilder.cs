@@ -26,7 +26,9 @@ public sealed class SqlBuilder
     public static SelectBuilder Select(params string[] columns)
     {
         if (columns == null || columns.Length == 0)
+        {
             throw new ArgumentException("At least one column must be specified", nameof(columns));
+        }
 
         var cols = columns.Select(c => new Column(c)).ToList();
         return new SelectBuilder(cols);
@@ -38,7 +40,9 @@ public sealed class SqlBuilder
     public static SelectBuilder Select(params Column[] columns)
     {
         if (columns == null || columns.Length == 0)
+        {
             throw new ArgumentException("At least one column must be specified", nameof(columns));
+        }
 
         return new SelectBuilder(columns.ToList());
     }
@@ -73,7 +77,9 @@ public sealed class SqlBuilder
     public static RoutineCallBuilder Routine(string name, RoutineKind kind)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException("Routine name cannot be empty", nameof(name));
+        }
 
         return new RoutineCallBuilder(name, kind);
     }
@@ -84,7 +90,9 @@ public sealed class SqlBuilder
     public static UpsertBuilder Upsert(string tableName, string? schema = null)
     {
         if (string.IsNullOrWhiteSpace(tableName))
+        {
             throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+        }
 
         return new UpsertBuilder(tableName, schema);
     }

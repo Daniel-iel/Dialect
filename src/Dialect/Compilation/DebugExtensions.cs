@@ -16,10 +16,14 @@ public static class DebugExtensions
     public static string ToDebugString(this CompiledQuery query)
     {
         if (query == null)
+        {
             throw new ArgumentNullException(nameof(query));
+        }
 
         if (query.Parameters == null || query.Parameters.Count == 0)
+        {
             return query.Sql;
+        }
 
         var debugSql = new StringBuilder(query.Sql);
 
@@ -46,7 +50,9 @@ public static class DebugExtensions
     private static string FormatParameterValue(object? value)
     {
         if (value == null)
+        {
             return "NULL";
+        }
 
         return value switch
         {
@@ -84,9 +90,14 @@ public static class DebugExtensions
     public static string ToDebugString(this SelectStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var compiled = statement.Compile(dialect);
         return compiled.ToDebugString();
@@ -98,9 +109,14 @@ public static class DebugExtensions
     public static string ToDebugString(this InsertStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var compiled = statement.Compile(dialect);
         return compiled.ToDebugString();
@@ -112,9 +128,14 @@ public static class DebugExtensions
     public static string ToDebugString(this UpdateStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var compiled = statement.Compile(dialect);
         return compiled.ToDebugString();
@@ -126,9 +147,14 @@ public static class DebugExtensions
     public static string ToDebugString(this DeleteStatement statement, ISqlDialect dialect)
     {
         if (statement == null)
+        {
             throw new ArgumentNullException(nameof(statement));
+        }
+
         if (dialect == null)
+        {
             throw new ArgumentNullException(nameof(dialect));
+        }
 
         var compiled = statement.Compile(dialect);
         return compiled.ToDebugString();

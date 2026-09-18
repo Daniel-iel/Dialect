@@ -373,7 +373,7 @@ var sql = ""SELECT UserId, UserName, Email FROM Users WHERE Status = 'Active' OR
 
     #region Helper Methods
 
-    private string GenerateTestFile(int fileCount, int queriesPerFile)
+    private static string GenerateTestFile(int fileCount, int queriesPerFile)
     {
         var sb = new System.Text.StringBuilder();
         

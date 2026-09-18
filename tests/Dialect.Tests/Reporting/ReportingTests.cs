@@ -33,11 +33,14 @@ namespace Dialect.Tests.Reporting
         public Task DisposeAsync()
         {
             if (Directory.Exists(_testOutputDir))
+            {
                 Directory.Delete(_testOutputDir, recursive: true);
+            }
+
             return Task.CompletedTask;
         }
 
-        private BulkFileRewriteResult CreateMockResult(int filesProcessed = 2, int totalFiles = 3, int totalReplacements = 5)
+        private static BulkFileRewriteResult CreateMockResult(int filesProcessed = 2, int totalFiles = 3, int totalReplacements = 5)
         {
             var fileResults = new List<FileRewriteResult>
             {
@@ -208,11 +211,14 @@ namespace Dialect.Tests.Reporting
         public Task DisposeAsync()
         {
             if (Directory.Exists(_testOutputDir))
+            {
                 Directory.Delete(_testOutputDir, recursive: true);
+            }
+
             return Task.CompletedTask;
         }
 
-        private BulkFileRewriteResult CreateMockResult()
+        private static BulkFileRewriteResult CreateMockResult()
         {
             return new BulkFileRewriteResult
             {
@@ -342,11 +348,14 @@ namespace Dialect.Tests.Reporting
         public Task DisposeAsync()
         {
             if (Directory.Exists(_testOutputDir))
+            {
                 Directory.Delete(_testOutputDir, recursive: true);
+            }
+
             return Task.CompletedTask;
         }
 
-        private BulkFileRewriteResult CreateMockResult(int successful = 4, int total = 5)
+        private static BulkFileRewriteResult CreateMockResult(int successful = 4, int total = 5)
         {
             var fileResults = new List<FileRewriteResult>();
             for (int i = 0; i < total; i++)
@@ -487,7 +496,7 @@ namespace Dialect.Tests.Reporting
             _mdWriterMock.SetupGet(w => w.FileExtension).Returns("md");
         }
 
-        private BulkFileRewriteResult CreateMockResult()
+        private static BulkFileRewriteResult CreateMockResult()
         {
             return new BulkFileRewriteResult
             {

@@ -61,7 +61,9 @@ public static class SqlDialectDetector
     public static SqlProvider? DetectDialectProvider(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))
+        {
             return null;
+        }
 
         // Score each dialect based on pattern matches
         int tsqlScore = CountPatternMatches(sql, TsqlPatterns);
@@ -80,9 +82,20 @@ public static class SqlDialectDetector
 
         // If there's a tie or no clear winner, return null to force explicit dialect specification
         int winnerCount = 0;
-        if (tsqlScore == maxScore) winnerCount++;
-        if (postgreSqlScore == maxScore) winnerCount++;
-        if (mySqlScore == maxScore) winnerCount++;
+        if (tsqlScore == maxScore)
+        {
+            winnerCount++;
+        }
+
+        if (postgreSqlScore == maxScore)
+        {
+            winnerCount++;
+        }
+
+        if (mySqlScore == maxScore)
+        {
+            winnerCount++;
+        }
 
         if (winnerCount > 1)
         {
@@ -92,11 +105,19 @@ public static class SqlDialectDetector
 
         // Return the clear winner
         if (tsqlScore == maxScore)
+        {
             return SqlProvider.SqlServer;
+        }
+
         if (postgreSqlScore == maxScore)
+        {
             return SqlProvider.PostgreSql;
+        }
+
         if (mySqlScore == maxScore)
+        {
             return SqlProvider.MySql;
+        }
 
         return null;
     }
@@ -111,7 +132,9 @@ public static class SqlDialectDetector
     public static SqlProvider? DetectDialectProvider(string sql, int minConfidenceScore = 1)
     {
         if (string.IsNullOrWhiteSpace(sql))
+        {
             return null;
+        }
 
         int tsqlScore = CountPatternMatches(sql, TsqlPatterns);
         int postgreSqlScore = CountPatternMatches(sql, PostgreSqlPatterns);
@@ -119,11 +142,19 @@ public static class SqlDialectDetector
 
         // Require minimum confidence
         if (tsqlScore >= minConfidenceScore && tsqlScore > Math.Max(postgreSqlScore, mySqlScore))
+        {
             return SqlProvider.SqlServer;
+        }
+
         if (postgreSqlScore >= minConfidenceScore && postgreSqlScore > Math.Max(tsqlScore, mySqlScore))
+        {
             return SqlProvider.PostgreSql;
+        }
+
         if (mySqlScore >= minConfidenceScore && mySqlScore > Math.Max(tsqlScore, postgreSqlScore))
+        {
             return SqlProvider.MySql;
+        }
 
         return null;
     }
@@ -137,7 +168,9 @@ public static class SqlDialectDetector
         foreach (var pattern in patterns)
         {
             if (pattern.IsMatch(sql))
+            {
                 count++;
+            }
         }
         return count;
     }
@@ -149,7 +182,9 @@ public static class SqlDialectDetector
     public static (int TsqlScore, int PostgreSqlScore, int MySqlScore) GetDetailedScores(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))
+        {
             return (0, 0, 0);
+        }
 
         return (
             CountPatternMatches(sql, TsqlPatterns),

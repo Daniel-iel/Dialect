@@ -36,7 +36,9 @@ public sealed class MySqlDialect : ISqlDialect
     public string RenderFunction(string functionName, IReadOnlyList<string> argumentPlaceholders)
     {
         if (string.IsNullOrWhiteSpace(functionName))
+        {
             throw new ArgumentException("Function name cannot be empty", nameof(functionName));
+        }
 
         return functionName.ToUpperInvariant() switch
         {

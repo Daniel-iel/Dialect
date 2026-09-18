@@ -211,7 +211,7 @@ public class BatchExampleExecutor
     /// <summary>
     /// Captures console output from a given action.
     /// </summary>
-    private string CaptureConsoleOutput(Action action)
+    private static string CaptureConsoleOutput(Action action)
     {
         var originalOut = Console.Out;
         using (var writer = new StringWriter())

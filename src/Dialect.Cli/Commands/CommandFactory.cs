@@ -44,7 +44,9 @@ public sealed class CommandFactory
     public ICommand? ResolveCommand(string commandName)
     {
         if (string.IsNullOrWhiteSpace(commandName))
+        {
             return null;
+        }
 
         if (_commandRegistry.TryGetValue(commandName, out var commandType))
         {
