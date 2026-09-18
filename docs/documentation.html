@@ -1,0 +1,3411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialect — Documentação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/atelier-cave-light.min.css">
+<style>
+  :root{
+
+    <!-- Security validation summary added for v3.0 -->
+    <section class="doc-section" id="cli-security-validation">
+      <h2>Validação de Segurança (CLI)</h2>
+      <p>O comando <code>translate-files</code> inclui validações para evitar operações inseguras e exposição de segredos em relatórios.</p>
+
+      <h3>Principais regras aplicadas</h3>
+      <ul>
+        <li><strong>Path safety</strong>: caminhos relativos que escapam do diretório base (../) são rejeitados; caminhos absolutos são aceitos apenas se acessíveis e não ocultos.</li>
+        <li><strong>Glob patterns</strong>: padrões contendo <code>..</code> ou caminhos absolutos são filtrados e rejeitados.</li>
+        <li><strong>Diretórios ocultos</strong>: diretórios com atributo <code>Hidden</code> são considerados não acessíveis por padrão.</li>
+        <li><strong>Sanitização de logs/relatórios</strong>: credenciais comuns (ex.: <code>password='...'</code>, <code>api_key='...'</code>) são mascaradas via <code>SecurityValidator.SanitizeSqlForLogging()</code> antes de salvar em JSON/MD/HTML.</li>
+        <li><strong>Relatórios</strong>: os pares antes/depois das traduções têm SQL sanitizado, evitando vazamento de segredos.</li>
+      </ul>
+
+      <h3>Onde foi implementado</h3>
+      <ul>
+        <li><code>src/Dialect.Cli/Security/SecurityValidator.cs</code> — funções utilitárias de validação e sanitização.</li>
+        <li><code>src/Dialect.Cli/Commands/TranslateFilesCommand.cs</code> — chamada de validação inicial (opções e diretórios).</li>
+        <li><code>src/Dialect.Cli/Reporting/JsonReportWriter.cs</code> — aplica sanitização nos pares de tradução antes de serializar.</li>
+        <li><code>tests/Dialect.Tests/Cli/SecurityValidationTests.cs</code> e <code>SecurityIntegrationTests.cs</code> — cobertura unit/integration para cenários comuns.</li>
+      </ul>
+
+      <h3>Exemplo de comportamento</h3>
+      <pre><code class="language-bash"># Rejeita source-dir que tenta escapar do projeto
+    --paper:#FAF9F6;
+    --paper-raised:#FFFFFF;
+    --ink:#1C1D21;
+    --ink-soft:#5A5C64;
+    --ink-faint:#9294A0;
+    --line:#E5E2DC;
+    --line-strong:#D3D0C8;
+
+      <div class="callout">
+        <span class="callout-label">Nota de segurança</span>
+        <p>Sanitização em logs e relatórios tem efeito de redução de risco, mas não substitui práticas de gestão de segredos. Nunca coloque credenciais em código-fonte.</p>
+      </div>
+    </section>
+    --accent:#4A55C4;
+    --accent-soft:#EEF0FC;
+    --accent-ink:#33399A;
+    --code-bg:#F1EFEA;
+    --radius:6px;
+    --sidebar-w:280px;
+    --toc-w:220px;
+    --font-ui:'IBM Plex Sans', -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SFMono-Regular', monospace;
+    color-scheme: light;
+  }
+  html[data-theme="dark"]{
+    --paper:#15161B;
+    --paper-raised:#1B1C22;
+    --ink:#ECEDF0;
+    --ink-soft:#A2A4B0;
+    --ink-faint:#6C6E7A;
+    --line:#2A2C34;
+    --line-strong:#3A3C46;
+    --accent:#8991F2;
+    --accent-soft:#23253A;
+    --accent-ink:#C2C7FA;
+    --code-bg:#1E1F26;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    font-size:16px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  a:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+
+  /* ---------- Progress bar ---------- */
+  #progress{
+    position:fixed; top:0; left:0; height:2px; width:0%;
+    background:var(--accent); z-index:200; transition:width .1s ease-out;
+  }
+
+  /* ---------- Topbar (mobile) ---------- */
+  #topbar{
+    display:none;
+    position:sticky; top:0; z-index:100;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px;
+  }
+  #topbar .brand{font-weight:600; font-size:1rem; letter-spacing:-0.01em;}
+  #topbar .brand span{color:var(--accent);}
+  #topbar-actions{display:flex; gap:8px;}
+  .icon-btn{
+    background:none; border:1px solid var(--line); border-radius:var(--radius);
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    color:var(--ink); cursor:pointer;
+  }
+  .icon-btn:hover{border-color:var(--line-strong); background:var(--paper-raised);}
+  .icon-btn svg{width:18px; height:18px;}
+
+  /* ---------- Layout shell ---------- */
+  #shell{
+    display:grid;
+    grid-template-columns: var(--sidebar-w) minmax(0,1fr) var(--toc-w);
+    max-width:1400px;
+    margin:0 auto;
+  }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    position:sticky; top:0;
+    height:100vh;
+    overflow-y:auto;
+    padding:28px 20px 60px;
+    border-right:1px solid var(--line);
+    scrollbar-width:thin;
+  }
+  #sidebar::-webkit-scrollbar{width:8px;}
+  #sidebar::-webkit-scrollbar-thumb{background:var(--line-strong); border-radius:8px;}
+
+  .brand-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px;
+  }
+  .brand{
+    font-weight:600; font-size:1.05rem; letter-spacing:-0.01em; color:var(--ink);
+  }
+  .brand span{color:var(--accent);}
+  .theme-toggle{display:flex;}
+  #close-sidebar{display:none;}
+
+  .search-wrap{position:relative; margin-bottom:22px;}
+  .search-wrap svg{
+    position:absolute; left:10px; top:50%; transform:translateY(-50%);
+    width:15px; height:15px; color:var(--ink-faint); pointer-events:none;
+  }
+  #nav-search{
+    width:100%;
+    padding:9px 12px 9px 32px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    font-size:0.85rem;
+  }
+  #nav-search::placeholder{color:var(--ink-faint);}
+  #nav-search:focus{border-color:var(--accent); outline:none;}
+
+  nav.toc-nav{font-size:0.875rem;}
+  .nav-group{margin-bottom:2px;}
+  .nav-group-btn{
+    width:100%;
+    display:flex; align-items:center; justify-content:space-between;
+    background:none; border:none; cursor:pointer;
+    padding:8px 6px;
+    color:var(--ink);
+    font-family:var(--font-ui);
+    font-size:0.8rem;
+    font-weight:600;
+    text-align:left;
+    border-radius:var(--radius);
+  }
+  .nav-group-btn:hover{background:var(--paper-raised);}
+  .nav-group-btn svg{
+    width:13px; height:13px; color:var(--ink-faint);
+    transition:transform .18s ease;
+    flex-shrink:0;
+  }
+  .nav-group.collapsed .nav-group-btn svg{transform:rotate(-90deg);}
+  .nav-items{
+    list-style:none; margin:2px 0 10px; padding:0 0 0 6px;
+    border-left:1px solid var(--line);
+    overflow:hidden;
+    max-height:800px;
+    transition:max-height .25s ease, opacity .2s ease;
+    opacity:1;
+  }
+  .nav-group.collapsed .nav-items{max-height:0; opacity:0; margin:0;}
+  .nav-items li{margin:0;}
+  .nav-items a{
+    display:block;
+    padding:6px 10px;
+    margin-left:6px;
+    color:var(--ink-soft);
+    font-size:0.85rem;
+    border-radius:var(--radius);
+    text-decoration:none;
+    border-left:2px solid transparent;
+    transition:color .15s ease, background .15s ease;
+  }
+  .nav-items a:hover{color:var(--ink); background:var(--paper-raised);}
+  .nav-items a.active{
+    color:var(--accent-ink);
+    background:var(--accent-soft);
+    font-weight:500;
+  }
+
+  /* ---------- Contents (subtópicos da seção ativa, bloco dedicado na esquerda) ---------- */
+  .contents-block{
+    margin-top:24px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .contents-title{
+    font-size:0.72rem;
+    font-weight:600;
+    color:var(--ink-faint);
+    margin-bottom:10px;
+    padding:0 6px;
+  }
+  #contents-list{
+    list-style:none;
+    margin:0;
+    padding:0 0 0 6px;
+    border-left:1px solid var(--line);
+  }
+  #contents-list li{margin:0;}
+  #contents-list a{
+    display:block;
+    padding:5px 10px;
+    margin-left:6px;
+    font-size:0.82rem;
+    color:var(--ink-faint);
+    border-radius:var(--radius);
+    text-decoration:none;
+    transition:color .15s ease, background .15s ease;
+  }
+  #contents-list a:hover{color:var(--ink); background:var(--paper-raised);}
+  #contents-list a.active{
+    color:var(--accent-ink);
+    font-weight:500;
+  }
+  .contents-empty{
+    font-size:0.8rem;
+    color:var(--ink-faint);
+    padding:2px 10px 2px 16px;
+    font-style:italic;
+  }
+  .nav-hidden{display:none !important;}
+
+  /* ---------- Main content ---------- */
+  main{
+    padding:56px 56px 120px;
+    max-width:760px;
+    min-width:0;
+  }
+  .doc-section{scroll-margin-top:24px; padding-top:8px;}
+  .doc-section + .doc-section{margin-top:64px; padding-top:40px; border-top:1px solid var(--line);}
+  .doc-subsection{margin-top:40px;}
+
+  .eyebrow-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:0.75rem; color:var(--accent-ink);
+    background:var(--accent-soft);
+    padding:3px 10px; border-radius:100px;
+    margin-bottom:14px;
+    font-weight:500;
+  }
+  h1{
+    font-size:2.1rem; line-height:1.2; letter-spacing:-0.02em;
+    margin:0 0 14px; font-weight:600;
+  }
+  h2{
+    font-size:1.5rem; line-height:1.3; letter-spacing:-0.015em;
+    margin:0 0 14px; font-weight:600; scroll-margin-top:24px;
+  }
+  h3{
+    font-size:1.1rem; line-height:1.4;
+    margin:0 0 10px; font-weight:600; scroll-margin-top:24px;
+  }
+  h4{
+    font-size:0.95rem; margin:0 0 8px; font-weight:600; color:var(--ink-soft);
+  }
+  p{margin:0 0 16px; color:var(--ink);}
+  .lede{font-size:1.1rem; color:var(--ink-soft); margin-bottom:28px;}
+  ul, ol{margin:0 0 16px; padding-left:22px;}
+  li{margin-bottom:6px;}
+  strong{font-weight:600;}
+  code{
+    font-family:var(--font-mono);
+    font-size:0.85em;
+    background:var(--code-bg);
+    padding:2px 6px;
+    border-radius:4px;
+  }
+  .callout{
+    border-left:3px solid var(--accent);
+    background:var(--accent-soft);
+    padding:14px 18px;
+    border-radius:0 var(--radius) var(--radius) 0;
+    margin:20px 0;
+    font-size:0.925rem;
+  }
+  .callout p:last-child{margin-bottom:0;}
+  .callout-label{
+    font-weight:600; color:var(--accent-ink); font-size:0.8rem;
+    display:block; margin-bottom:4px;
+  }
+
+  /* code blocks */
+  .code-block{
+    position:relative;
+    margin:18px 0 22px;
+    border-radius:var(--radius);
+    border:1px solid var(--line);
+    overflow:hidden;
+    background:var(--code-bg);
+  }
+  .code-block-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 12px;
+    border-bottom:1px solid var(--line);
+    font-size:0.72rem;
+    color:var(--ink-faint);
+    font-family:var(--font-mono);
+  }
+  .copy-btn{
+    background:none; border:1px solid var(--line);
+    border-radius:4px; padding:4px 9px;
+    color:var(--ink-soft); cursor:pointer;
+    font-family:var(--font-ui);
+    font-size:0.72rem;
+    display:flex; align-items:center; gap:5px;
+  }
+  .copy-btn:hover{background:var(--paper-raised); color:var(--ink);}
+  .copy-btn svg{width:12px; height:12px;}
+  .code-block pre{margin:0; padding:16px; overflow-x:auto;}
+  .code-block code{
+    background:none; padding:0;
+    font-size:0.83rem; line-height:1.6;
+  }
+
+  table{width:100%; border-collapse:collapse; margin:18px 0 24px; font-size:0.875rem;}
+  th, td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line);}
+  th{color:var(--ink-soft); font-weight:600; font-size:0.78rem;}
+  tr:last-child td{border-bottom:none;}
+
+  .pill-row{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 20px;}
+  .pill{
+    font-size:0.78rem; padding:4px 11px; border-radius:100px;
+    border:1px solid var(--line); color:var(--ink-soft);
+  }
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0;}
+  .card{
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; background:var(--paper-raised);
+  }
+  .card h4{margin-bottom:6px; color:var(--ink);}
+  .card p{margin-bottom:0; font-size:0.88rem; color:var(--ink-soft);}
+
+  footer.doc-footer{
+    margin-top:64px; padding-top:24px; border-top:1px solid var(--line);
+    color:var(--ink-faint); font-size:0.82rem;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+
+  /* ---------- Page Contents (right rail, estilo MUI) ---------- */
+  #page-contents{
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+    padding:56px 24px 40px 0;
+    font-size:0.8rem;
+    scrollbar-width:thin;
+  }
+  #page-contents::-webkit-scrollbar{width:6px;}
+  #page-contents::-webkit-scrollbar-thumb{background:var(--line-strong); border-radius:8px;}
+  #page-contents .contents-title{
+    font-weight:600; color:var(--ink-faint); font-size:0.72rem;
+    margin-bottom:12px; padding:0;
+  }
+  #page-contents ul{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  #page-contents li{margin:0;}
+  #page-contents a{
+    display:block; padding:6px 0 6px 14px; color:var(--ink-faint);
+    border-left:2px solid transparent; margin-left:-1px;
+    text-decoration:none; font-size:0.82rem;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  #page-contents a:hover{color:var(--ink-soft);}
+  #page-contents a.active{
+    color:var(--accent-ink);
+    border-left-color:var(--accent);
+    font-weight:500;
+  }
+
+  /* ---------- Overlay for mobile drawer ---------- */
+  #overlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:90;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:1180px){
+    #shell{grid-template-columns: var(--sidebar-w) minmax(0,1fr);}
+    #page-contents{display:none;}
+  }
+  @media (max-width:860px){
+    #topbar{display:flex;}
+    #shell{grid-template-columns: 1fr; display:block;}
+    #sidebar{
+      position:fixed; top:0; left:0; height:100vh; width:280px; z-index:110;
+      background:var(--paper);
+      transform:translateX(-100%);
+      transition:transform .25s ease;
+    }
+    #sidebar.open{transform:translateX(0);}
+    #close-sidebar{display:flex;}
+    #overlay.show{display:block;}
+    main{padding:32px 22px 100px; max-width:100%;}
+    .grid-2{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div id="topbar">
+  <div class="brand">Dialect</div>
+  <div id="topbar-actions">
+    <button class="icon-btn" id="theme-toggle-mobile" aria-label="Alternar tema">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <button class="icon-btn" id="open-sidebar" aria-label="Abrir menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="overlay"></div>
+
+<div id="shell">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="brand-row">
+      <div class="brand"><span>Dialect</span></div>
+      <div style="display:flex; gap:6px;">
+        <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Alternar tema">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <button class="icon-btn" id="close-sidebar" aria-label="Fechar menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="nav-search" type="text" placeholder="Buscar na documentação…">
+    </div>
+
+    <nav class="toc-nav" id="toc-nav">
+      <!-- groups injected by content, written statically below -->
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Visão geral</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#objetivo" data-label="Objetivo, fora de escopo">Objetivo</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>📖 Guias de Início</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#installation" data-label="Instalação de pacotes e verificação">Guia de Instalação</a></li>
+          <li><a href="#setup-guide" data-label="Configuração, DI e appsettings.json">Setup & Configuração</a></li>
+          <li><a href="#database-setup-guide" data-label="Configuração específica por banco">Setup do Banco de Dados</a></li>
+          <li><a href="#docker-guide" data-label="Executar bancos com Docker">Setup com Docker</a></li>
+          <li><a href="#troubleshooting-guide" data-label="Resolução de problemas e FAQ">Troubleshooting & FAQ</a></li>
+          <li><a href="#contributing-guide" data-label="Guia para contribuidores">Guia de Contribuição</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Arquitetura</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#camadas" data-label="Camadas do framework">Camadas</a></li>
+          <li><a href="#extensibilidade" data-label="Adicionar novos bancos no futuro">Extensibilidade</a></li>
+          <li><a href="#ast" data-label="Árvore de objetos da query">Modelo de dados (AST)</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>FluentBuilder</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#select-join" data-label="Select, Join, Distinct">Select, Join &amp; Distinct</a></li>
+          <li><a href="#paginacao" data-label="Take e Skip">Paginação</a></li>
+          <li><a href="#dml" data-label="Insert Update Delete">Insert, Update, Delete</a></li>
+          <li><a href="#raw" data-label="Escape hatch">Escape hatch (Raw)</a></li>
+          <li><a href="#procedures" data-label="Stored procedures">Procedures &amp; Functions</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Configuração</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#add-sql-framework" data-label="Registro do dialeto">AddSqlFramework</a></li>
+          <li><a href="#add-sql-translation" data-label="Registro da tradução">AddSqlTranslation</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Recursos Avançados</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#recursos-avancados" data-label="Overview de features avançadas">Overview</a></li>
+          <li><a href="#ctes" data-label="WITH clauses">CTEs (WITH)</a></li>
+          <li><a href="#window-functions" data-label="ROW_NUMBER, RANK, LEAD">Window Functions</a></li>
+          <li><a href="#upsert" data-label="MERGE, ON CONFLICT, ON DUPLICATE KEY">UPSERT</a></li>
+          <li><a href="#schema-validation" data-label="Validação de schema">Schema Validation</a></li>
+          <li><a href="#query-rewrite" data-label="Otimização e reescrita">Query Rewrite & Optimization</a></li>
+          <li><a href="#migrations" data-label="Migrações de schema">Schema Migrations</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Bancos de Dados</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#bancos-overview" data-label="Overview de bancos suportados">Overview</a></li>
+          <li><a href="#sqlserver-setup" data-label="SQL Server setup e features">SQL Server</a></li>
+          <li><a href="#postgresql-setup" data-label="PostgreSQL setup e features">PostgreSQL</a></li>
+          <li><a href="#mysql-setup" data-label="MySQL setup e features">MySQL</a></li>
+          <li><a href="#bancos-comparacao" data-label="Comparação e limitações">Comparação</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Tradução &amp; CLI</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#traducao" data-label="SQL para SQL">Tradução SQL → SQL</a></li>
+          <li><a href="#cli" data-label="Converter projeto">CLI de conversão</a></li>
+          <li><a href="#cli-commands" data-label="Comandos e opções da CLI">Comandos CLI</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Qualidade</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#seguranca" data-label="Proteção contra SQL Injection">Segurança</a></li>
+          <li><a href="#performance" data-label="Cache e thread-safety">Performance &amp; concorrência</a></li>
+          <li><a href="#index-advisor" data-label="Sugestão de índices">Index Advisor</a></li>
+          <li><a href="#execution-plan-analysis" data-label="Análise de planos de execução">Execution Plan Analysis</a></li>
+          <li><a href="#version-detection" data-label="Detecção de versão do BD">Version Detection</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn"><span>Projeto</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="nav-items">
+          <li><a href="#estrutura" data-label="Pacotes do projeto">Estrutura de pacotes</a></li>
+          <li><a href="#roadmap" data-label="Fases de entrega">Roadmap</a></li>
+        </ul>
+      </div>
+
+    </nav>
+
+    <div class="contents-block">
+      <div class="contents-title">Nesta seção</div>
+      <ul id="contents-list"></ul>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main id="main-content">
+
+    <section class="doc-section" id="objetivo">
+      <span class="eyebrow-badge">Documentação · v0.1</span>
+      <h1>Dialect</h1>
+      <p class="lede">Um framework .NET que produz SQL correto para SQL Server, PostgreSQL e MySQL a partir de uma única definição de query — via API fluente ou tradução direta de SQL existente.</p>
+
+      <p>O resultado de ambos os caminhos é o mesmo formato: um <code>CompiledQuery</code> com <code>Sql</code> e <code>Parameters</code>, pronto para ser executado com <a href="#">Dapper</a>. Dialect nunca executa comandos contra o banco — essa responsabilidade fica inteiramente com o consumidor.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>FluentBuilder</h4>
+          <p>Monte a query programaticamente em C#, com IntelliSense e checagem em tempo de compilação.</p>
+        </div>
+        <div class="card">
+          <h4>Tradução direta</h4>
+          <p>Já tem o SQL escrito? Traduza para outro dialeto sem reescrever nada — sem depender do pattern builder.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Princípio central</span>
+        <p>Nem o FluentBuilder nem a tradução geram SQL diretamente. Ambos preenchem a mesma árvore de objetos (AST). Só no momento de <code>Compile()</code> ou <code>Translate()</code> um renderer específico do dialeto de destino produz o <code>CompiledQuery</code> final.</p>
+      </div>
+
+      <h3 id="fora-de-escopo">Fora de escopo</h3>
+      <p>Para deixar claro onde a responsabilidade do framework termina:</p>
+      <ul>
+        <li>Execução de comandos, conexão, transação, retry e pooling — fica a cargo do Dapper.</li>
+        <li>Mapeamento de resultado para objetos — responsabilidade do <code>Query&lt;T&gt;</code> do Dapper.</li>
+        <li>ORM completo (change tracking, lazy loading, unit of work).</li>
+        <li>Suporte a Oracle ou outros bancos além dos três iniciais — a arquitetura permite adicionar depois, mas não é v1.</li>
+        <li>Geração de código C# fora do fluxo da CLI de conversão de projeto (veja <a href="#cli">CLI de conversão</a>).</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="camadas">
+      <h2>Arquitetura em camadas</h2>
+      <p>O núcleo do framework é uma árvore de objetos (AST) que representa a <em>intenção</em> da query, independente de qualquer banco. Um renderer específico de cada dialeto é o único responsável por transformar essa árvore em texto SQL.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>fluxo</span></div>
+        <pre><code class="language-plaintext">SqlBuilder (API fluente)          Tradução (SQL de origem)
+        │                                  │
+        └──────────────┬───────────────────┘
+                        ▼
+              Query Model / AST
+        (SelectStatement, InsertStatement, RoutineCall…)
+                        │
+                        ▼
+                  ISqlDialect
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+   SqlServerDialect  PostgreSqlDialect  MySqlDialect
+                        │
+                        ▼
+        CompiledQuery { Sql, Parameters }</code></pre>
+      </div>
+
+      <p>Regras que sustentam essa camada:</p>
+      <ul>
+        <li>O <strong>core nunca conhece bancos específicos</strong> — só conceitos abstratos como <code>SqlFunction</code> e <code>SqlFeature</code>.</li>
+        <li>Toda a AST é <strong>imutável</strong> após <code>.Build()</code> — coleções expostas usam <code>ImmutableArray&lt;T&gt;</code>.</li>
+        <li>O <code>SqlBuilder</code> é <strong>thread-confined</strong>: objeto de uso local, nunca compartilhado entre threads antes do <code>.Build()</code>.</li>
+        <li><code>ISqlDialect</code> é <strong>stateless</strong> e registrado como singleton via DI.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="extensibilidade">
+      <h2>Extensibilidade para novos bancos</h2>
+      <p>Ainda que a v1 tenha como alvo apenas SQL Server, PostgreSQL e MySQL, o projeto é desenhado para permitir a adição de novos bancos — Oracle, SQLite, MariaDB — sem alterar o core.</p>
+
+      <ul>
+        <li>Nenhuma classe do core pode ter lógica condicional do tipo <code>if (provider == SqlProvider.Postgres)</code>.</li>
+        <li>Adicionar um banco novo é criar um <strong>pacote novo</strong>, implementando <code>ISqlDialect</code> e <code>IQueryRenderer</code>, sem tocar nos pacotes existentes.</li>
+        <li><code>ISqlDialect.Supports(SqlFeature)</code> é o mecanismo de negociação de recursos — cresce de forma aditiva, sem quebrar dialetos já existentes.</li>
+      </ul>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Dialect.Oracle (hipotético)</span></div>
+        <pre><code class="language-plaintext">Dialect.Oracle
+ ├── OracleDialect : ISqlDialect
+ ├── OracleQueryRenderer : IQueryRenderer
+ ├── OracleRoutineRenderer : IRoutineRenderer   (aqui entra "package", específico de Oracle)
+ └── depende apenas de dialect</code></pre>
+      </div>
+
+      <p>É por isso que o campo <code>Package</code> em <code>RoutineCall</code> já existe reservado (nulo, ignorado pelos três dialetos atuais) — a AST foi pensada para um banco que ainda não existe no v1.</p>
+    </section>
+
+    <section class="doc-section" id="ast">
+      <h2>Modelo de dados (AST)</h2>
+      <p><code>WhereExpression</code> é reaproveitada em <code>WHERE</code>, <code>HAVING</code> e <code>ON</code> de <code>JOIN</code> — é a mesma árvore de condições em todos os casos, evitando duplicar lógica de renderização.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">public sealed class SelectStatement
+{
+    public bool IsDistinct { get; init; }
+    public IReadOnlyList&lt;Column&gt; Columns { get; init; }
+    public TableReference From { get; init; }
+    public IReadOnlyList&lt;JoinClause&gt; Joins { get; init; }
+    public WhereExpression? Where { get; init; }
+    public IReadOnlyList&lt;Column&gt; GroupBy { get; init; }
+    public WhereExpression? Having { get; init; }
+    public IReadOnlyList&lt;OrderByClause&gt; OrderBy { get; init; }
+    public RowLimit? RowLimit { get; init; }
+    public IReadOnlyDictionary&lt;Type, object&gt; DialectExtensions { get; init; }
+}</code></pre>
+      </div>
+    </section>
+
+    <section class="doc-section" id="select-join">
+      <h2>Select, Join &amp; Distinct</h2>
+      <p>Um único <code>Join(JoinType, …)</code> genérico sustenta todos os tipos, com métodos de conveniência por cima:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var query = SqlBuilder
+    .Select("u.Id", "u.Name", "o.Total")
+    .Distinct()
+    .From("Users", alias: "u")
+    .LeftJoin("Orders", alias: "o", on: j =&gt; j
+        .On("o.UserId", Op.Equals, "u.Id")
+        .And("o.Status", Op.Equals, "Paid"))
+    .InnerJoin("Departments", alias: "d", on: j =&gt; j
+        .On("d.Id", Op.Equals, "u.DepartmentId"))
+    .Where("u.Age", Op.GreaterThan, 18)
+    .GroupBy("u.Id", "u.Name", "o.Total")
+    .Having("o.Total", Op.GreaterThan, 100)
+    .OrderBy("u.Name")
+    .Build();</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Recurso</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>FULL JOIN</td><td>Suportado</td><td>Suportado</td><td>Sem suporte nativo</td></tr>
+          <tr><td>DISTINCT</td><td>Padrão</td><td>Padrão + <code>DISTINCT ON</code></td><td>Padrão</td></tr>
+          <tr><td>Quote de identificador</td><td><code>[Nome]</code></td><td><code>"nome"</code></td><td><code>`nome`</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Política</span>
+        <p><code>FULL JOIN</code> sem equivalente direto no destino (ex: MySQL) lança exceção clara em <code>Compile()</code> por padrão — nunca gera SQL inválido silenciosamente.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="paginacao">
+      <h2>Paginação</h2>
+      <p>A API usa nomenclatura agnóstica de banco — <code>Take()</code> e <code>Skip()</code>, no estilo LINQ — nunca <code>Top()</code> ou <code>Limit()</code>, que vazariam terminologia específica de um dialeto.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var page = SqlBuilder
+    .Select("Id", "Name")
+    .From("Users")
+    .OrderBy("Id")
+    .Take(10)
+    .Skip(20)
+    .Build();</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Cenário</th><th>SQL Server</th><th>PostgreSQL / MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>Top N simples</td><td><code>TOP N</code> (antes das colunas)</td><td><code>LIMIT N</code> (no final)</td></tr>
+          <tr><td>Paginação</td><td><code>OFFSET … FETCH NEXT …</code></td><td><code>LIMIT … OFFSET …</code></td></tr>
+        </tbody>
+      </table>
+
+      <p><code>OFFSET</code> sem <code>ORDER BY</code> é validado em <code>Compile()</code>, com erro amigável — SQL Server e a especificação ANSI exigem ordenação para paginação com offset.</p>
+    </section>
+
+    <section class="doc-section" id="dml">
+      <h2>Insert, Update, Delete</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">SqlBuilder.InsertInto("Users").Values(new { Name = "João", Age = 30 }).Build();
+
+SqlBuilder.Update("Users")
+    .Set("Status", "Inactive")
+    .Where("LastLogin", Op.LessThan, cutoffDate)
+    .Build();
+
+SqlBuilder.DeleteFrom("Users").Where("Id", Op.Equals, userId).Build();</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Proteção</span>
+        <p><code>DELETE</code>/<code>UPDATE</code> sem <code>WHERE</code> são bloqueados por padrão. Use <code>.AllowFullTableOperation()</code> explicitamente quando for intencional.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="raw">
+      <h2>Escape hatch (Raw)</h2>
+      <p>Sempre parametrizado — nunca concatenação livre de valores.</p>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">.WhereRaw("EXTRACT(YEAR FROM created_at) = {0}", 2024)
+.SelectRaw("JSON_VALUE(data, '$.name') AS Name")
+.OrderByRaw("CASE WHEN status = 'urgent' THEN 0 ELSE 1 END")</code></pre>
+      </div>
+      <p>Uma heurística detecta concatenação suspeita (aspas desbalanceadas) no template e lança exceção. Para casos deliberadamente fora do padrão, <code>WhereRawUnsafe()</code> — nomeado assim de propósito, como fricção consciente em revisão de código.</p>
+    </section>
+
+    <section class="doc-section" id="subqueries">
+      <h2>Subqueries &amp; Derived Tables</h2>
+      <p>Aninhamento de <code>SELECT</code> em cláusulas <code>FROM</code> (derived tables) e <code>WHERE IN</code> para padrões de filtro complexos e agregações hierárquicas.</p>
+
+      <h3>FROM Subquery — Derived Tables</h3>
+      <p>Use subqueries na cláusula <code>FROM</code> para criar tabelas derivadas com agregação, filtragem ou transformação de dados:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: agregação de pedidos por usuário
+var subquery = SqlBuilder
+    .Select("UserId", "COUNT(*) as OrderCount", "SUM(TotalAmount) as TotalSpent")
+    .From("Orders")
+    .GroupBy("UserId")
+    .Build();
+
+// Query externa: filtrar usuários com mais de 5 pedidos
+var query = SqlBuilder
+    .Select("UserId", "OrderCount", "TotalSpent")
+    .From(subquery, "UserOrders")
+    .Where("OrderCount", Op.GreaterThan, 5)
+    .OrderBy("TotalSpent", false)  // DESC
+    .Build()
+    .Compile(SqlProvider.PostgreSQL);</code></pre>
+      </div>
+
+      <h3>WHERE IN Subquery — Filtro por resultados de subquery</h3>
+      <p>Filtre registros cuja coluna está presente (ou ausente) nos resultados de outra query:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — WHERE IN</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: todos os IDs de usuários com status "Active"
+var activeUsersSubquery = SqlBuilder
+    .Select("UserId")
+    .From("Users")
+    .Where("Status", Op.Equals, "Active")
+    .Build();
+
+// Query: pedidos de usuários ativos
+var query = SqlBuilder
+    .Select("OrderId", "UserId", "OrderDate", "TotalAmount")
+    .From("Orders")
+    .WhereIn("UserId", activeUsersSubquery)
+    .Compile(SqlProvider.SqlServer);</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — WHERE NOT IN</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: produtos que apareceram em algum pedido
+var orderedProductsSubquery = SqlBuilder
+    .Select("ProductId")
+    .From("OrderItems")
+    .Build();
+
+// Query: produtos que NUNCA foram pedidos (descontinuados?)
+var query = SqlBuilder
+    .Select("ProductId", "Name", "Price")
+    .From("Products")
+    .WhereNotIn("ProductId", orderedProductsSubquery)
+    .Compile(SqlProvider.MySql);</code></pre>
+      </div>
+
+      <h3>Subqueries com Agregação &amp; HAVING</h3>
+      <p>Combine agregação na subquery com filtro <code>HAVING</code> na cláusula externa:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Subquery: departamentos com média salarial > $50k
+var highPayrollDepts = SqlBuilder
+    .Select("DepartmentId", "AVG(Salary) as AvgSalary")
+    .From("Employees")
+    .GroupBy("DepartmentId")
+    .Having("Salary", Op.GreaterThan, 50000m)
+    .Build();
+
+// Query: listar departamentos de alto custo com contagem de funcionários
+var query = SqlBuilder
+    .Select("DepartmentId", "AvgSalary")
+    .From(highPayrollDepts, "ExpensiveDepts")
+    .OrderBy("AvgSalary", false)
+    .Build()
+    .Compile(SqlProvider.PostgreSQL);</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Padrão</th><th>Uso</th><th>Método</th><th>SQL</th></tr></thead>
+        <tbody>
+          <tr><td><strong>FROM Subquery</strong></td><td>Derived table com agregação</td><td><code>.From(subquery, "alias")</code></td><td><code>FROM (SELECT ...) AS alias</code></td></tr>
+          <tr><td><strong>WHERE IN</strong></td><td>Filtro por resultados</td><td><code>.WhereIn("col", subquery)</code></td><td><code>WHERE col IN (SELECT ...)</code></td></tr>
+          <tr><td><strong>WHERE NOT IN</strong></td><td>Exclusão de resultados</td><td><code>.WhereNotIn("col", subquery)</code></td><td><code>WHERE col NOT IN (SELECT ...)</code></td></tr>
+          <tr><td><strong>Nested Conditions</strong></td><td>Múltiplas cláusulas WHERE</td><td><code>.Where(...).And(...)</code></td><td>Combinar com subqueries</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Compatibilidade</span>
+        <p>Subqueries são suportadas nativamente em SQL Server, PostgreSQL e MySQL. A renderização para cada dialeto é automática — não há mudanças de código necessárias ao trocar de banco.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="procedures">
+      <h2>Procedures &amp; Functions</h2>
+      <p>Nenhum dos três bancos alvo tem o conceito de <em>package</em> (isso é exclusivo do Oracle) — o campo correspondente na AST fica reservado para uso futuro.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var call = SqlBuilder
+    .CallProcedure("CreateOrder")
+    .WithParameter("UserId", userId)
+    .WithParameter("Total", total)
+    .WithOutParameter("NewOrderId", DbType.Int32)
+    .Build();</code></pre>
+      </div>
+
+      <p>Como a execução é feita via Dapper, <code>CommandType.StoredProcedure</code> resolve nativamente a chamada e os parâmetros de saída — o framework só precisa produzir o nome da rotina e os parâmetros corretos, sem montar <code>EXEC</code>/<code>CALL</code> como texto manualmente.</p>
+    </section>
+
+    <section class="doc-section" id="add-sql-framework">
+      <h2>AddSqlFramework — Registrando o Dialeto</h2>
+      <p>O Dialect usa <strong>métodos específicos por banco</strong> em vez de um único método genérico. Isso reflete a arquitetura real: cada banco de dados (SQL Server, PostgreSQL, MySQL) reside em seu próprio pacote NuGet com namespace separado e configuração de cache independente.</p>
+
+      <h3>SQL Server</h3>
+      <p>Use <code>AddSqlServerFramework()</code> para registrar SQL Server como dialeto padrão.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs — Configuração Simples</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Padrão: 1000 entradas em cache, sem eviction
+builder.Services.AddSqlServerFramework();</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs — Com Configuração de Cache</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Customizar tamanho do cache, estratégia de eviction e TTL
+builder.Services.AddSqlServerFramework(
+    cacheMaxEntries: 2000,
+    evictionStrategy: CacheEvictionStrategy.Oldest,  // FIFO (first-in, first-out)
+    cacheTtl: TimeSpan.FromMinutes(10)  // Opcional: expiração de entradas
+);</code></pre>
+      </div>
+
+      <h3>PostgreSQL</h3>
+      <p>Use <code>AddPostgreSqlFramework()</code> para registrar PostgreSQL como dialeto padrão.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs — Configuração Simples</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Padrão: 1000 entradas em cache, sem eviction
+builder.Services.AddPostgreSqlFramework();</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs — Com Configuração de Cache</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Customizar tamanho do cache, estratégia de eviction e TTL
+builder.Services.AddPostgreSqlFramework(
+    cacheMaxEntries: 2000,
+    evictionStrategy: CacheEvictionStrategy.Oldest,
+    cacheTtl: TimeSpan.FromMinutes(10)
+);</code></pre>
+      </div>
+
+      <h3>MySQL</h3>
+      <p>Use <code>AddMySqlFramework()</code> para registrar MySQL como dialeto padrão.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs — Configuração Simples</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Padrão: 1000 entradas em cache, sem eviction
+builder.Services.AddMySqlFramework();</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs — Com Configuração de Cache</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Customizar tamanho do cache, estratégia de eviction e TTL
+builder.Services.AddMySqlFramework(
+    cacheMaxEntries: 2000,
+    evictionStrategy: CacheEvictionStrategy.Oldest,
+    cacheTtl: TimeSpan.FromMinutes(10)
+);</code></pre>
+      </div>
+
+      <h3>Configuração de Cache</h3>
+      <p><strong>Estratégias de Eviction</strong>:</p>
+      <ul>
+        <li><code>CacheEvictionStrategy.None</code> — Sem eviction automática. Quando o cache atinge o limite, entradas são duplicadas antes de novas serem adicionadas.</li>
+        <li><code>CacheEvictionStrategy.Oldest</code> — FIFO (first-in, first-out). Remove a entrada mais antiga ao atingir o limite.</li>
+        <li><code>CacheEvictionStrategy.Random</code> — Remove uma entrada aleatória ao atingir o limite.</li>
+      </ul>
+      <p><strong>TTL (Time-to-Live)</strong>: Opcional. Quando definido, entradas no cache expiram após o tempo especificado. Útil para:</p>
+      <ul>
+        <li>Evolução de schema (novas colunas, tipos de dados)</li>
+        <li>Otimização em cold-start (warm up inicial)</li>
+        <li>Queries temporárias ou sazonais</li>
+      </ul>
+      <p><strong>Recomendações</strong>:</p>
+      <ul>
+        <li>Para aplicações típicas: mantenha padrão (1000 entradas, sem eviction)</li>
+        <li>Para altíssima concorrência: aumente cache (2000-5000) com <code>Oldest</code></li>
+        <li>Para schemas dinâmicos: use TTL de 5-10 minutos</li>
+        <li>Para read-heavy patterns: <code>Oldest</code> geralmente supera <code>Random</code></li>
+      </ul>
+      <p>Deliberadamente sem <code>appsettings.json</code>/<code>IOptions&lt;T&gt;</code> para essa escolha — a validação é síncrona e imediata no momento do registro, antes até do <code>builder.Build()</code>.</p>
+    </section>
+
+    <section class="doc-section" id="add-sql-translation">
+      <h2>AddSqlTranslation</h2>
+      <p>Diferente do provider de destino, a <em>connection string</em> de origem é dado sensível e variável por ambiente — aqui, <code>appsettings.json</code> é a fonte natural, seguindo a convenção padrão do .NET.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// appsettings.json → "ConnectionStrings": { "LegacySqlServer": "Server=...;Integrated Security=True;" }
+
+builder.Services.AddPostgreSqlFramework();  // ou AddSqlServerFramework(), AddMySqlFramework()
+builder.Services.AddSqlTranslation(builder.Configuration, connectionStringName: "LegacySqlServer");</code></pre>
+      </div>
+      <p><code>AddSqlTranslation</code> depende do <code>ISqlDialect</code> já registrado por <code>AddSqlServerFramework</code>, <code>AddPostgreSqlFramework</code> ou <code>AddMySqlFramework</code> — lança erro claro no registro se nenhum deles estiver presente.</p>
+    </section>
+
+    <section class="doc-section" id="bancos-overview">
+      <h2>Bancos de Dados Suportados</h2>
+      <p>O Dialect é agnóstico de banco no nível da AST, mas cada dialeto (SQL Server, PostgreSQL, MySQL) tem características, limitações e sintaxe próprias. Esta seção detalha como usar cada um, incluindo setup, connection strings, features suportadas e limitações críticas.</p>
+
+      <div class="callout">
+        <span class="callout-label">Versões Recomendadas</span>
+        <p><strong>SQL Server</strong> 2019+ (2022 recomendado) | <strong>PostgreSQL</strong> 13+ | <strong>MySQL</strong> 8.0+ (obrigatório para CTEs e Window Functions)</p>
+      </div>
+
+      <h3 id="sqlserver-setup">SQL Server</h3>
+      <p><strong>SQL Server 2019+</strong> é o dialeto mais rico em features. Suporta <code>MERGE</code> para UPSERT, <code>FULL OUTER JOIN</code>, <code>OUTPUT</code> para retornar valores modificados, e operações JSON avançadas.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs - Setup</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Usar SQL Server como dialeto padrão (padrão: 1000 cache entries)
+builder.Services.AddSqlServerFramework();
+
+// Com configuração customizada de cache
+builder.Services.AddSqlServerFramework(
+    cacheMaxEntries: 2000,
+    evictionStrategy: CacheEvictionStrategy.Oldest,
+    cacheTtl: TimeSpan.FromMinutes(10)
+);</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Connection String</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost,1433;Database=DialectSamples;User Id=sa;Password=P@ssw0rd!;TrustServerCertificate=true;
+
+// Environment variable
+SQLSERVER_CONN</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Feature</th><th>Suporte</th><th>Sintaxe</th></tr></thead>
+        <tbody>
+          <tr><td>Identifier Quote</td><td>✅</td><td><code>[Users]</code></td></tr>
+          <tr><td>Parameter Prefix</td><td>✅</td><td><code>@UserId</code></td></tr>
+          <tr><td>FULL OUTER JOIN</td><td>✅ Nativo</td><td>FULL OUTER JOIN</td></tr>
+          <tr><td>UPSERT</td><td>✅</td><td>MERGE INTO ... WHEN MATCHED</td></tr>
+          <tr><td>RETURNING</td><td>❌ (usa OUTPUT)</td><td>OUTPUT inserted.Id</td></tr>
+          <tr><td>Window Functions</td><td>✅ 2012+</td><td>ROW_NUMBER() OVER (...)</td></tr>
+          <tr><td>CTEs (WITH)</td><td>✅ 2005+</td><td>WITH cte AS (...)</td></tr>
+          <tr><td>JSON Operations</td><td>✅ 2016+</td><td>JSON_VALUE, JSON_QUERY</td></tr>
+          <tr><td>Stored Procedures</td><td>✅</td><td>CREATE PROCEDURE</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Versões Suportadas</span>
+        <p>SQL Server 2019, 2022 (recomendado). Compatível com Express, Developer, Standard, Enterprise.</p>
+      </div>
+
+      <h3 id="postgresql-setup">PostgreSQL</h3>
+      <p><strong>PostgreSQL 13+</strong> segue padrão ANSI SQL puro. Destaca-se por suportar <code>RETURNING</code> nativo, <code>INSERT...ON CONFLICT</code> para UPSERT, e operações JSON/JSONB avançadas. NÃO tem stored procedures (usa functions).</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs - Setup</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Usar PostgreSQL como dialeto padrão (padrão: 1000 cache entries)
+builder.Services.AddPostgreSqlFramework();
+
+// Com configuração customizada de cache
+builder.Services.AddPostgreSqlFramework(
+    cacheMaxEntries: 2000,
+    evictionStrategy: CacheEvictionStrategy.Oldest,
+    cacheTtl: TimeSpan.FromMinutes(10)
+);</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Connection String</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Host=localhost;Port=5432;Database=dialect_samples;Username=postgres;Password=postgres;
+
+// Environment variable
+POSTGRESQL_CONN</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Feature</th><th>Suporte</th><th>Sintaxe</th></tr></thead>
+        <tbody>
+          <tr><td>Identifier Quote</td><td>✅</td><td><code>"users"</code></td></tr>
+          <tr><td>Parameter Prefix</td><td>✅</td><td><code>:UserId</code></td></tr>
+          <tr><td>FULL OUTER JOIN</td><td>✅ Nativo</td><td>FULL OUTER JOIN</td></tr>
+          <tr><td>UPSERT</td><td>✅</td><td>ON CONFLICT (id) DO UPDATE SET</td></tr>
+          <tr><td>RETURNING</td><td>✅ Nativo</td><td>RETURNING id, name, ...</td></tr>
+          <tr><td>Window Functions</td><td>✅ 8.4+</td><td>ROW_NUMBER() OVER (...)</td></tr>
+          <tr><td>CTEs (WITH)</td><td>✅ Múltiplas</td><td>WITH cte1 AS (...), cte2 AS (...)</td></tr>
+          <tr><td>JSON/JSONB</td><td>✅ Muito rico</td><td>->, ->>, @>, jsonb_agg()</td></tr>
+          <tr><td>Stored Procedures</td><td>❌ (usa Functions)</td><td>CREATE FUNCTION</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Versões Suportadas</span>
+        <p>PostgreSQL 13, 14, 15, 16 (recomendado 15+). Compatível com RDS (AWS), Azure Database for PostgreSQL, e on-premises.</p>
+      </div>
+
+      <h3 id="mysql-setup">MySQL</h3>
+      <p><strong>MySQL 8.0+</strong> é mais limitado que os outros dois. <strong>Limitação crítica:</strong> NÃO suporta <code>FULL OUTER JOIN</code> (workaround: <code>UNION</code> de LEFT + RIGHT). Sem <code>RETURNING</code>. Usa <code>INSERT...ON DUPLICATE KEY UPDATE</code> para UPSERT.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Program.cs - Setup</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Usar MySQL como dialeto padrão (padrão: 1000 cache entries)
+builder.Services.AddMySqlFramework();
+
+// Com configuração customizada de cache
+builder.Services.AddMySqlFramework(
+    cacheMaxEntries: 2000,
+    evictionStrategy: CacheEvictionStrategy.Oldest,
+    cacheTtl: TimeSpan.FromMinutes(10)
+);</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Connection String</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost;Port=3306;Database=dialect_samples;Uid=root;Pwd=root;
+
+// Environment variable
+MYSQL_CONN</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Feature</th><th>Suporte</th><th>Sintaxe / Limitação</th></tr></thead>
+        <tbody>
+          <tr><td>Identifier Quote</td><td>✅</td><td><code>`users`</code></td></tr>
+          <tr><td>Parameter Prefix</td><td>✅</td><td><code>?</code> (posicional, sem nomes)</td></tr>
+          <tr><td>FULL OUTER JOIN</td><td>❌ Nativo</td><td>Workaround: (LEFT JOIN) UNION (RIGHT JOIN)</td></tr>
+          <tr><td>UPSERT</td><td>✅</td><td>INSERT ... ON DUPLICATE KEY UPDATE</td></tr>
+          <tr><td>RETURNING</td><td>❌</td><td>Sem forma nativa de retornar valores</td></tr>
+          <tr><td>Window Functions</td><td>✅ 8.0+ only</td><td>ROW_NUMBER() OVER (...)</td></tr>
+          <tr><td>CTEs (WITH)</td><td>✅ 8.0+ only</td><td>WITH cte AS (...)</td></tr>
+          <tr><td>JSON Operations</td><td>✅ 5.7+</td><td>JSON_EXTRACT, JSON_SET</td></tr>
+          <tr><td>Stored Procedures</td><td>✅</td><td>CREATE PROCEDURE</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">⚠️ Versões e Limitações</span>
+        <p><strong>MySQL 8.0+ obrigatório</strong> para CTEs e Window Functions. MySQL 5.7 tem suporte parcial. <strong>Sem FULL OUTER JOIN nativo</strong> — use workaround com UNION. <strong>Parâmetros posicionais</strong> — sem nomes de parâmetros, apenas <code>?</code>.</p>
+      </div>
+
+      <h3 id="bancos-comparacao">Comparação & Limitações</h3>
+      <p>Tabela abaixo resume as principais diferenças entre os três bancos. Use como referência ao escolher qual banco usar ou ao migrar entre eles.</p>
+
+      <table>
+        <thead><tr><th>Aspecto</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Identifier Quote</strong></td><td><code>[...]</code></td><td><code>"..."</code></td><td><code>`...`</code></td></tr>
+          <tr><td><strong>Parameter</strong></td><td><code>@name</code></td><td><code>:name</code></td><td><code>?</code> (posicional)</td></tr>
+          <tr><td><strong>UPSERT</strong></td><td>MERGE</td><td>INSERT...ON CONFLICT</td><td>INSERT...ON DUPLICATE KEY</td></tr>
+          <tr><td><strong>Pagination</strong></td><td>OFFSET x ROWS FETCH NEXT y ROWS ONLY</td><td>OFFSET x LIMIT y</td><td>LIMIT y OFFSET x</td></tr>
+          <tr><td><strong>FULL OUTER JOIN</strong></td><td>✅ Nativo</td><td>✅ Nativo</td><td>❌ Workaround: UNION</td></tr>
+          <tr><td><strong>RETURNING</strong></td><td>❌ OUTPUT</td><td>✅ RETURNING</td><td>❌</td></tr>
+          <tr><td><strong>Stored Procedures</strong></td><td>✅ PROCEDURE</td><td>❌ FUNCTION</td><td>✅ PROCEDURE</td></tr>
+          <tr><td><strong>Versão Mínima</strong></td><td>2019+</td><td>13+</td><td>8.0+</td></tr>
+          <tr><td><strong>RDS/Cloud</strong></td><td>SQL Server on RDS</td><td>RDS, Azure, AlloyDB</td><td>RDS, Azure, PlanetScale</td></tr>
+        </tbody>
+      </table>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>Melhor para...</h4>
+          <p><strong>SQL Server:</strong> Empresa com stack Microsoft. <strong>PostgreSQL:</strong> Open-source, máxima compatibilidade ANSI. <strong>MySQL:</strong> Aplicações web tradicionais.</p>
+        </div>
+        <div class="card">
+          <h4>Migração</h4>
+          <p>Ao migrar entre bancos, teste <strong>FULL JOIN</strong> (falha em MySQL), <strong>CTEs/Window Functions</strong> (falha em MySQL 5.7), e <strong>RETURNING</strong> (falha em SQL Server e MySQL).</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="recursos-avancados">
+      <h2>Recursos Avançados</h2>
+      <p>Além do builder básico, o Dialect oferece funcionalidades avançadas para queries complexas, otimização e manutenção de schema.</p>
+
+      <h3 id="ctes">CTEs (Common Table Expressions)</h3>
+      <p>Use <code>With()</code> para definir subqueries reutilizáveis (claúsulas WITH). Especialmente úteis para lógica recursiva ou reuso de resultados intermediários.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var query = SqlBuilder
+    .Select("*")
+    .With("active_users", cte => cte
+        .Select("Id", "Name", "Email")
+        .From("Users")
+        .Where("IsActive", Op.Equals, true))
+    .From("active_users")
+    .OrderBy("Name")
+    .Build();</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Recurso</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>WITH simples</td><td>Suportado</td><td>Suportado</td><td>Suportado (v8.0+)</td></tr>
+          <tr><td>CTEs recursivas</td><td>Suportado</td><td>Suportado</td><td>Suportado (v8.0+)</td></tr>
+          <tr><td>Múltiplas CTEs</td><td>Suportado</td><td>Suportado</td><td>Suportado</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Dica</span>
+        <p>CTEs melhoram legibilidade e facilitam reutilização de lógica intermediária. Use para quebrar queries complexas em passos nomeados e reutilizáveis.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="window-functions">
+      <h2>Window Functions</h2>
+      <p>Funções de análise que operam em janelas de linhas — ranking, lead/lag, agregações sem colapsar grupos.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var query = SqlBuilder
+    .Select(
+        "Id", "Name", "Salary",
+        "ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY salary DESC) as rank"
+    )
+    .SelectWindow(sf => sf
+        .WithFunction("LAG(salary, 1, 0)")
+        .Over(w => w
+            .PartitionBy("dept_id")
+            .OrderBy("salary", ascending: false))
+        .AsAlias("prev_salary"))
+    .From("Employees")
+    .Build();</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Função</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>ROW_NUMBER</td><td>Suportado</td><td>Suportado</td><td>Suportado (v8.0+)</td></tr>
+          <tr><td>RANK / DENSE_RANK</td><td>Suportado</td><td>Suportado</td><td>Suportado</td></tr>
+          <tr><td>LAG / LEAD</td><td>Suportado</td><td>Suportado</td><td>Suportado (v8.0+)</td></tr>
+          <tr><td>Frame ROWS/RANGE</td><td>Suportado</td><td>Suportado</td><td>Suportado</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Limite</span>
+        <p>MySQL versões anteriores a 8.0 não suportam window functions. Compile com validação ativa para evitar gerar SQL inválido.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="upsert">
+      <h2>UPSERT (Merge INSERT/UPDATE)</h2>
+      <p>Operação atômica de inserção com tratamento de conflito — se a linha já existe, atualiza; senão, insere. Cada banco tem sintaxe própria, mas a AST é uniforme.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var upsert = SqlBuilder
+    .Upsert("Users")
+    .Columns("Id", "Name", "Email", "LastLogin")
+    .Values(userId, userName, userEmail, DateTime.UtcNow)
+    .OnConflict("Id")  // Coluna que define unicidade
+    .UpdateSet("Name", userName)
+    .UpdateSet("Email", userEmail)
+    .UpdateSet("LastLogin", DateTime.UtcNow)
+    .Build();</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Banco</th><th>Sintaxe nativa</th><th>Suporte</th></tr></thead>
+        <tbody>
+          <tr><td>SQL Server</td><td>MERGE INTO ... WHEN MATCHED THEN UPDATE ...</td><td>✅ Completo</td></tr>
+          <tr><td>PostgreSQL</td><td>ON CONFLICT (col) DO UPDATE SET ...</td><td>✅ Completo</td></tr>
+          <tr><td>MySQL</td><td>ON DUPLICATE KEY UPDATE ...</td><td>✅ Completo</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Uso típico</span>
+        <p>UPSERT é ideal para sincronização de dados, carga incremental (ETL) e operações idempotentes. Evita boilerplate de IF EXISTS ... ELSE ...</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="schema-validation">
+      <h2>Schema Validation</h2>
+      <p>Valide a integridade de schemas antes de aplicar migrações ou executar queries complexas. Detecta inconsistências, colunas faltantes, tipos de dados inválidos.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Validar se tabela existe e tem estrutura esperada
+var validator = sqlDialect.CreateSchemaValidator();
+
+var result = validator.ValidateTable("Users", new[]
+{
+    new ColumnDef("Id", DataType.Int, nullable: false, isPrimaryKey: true),
+    new ColumnDef("Name", DataType.VarChar(255), nullable: false),
+    new ColumnDef("Email", DataType.VarChar(255), nullable: true)
+});
+
+if (!result.IsValid)
+{
+    foreach (var error in result.Errors)
+        Console.WriteLine($"Erro: {error.Message}");
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Validação</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>Colunas obrigatórias</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>Tipo de dados</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>Chaves primárias</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>Índices esperados</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Integração</span>
+        <p>Use <code>ISchemaValidator</code> como parte de seu setup de aplicação ou CI/CD, para garantir que o ambiente está pronto antes de executar operações.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="query-rewrite">
+      <h2>Query Rewrite Advisor &amp; Optimization</h2>
+      <p>Analisador que examina sua query e sugere otimizações — reescrita de subqueries, uso de JOINs, CTEs vs. subqueries, agregações ineficientes.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Compilar a query
+var compiled = query.Compile();
+
+// Obter sugestões de otimização
+var optimizer = sqlDialect.CreateOptimizationEngine();
+var suggestions = optimizer.Analyze(query);
+
+foreach (var suggestion in suggestions)
+{
+    Console.WriteLine($"Tipo: {suggestion.Category}");
+    Console.WriteLine($"Sugestão: {suggestion.Recommendation}");
+    Console.WriteLine($"Severidade: {suggestion.Severity}");
+}</code></pre>
+      </div>
+
+      <p><strong>Tipos comuns de sugestões:</strong></p>
+      <ul>
+        <li><strong>Subquery desnecessária</strong> — Converter para JOIN quando apropriado</li>
+        <li><strong>Agregação sem índice</strong> — GROUP BY em colunas sem índice</li>
+        <li><strong>N+1 pattern</strong> — Loop de queries quando poderia ser um JOIN</li>
+        <li><strong>Selectividade baixa</strong> — Preditados que retornam muitos registros</li>
+        <li><strong>Falta de DISTINCT</strong> — Possível deduplica desnecessária</li>
+      </ul>
+
+      <div class="callout">
+        <span class="callout-label">Não é vinculante</span>
+        <p>Sugestões são heurísticas baseadas em estrutura da query, não em volume de dados real. DBA pode ignorar ou priorizar conforme caso de uso.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="migrations">
+      <h2>Schema Migrations</h2>
+      <p>Defina mudanças de schema de forma agnóstica de dialeto — criar tabelas, adicionar colunas, criar índices. Framework compila para SQL específico de cada banco.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var migration = new Migration(
+    version: 1,
+    description: "Initial schema",
+    steps: new MigrationStep[]
+    {
+        new CreateTableStep("Users", new[]
+        {
+            new ColumnDef("Id", DataType.Int, nullable: false, isPrimaryKey: true),
+            new ColumnDef("Name", DataType.VarChar(255), nullable: false),
+            new ColumnDef("CreatedAt", DataType.DateTime, nullable: false, defaultValue: "GETDATE()") // dialect-specific
+        }),
+
+        new CreateIndexStep("idx_users_name", "Users", new[] { "Name" }, isUnique: false),
+
+        new CreateTableStep("Orders", new[] { ... })
+    }
+);
+
+var compiled = sqlDialect.CreateMigrationRenderer().Render(migration);</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Operação</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>CREATE TABLE</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>ALTER TABLE ADD COLUMN</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>CREATE INDEX</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>DROP CONSTRAINT</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Versioning</span>
+        <p>Cada <code>Migration</code> tem um número de versão. Seu serviço de dados controla qual versão foi aplicada e roda incrementalmente até o estado desejado.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="traducao">
+      <h2>Tradução SQL → SQL</h2>
+      <p>Para quem prefere escrever SQL puro em vez do pattern builder. Reaproveita a mesma AST e os mesmos renderers do <code>SqlBuilder</code> — o parser de origem é a única peça nova.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>fluxo</span></div>
+        <pre><code class="language-plaintext">SQL de origem (texto)
+      │
+      ▼
+Parser de terceiros (ScriptDom / PgQuery / ANTLR)
+      │
+      ▼
+Adapter → AST própria (a MESMA usada pelo SqlBuilder)
+      │
+      ▼
+IQueryRenderer do destino (o MESMO usado pelo Compile())
+      │
+      ▼
+CompiledQuery — pronto para Dapper</code></pre>
+      </div>
+
+      <h3 id="tres-formas-de-chamar">Três formas de chamar</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// 1) usa a connection string e o dialeto já configurados via DI
+var r1 = translator.Translate(sql);
+
+// 2) connection string avulsa para esta chamada
+var r2 = translator.Translate(sql, "Server=outro;Integrated Security=True;", SqlDialects.PostgreSql);
+
+// 3) explícito, sem nenhuma detecção
+var r3 = translator.Translate(sql, SqlProvider.SqlServer, SqlDialects.PostgreSql);</code></pre>
+      </div>
+
+      <h3 id="deteccao-dialeto">Detecção do dialeto de origem</h3>
+      <p>Heurística baseada em padrões característicos da connection string — <strong>não é infalível</strong>. Se a string for ambígua, o método lança <code>AmbiguousConnectionStringException</code> em vez de adivinhar.</p>
+
+      <table>
+        <thead><tr><th>Provider</th><th>Sinais característicos</th></tr></thead>
+        <tbody>
+          <tr><td>SQL Server</td><td><code>Data Source=</code>, <code>Integrated Security=</code></td></tr>
+          <tr><td>PostgreSQL</td><td><code>Host=</code>, <code>Port=5432</code></td></tr>
+          <tr><td>MySQL</td><td><code>Uid=</code>/<code>Pwd=</code>, <code>Port=3306</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="doc-section" id="cli">
+      <h2>CLI de conversão de projeto</h2>
+      <p>Diferente da tradução (que sempre produz SQL), esta CLI existe para quando o objetivo é <strong>converter um projeto C# existente para usar o FluentBuilder</strong> — encontrando SQL cru embutido no código e gerando o código equivalente em builder.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash"># projeto inteiro
+dialect --scope project --path ./MyApp.csproj --source sqlserver
+
+# um arquivo
+dialect --scope file --path ./Repositories/UserRepository.cs --source sqlserver
+
+# um método específico
+dialect --scope method --path ./Repositories/UserRepository.cs \
+    --type UserRepository --method GetActiveUsers --source sqlserver</code></pre>
+      </div>
+
+      <ul>
+        <li><strong>Descoberta</strong> via Roslyn — localiza SQL em Dapper, ADO.NET e EF Core raw SQL.</li>
+        <li><strong>Parsing</strong> por dialeto de origem (ScriptDom / PgQuery / ANTLR).</li>
+        <li><strong>Geração de código</strong> — trechos sem mapeamento direto viram <code>Raw()</code> comentado com <code>// TODO: revisar</code>, em vez de falhar a conversão inteira.</li>
+        <li><strong>Dry-run por padrão</strong> — sobrescrever arquivos exige <code>--apply</code> explícito.</li>
+      </ul>
+
+      <div class="callout">
+        <span class="callout-label">Atenção</span>
+        <p>SQL concatenado (<code>"… WHERE Id = " + userId</code>) nunca é convertido automaticamente — é sinalizado como achado de <strong>risco de segurança</strong>, prioridade alta no relatório.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="cli-commands">
+      <h2>Comandos da CLI (Detalhado)</h2>
+      <p>A CLI de conversão automatiza a transformação de SQL strings embutidas em C# para o padrão FluentBuilder. Funciona via discovery (Roslyn) → parsing → translation → code generation.</p>
+
+      <h3 id="comando-convert">Comando: convert</h3>
+      <p>Principal comando — descobre SQL strings em `.cs` files e gera código FluentBuilder equivalente. Suporta <strong>dry-run por padrão</strong> (sem modificar arquivos), opção <code>--apply</code> para aplicar mudanças com backup automático.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Sintaxe</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">dialect convert &lt;path&gt; [options]</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Opção</th><th>Tipo</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr><td><code>-sp, --source-provider</code></td><td>string</td><td>Provider de origem: <code>SqlServer</code> | <code>PostgreSql</code> | <code>MySql</code>. Auto-detecta se omitido.</td></tr>
+          <tr><td><code>-cs, --connection-string</code></td><td>string</td><td>Connection string p/ auto-detectar provider de origem (alternativa a <code>--source-provider</code>).</td></tr>
+          <tr><td><code>-tp, --target-provider</code></td><td>string</td><td>Provider de destino: <code>SqlServer</code> | <code>PostgreSql</code> | <code>MySql</code>. Default: <code>SqlServer</code>.</td></tr>
+          <tr><td><code>-d, --dry-run</code></td><td>flag</td><td>Visualiza mudanças SEM aplicar (DEFAULT).</td></tr>
+          <tr><td><code>-a, --apply</code></td><td>flag</td><td>Aplica conversões nos arquivos. Cria backup automático <code>.bak</code>.</td></tr>
+          <tr><td><code>-v, --verbose</code></td><td>flag</td><td>Logs detalhados de discovery, parsing, generation.</td></tr>
+          <tr><td><code>--no-backup</code></td><td>flag</td><td>Skip backup ao usar <code>--apply</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Exemplos Práticos</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash"># Dry-run: visualizar conversões propostas
+dialect convert ./src --target-provider PostgreSql --verbose
+
+# Apply: converter + salvar (backup automático)
+dialect convert ./src --target-provider PostgreSql --apply
+
+# Sem backup
+dialect convert ./src --target-provider MySql --apply --no-backup
+
+# Auto-detectar via connection string
+dialect convert ./src -cs "Host=localhost;Port=5432;..." --apply</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Fluxo Interno</span>
+        <p><strong>1. Discovery</strong> — RoslynSqlDiscoveryService escaneia `.cs` procurando SQL strings (Dapper, ADO.NET, EF Core). <strong>2. Parse</strong> — Parser específico do provider de origem converte texto SQL → AST. <strong>3. Translate</strong> — AST → AST de destino (se providers forem diferentes). <strong>4. Generate</strong> — AST → código C# FluentBuilder com `SqlBuilder`. <strong>5. Apply/Backup</strong> — Escreve no arquivo original ou visualiza em stdout.</p>
+      </div>
+
+      <h3 id="comando-config">Comando: config</h3>
+      <p>Gerencia configuração da CLI (target provider padrão, cache, etc).</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Sintaxe</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">dialect config &lt;action&gt; [key] [value]
+
+# Show all
+dialect config show
+
+# Get specific
+dialect config get target-provider
+
+# Set value
+dialect config set target-provider PostgreSql</code></pre>
+      </div>
+
+      <h3 id="comando-version">Comando: version</h3>
+      <p>Mostra versão instalada da CLI.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Sintaxe</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">dialect version
+# Output: Dialect.Cli version 1.0.0</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Limitações da CLI</span>
+        <p><strong>Não suporta:</strong> DDL (CREATE TABLE, ALTER TABLE), Stored Procedures complexas, Triggers, Views. <strong>Perde:</strong> Comments e formatação de SQL original. <strong>Limite de profundidade:</strong> Subqueries aninhadas muito profundas podem não ser parseadas corretamente.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="seguranca">
+      <h2>Segurança contra SQL Injection</h2>
+      <table>
+        <thead><tr><th>Camada</th><th>Mecanismo</th></tr></thead>
+        <tbody>
+          <tr><td>Valores</td><td>Parametrização obrigatória e estrutural</td></tr>
+          <tr><td>Identificadores dinâmicos</td><td><code>IdentifierAllowList</code> — whitelist explícita</td></tr>
+          <tr><td>Identificadores em geral</td><td>Validação automática dentro de <code>QuoteIdentifier()</code></td></tr>
+          <tr><td>Escape hatch <code>Raw()</code></td><td>Heurística de concatenação + <code>...Unsafe()</code> como via deliberada</td></tr>
+          <tr><td>Build-time</td><td>Analyzer Roslyn (<code>SQLF001</code>) bloqueando o build</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="doc-section" id="performance">
+      <h2>Performance &amp; concorrência</h2>
+      <h3 id="cache-de-shape">Cache de shape de query</h3>
+      <p>A mesma forma de query, com valores diferentes, sempre produz o mesmo SQL — só o parâmetro muda. Um hash estrutural da AST (ignorando literais) evita re-renderizar a mesma forma repetidamente.</p>
+
+      <h3 id="thread-safety">Regras de thread-safety</h3>
+      <ol>
+        <li><code>SqlBuilder</code> é sempre thread-confined.</li>
+        <li>Tudo que sobrevive ao <code>.Build()</code> é imutável.</li>
+        <li>O único estado mutável compartilhado é o cache — isolado atrás de <code>ConcurrentDictionary</code>.</li>
+      </ol>
+    </section>
+
+    <section class="doc-section" id="index-advisor">
+      <h2>Index Advisor</h2>
+      <p>Extrai candidatos a índice diretamente da AST já existente no <code>Compile()</code>, sem custo de parsing adicional. Em índices compostos, colunas de igualdade vêm antes de colunas de intervalo — mais eficiente para busca em B-tree.</p>
+
+      <div class="callout">
+        <span class="callout-label">Limite honesto</span>
+        <p>A ferramenta não conhece seletividade real de dados, volume de tabela nem índices já existentes. É um assistente, não um substituto de DBA — sugestões nunca são aplicadas automaticamente.</p>
+      </div>
+
+      <h3 id="execution-plan-analysis">Execution Plan Analysis</h3>
+      <p>Após compilar a query e executá-la, analise o plano de execução do BD para identificar bottlenecks — full table scans, operações custosas, predicados sem índice.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Compilar
+var compiled = query.Compile();
+
+// Executar com conexão (via Dapper)
+using (var connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    
+    // Usar SET STATISTICS IO / STATISTICS TIME para capturar plano
+    var planAnalyzer = sqlDialect.CreateExecutionPlanAnalyzer();
+    var metrics = planAnalyzer.AnalyzeExecution(connection, compiled);
+
+    Console.WriteLine($"Linhas examinadas: {metrics.RowsExamined}");
+    Console.WriteLine($"Custo estimado: {metrics.EstimatedCost:F2}");
+    Console.WriteLine($"Tempo: {metrics.ExecutionTimeMs}ms");
+    
+    // Dicas se houver scan completo
+    if (metrics.HasFullTableScan)
+        Console.WriteLine("⚠️ Full table scan detectado — considere índice");
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Métrica</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>Rows Examined</td><td>✅ Sim</td><td>✅ Sim</td><td>✅ Sim</td></tr>
+          <tr><td>Estimated Cost</td><td>✅ Sim</td><td>✅ Sim</td><td>✅ Estimado</td></tr>
+          <tr><td>Execution Plan XML</td><td>✅ Sim</td><td>✅ EXPLAIN</td><td>✅ EXPLAIN JSON</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="version-detection">Version Detection</h3>
+      <p>Detecte a versão e capacidades do BD em tempo de execução. Útil para ativar/desativar features conforme disponibilidade.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using (var connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    
+    var detector = sqlDialect.CreateVersionDetector();
+    var version = detector.DetectVersion(connection);
+
+    Console.WriteLine($"Servidor: {version.ServerName}");
+    Console.WriteLine($"Versão: {version.VersionString}");
+    Console.WriteLine($"Suporta Window Functions: {version.SupportsWindowFunctions}");
+    Console.WriteLine($"Suporta CTEs: {version.SupportsCTEs}");
+    Console.WriteLine($"Suporta JSON: {version.SupportsJsonOperations}");
+
+    // Ajustar comportamento conforme versão
+    if (!version.SupportsWindowFunctions)
+    {
+        // Fallback para agregação alternativa
+    }
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Capacidade</th><th>SQL Server (2016+)</th><th>PostgreSQL (9.3+)</th><th>MySQL (5.7+)</th></tr></thead>
+        <tbody>
+          <tr><td>Window Functions</td><td>SQL Server 2012+</td><td>PostgreSQL 8.4+</td><td>MySQL 8.0+</td></tr>
+          <tr><td>CTEs</td><td>SQL Server 2005+</td><td>PostgreSQL 8.4+</td><td>MySQL 8.0+</td></tr>
+          <tr><td>JSON</td><td>SQL Server 2016+</td><td>PostgreSQL 9.3+</td><td>MySQL 5.7+</td></tr>
+          <tr><td>Upsert nativa</td><td>SQL Server 2008+ (MERGE)</td><td>PostgreSQL 9.5+</td><td>MySQL 5.5.49+</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Integração com DI</span>
+        <p><code>IVersionDetector</code> é criado pelo seu dialeto e registrado como singleton. Chame uma vez na inicialização da aplicação para cache.</p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="estrutura">
+      <h2>Estrutura de pacotes</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>solução</span></div>
+        <pre><code class="language-plaintext">dialect          → AST, interfaces, SqlBuilder, cache
+Dialect.SqlServer     → ISqlDialect + renderers para SQL Server
+Dialect.PostgreSql    → ISqlDialect + renderers para PostgreSQL
+Dialect.MySql         → ISqlDialect + renderers para MySQL
+Dialect.Translation   → ISqlTranslator + ISqlProviderDetector (biblioteca)
+Dialect.Migration     → CLI de conversão de projeto (Roslyn + FluentCodeGenerator)
+Dialect.Analysis      → Index Advisor
+Dialect.Tests         → golden tests, testes de concorrência</code></pre>
+      </div>
+      <p>O <code>Core</code> nunca carrega dependências pesadas de parsing ou Roslyn — isso fica isolado em <code>Translation</code> e <code>Migration</code>, para não onerar quem só usa o builder fluente no dia a dia.</p>
+    </section>
+
+    <!-- NEW SECTION 1: Query Analysis & Insights -->
+    <section class="doc-section" id="query-analysis">
+      <h2>Query Analysis & Insights</h2>
+      <p>Analise estrutura de queries para otimização, validação e detecção de anti-patterns. Use os analisadores de Query para examinar predicados, joins e agregações sem executar a query.</p>
+
+      <h3>PredicateAnalyzer — Análise de WHERE</h3>
+      <p>Classifique cada predicado por tipo de operador, indexabilidade e seletividade esperada. Ideal para priorizar quais colunas indexar.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var analyzer = new PredicateAnalyzer();
+
+// Predicado altamente seletivo (índice prioritário)
+var analysis1 = analyzer.Analyze("Id = 1");
+Console.WriteLine($"Tipo: {analysis1.OperatorType}");           // "EQUALITY"
+Console.WriteLine($"Indexável: {analysis1.IsIndexable}");       // true
+Console.WriteLine($"Seletividade: {analysis1.Selectivity}");    // 0.1 (10% do dados)
+Console.WriteLine($"Prioridade: {analysis1.IndexPriority}");    // 10 (máxima)
+
+// Predicado com LIKE — não-indexável com wildcard no início
+var analysis2 = analyzer.Analyze("Name LIKE '%john%'");
+Console.WriteLine($"Indexável: {analysis2.IsIndexable}");       // false
+Console.WriteLine($"Seletividade: {analysis2.Selectivity}");    // 0.5 (baixa)
+Console.WriteLine($"Prioridade: {analysis2.IndexPriority}");    // 0
+
+// Range query — moderadamente seletiva
+var analysis3 = analyzer.Analyze("CreatedDate >= '2024-01-01'");
+Console.WriteLine($"Tipo: {analysis3.OperatorType}");           // "RANGE"
+Console.WriteLine($"Seletividade: {analysis3.Selectivity}");    // 0.4 (40%)</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Operador</th><th>OperatorType</th><th>Indexável</th><th>Seletividade</th><th>Prioridade</th></tr></thead>
+        <tbody>
+          <tr><td><code>= valor</code></td><td>EQUALITY</td><td>✅</td><td>0.1 (10%)</td><td>10</td></tr>
+          <tr><td><code>&lt;&gt; / !=</code></td><td>INEQUALITY</td><td>✅</td><td>0.5 (50%)</td><td>5</td></tr>
+          <tr><td><code>&lt; / &gt; / &lt;= / &gt;=</code></td><td>COMPARISON / RANGE</td><td>✅</td><td>0.4 (40%)</td><td>7</td></tr>
+          <tr><td><code>BETWEEN</code></td><td>BETWEEN</td><td>✅</td><td>0.3 (30%)</td><td>8</td></tr>
+          <tr><td><code>IN (...)</code></td><td>IN_LIST</td><td>✅</td><td>0.25 (25%)</td><td>8</td></tr>
+          <tr><td><code>LIKE 'prefix%'</code></td><td>LIKE</td><td>✅</td><td>0.3 (30%)</td><td>6</td></tr>
+          <tr><td><code>LIKE '%..%'</code></td><td>LIKE</td><td>❌</td><td>0.5 (50%)</td><td>0</td></tr>
+          <tr><td><code>IS NULL</code></td><td>IS_NULL</td><td>❌</td><td>0.05 (5%)</td><td>0</td></tr>
+          <tr><td><code>IS NOT NULL</code></td><td>IS_NOT_NULL</td><td>❌</td><td>0.95 (95%)</td><td>0</td></tr>
+        </tbody>
+      </table>
+
+      <h3>JoinAnalyzer — Análise de JOINs</h3>
+      <p>Classifique joins por tipo e otimalidade. Detecte FULL JOINs e CROSS JOINs potencialmente caros e receba sugestões de reescrita.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var analyzer = new JoinAnalyzer();
+
+// INNER JOIN — ótimo
+var analysis1 = analyzer.Analyze("INNER JOIN Orders ON Users.Id = Orders.UserId");
+Console.WriteLine($"Tipo: {analysis1.JoinType}");        // "INNER_JOIN"
+Console.WriteLine($"Ótimo: {analysis1.IsOptimal}");      // true
+Console.WriteLine($"Esquerda: {analysis1.LeftTable}");   // "Users"
+Console.WriteLine($"Direita: {analysis1.RightTable}");   // "Orders"
+
+// FULL JOIN — subótimo
+var analysis2 = analyzer.Analyze("FULL JOIN Orders ON Users.Id = Orders.UserId");
+Console.WriteLine($"Tipo: {analysis2.JoinType}");        // "FULL_JOIN"
+Console.WriteLine($"Ótimo: {analysis2.IsOptimal}");      // false
+Console.WriteLine($"Recomendação: {analysis2.Recommendation}");  
+// "FULL JOIN é menos eficiente. Considere reescrever com UNION de LEFT e RIGHT joins."
+
+// CROSS JOIN — muito caro
+var analysis3 = analyzer.Analyze("CROSS JOIN Categories");
+Console.WriteLine($"Ótimo: {analysis3.IsOptimal}");      // false
+Console.WriteLine($"Recomendação: {analysis3.Recommendation}");
+// "CROSS JOIN cria produto cartesiano completo — evitar ou validar volume"</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Tipo de Join</th><th>Ótimo</th><th>Notas</th></tr></thead>
+        <tbody>
+          <tr><td>INNER JOIN</td><td>✅</td><td>Elimina linhas não-correspondentes — mais eficiente</td></tr>
+          <tr><td>LEFT JOIN</td><td>✅</td><td>Mantém todos registros da esquerda — seguro e previsível</td></tr>
+          <tr><td>RIGHT JOIN</td><td>⚠️</td><td>Subótimo — reescrever como LEFT JOIN</td></tr>
+          <tr><td>FULL JOIN</td><td>❌</td><td>Custoso — considerar UNION de LEFT + RIGHT</td></tr>
+          <tr><td>CROSS JOIN</td><td>❌</td><td>Produto cartesiano — muito caro, usar com cuidado</td></tr>
+        </tbody>
+      </table>
+
+      <h3>AggregationAnalyzer — Análise de GROUP BY</h3>
+      <p>Extraia colunas de agrupamento, identifique funções de agregação e receba recomendações de índices para melhorar performance.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var analyzer = new AggregationAnalyzer();
+
+// Análise de GROUP BY simples
+var analysis = analyzer.Analyze("GROUP BY dept_id, salary HAVING COUNT(*) > 5");
+Console.WriteLine($"Colunas agrupadas: {string.Join(", ", analysis.GroupByColumns)}");
+// ["dept_id", "salary"]
+
+Console.WriteLine($"Funções agregadas: {string.Join(", ", analysis.AggregateFunctions)}");
+// ["COUNT"]
+
+Console.WriteLine($"Índice recomendado: {analysis.RecommendedIndex}");
+// "CREATE INDEX idx_dept_salary ON employees(dept_id, salary)"
+
+Console.WriteLine($"Otimização: {analysis.OptimizationTip}");
+// "Índice composto (dept_id, salary) melhora performance de GROUP BY"</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Quando usar</span>
+        <p>Use análise de queries durante development para validar padrões antes de deploy. Combine com execution plan analysis para decisões de indexação baseadas em dados reais.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 2: Performance Analysis & Execution Plans -->
+    <section class="doc-section" id="performance-analysis">
+      <h2>Performance Analysis & Execution Plans</h2>
+      <p>Após executar queries, analise planos de execução para identificar bottlenecks — full table scans, operações custosas, falta de índices. Capture métricas de execução e compare performance entre dialetos.</p>
+
+      <h3>Capturando Execution Plans</h3>
+      <p>Use <code>EXPLAIN</code> (PostgreSQL/MySQL) ou <code>SET STATISTICS</code> (SQL Server) para capturar e analisar planos de execução.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Análise de Plano</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using (var connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    
+    var compiled = query.Compile();
+    var planAnalyzer = sqlDialect.CreateExecutionPlanAnalyzer();
+    
+    // Capturar métricas de execução
+    var metrics = planAnalyzer.AnalyzeExecution(connection, compiled);
+
+    Console.WriteLine($"Linhas examinadas: {metrics.RowsExamined}");
+    Console.WriteLine($"Linhas retornadas: {metrics.RowsReturned}");
+    Console.WriteLine($"Custo estimado: {metrics.EstimatedCost:F2}");
+    Console.WriteLine($"Tempo real: {metrics.ExecutionTimeMs}ms");
+    Console.WriteLine($"I/O lógico: {metrics.LogicalReadsCount}");
+    Console.WriteLine($"I/O físico: {metrics.PhysicalReadsCount}");
+    
+    // Avisos automáticos
+    if (metrics.HasFullTableScan)
+        Console.WriteLine("⚠️ Full table scan detectado — considere índice");
+    
+    if (metrics.RowsExamined > metrics.RowsReturned * 10)
+        Console.WriteLine("⚠️ Taxa de filtragem baixa — query ineficiente");
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Métrica</th><th>Significado</th><th>SQL Server</th><th>PostgreSQL</th><th>MySQL</th></tr></thead>
+        <tbody>
+          <tr><td>RowsExamined</td><td>Linhas lidas antes de filtros</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>RowsReturned</td><td>Linhas finais após WHERE</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>EstimatedCost</td><td>Custo CPU/IO estimado (0-1)</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>ExecutionTimeMs</td><td>Tempo real de execução</td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td>LogicalReadsCount</td><td>Leituras de cache</td><td>✅</td><td>⚠️ Estimado</td><td>✅</td></tr>
+          <tr><td>PhysicalReadsCount</td><td>Leituras de disco</td><td>✅</td><td>⚠️ Estimado</td><td>✅</td></tr>
+          <tr><td>HasFullTableScan</td><td>Sem índice foi usado?</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Comparação entre Dialetos</h3>
+      <p>Mesma query pode ter performance diferente em cada banco. Execute e compare.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Benchmark entre dialetos</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var query = SqlBuilder
+    .Select("Users.Id", "Users.Name", "COUNT(Orders.Id) as OrderCount")
+    .From("Users")
+    .LeftJoin("Orders").On("Users.Id", Op.Equals, "Orders.UserId")
+    .GroupBy("Users.Id", "Users.Name")
+    .Having("COUNT(Orders.Id)", Op.GreaterThan, 5)
+    .Build();
+
+foreach (var dialect in new[] { sqlServerDialect, postgreSqlDialect, mySqlDialect })
+{
+    var compiled = dialect.Compile(query);
+    var metrics = dialect.CreateExecutionPlanAnalyzer()
+        .AnalyzeExecution(connection, compiled);
+    
+    Console.WriteLine($"{dialect.GetType().Name}: {metrics.ExecutionTimeMs}ms, " +
+        $"Cost={metrics.EstimatedCost:F2}, RowsExamined={metrics.RowsExamined}");
+}</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Dica de Performance</span>
+        <p>A relação entre RowsExamined e RowsReturned é um excelente indicador de eficiência. Idealmente, examinada ≤ 1.5x retornada. Se > 10x, há oportunidade de otimização.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 3: Advanced Query Optimization -->
+    <section class="doc-section" id="advanced-optimization">
+      <h2>Advanced Query Optimization</h2>
+      <p>Use o optimizer para gerar recomendações automáticas de reescrita de queries. O engine sugere transformações com base em heurísticas de custo, indexação e padrão de dado.</p>
+
+      <h3>OptimizationEngine — Gerar Recomendações</h3>
+      <p>Compile query e passe para o engine gerar lista de sugestões de reescrita com prioridade e ROI estimado.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var query = SqlBuilder
+    .Select("*")
+    .From("Orders")
+    .LeftJoin("Users").On("Orders.UserId", Op.Equals, "Users.Id")
+    .LeftJoin("Products").On("Orders.ProductId", Op.Equals, "Products.Id")
+    .Where("Orders.Status", Op.Equals, "Completed")
+    .OrderBy("Orders.CreatedDate", ascending: false)
+    .Limit(100)
+    .Build();
+
+var engine = sqlDialect.CreateOptimizationEngine();
+var recommendations = engine.GenerateRecommendations(query.CompiledSql);
+
+foreach (var rec in recommendations)
+{
+    Console.WriteLine($"[{rec.Category}] {rec.Title}");
+    Console.WriteLine($"  Impacto: {rec.ImpactEstimate}");      // "High", "Medium", "Low"
+    Console.WriteLine($"  Risco: {rec.RiskLevel}");             // "Low", "Medium", "High"
+    Console.WriteLine($"  Descrição: {rec.Description}");
+    Console.WriteLine($"  Sugestão: {rec.Suggestion}");
+    Console.WriteLine();
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Categoria</th><th>Exemplo</th><th>Impacto típico</th></tr></thead>
+        <tbody>
+          <tr><td>Missing Index</td><td>Índice em coluna WHERE/JOIN</td><td>High (10-50x melhora)</td></tr>
+          <tr><td>Join Reorder</td><td>Reordenar joins por seletividade</td><td>Medium (2-5x)</td></tr>
+          <tr><td>Query Rewrite</td><td>FULL JOIN → UNION, EXISTS → IN</td><td>Medium (2-10x)</td></tr>
+          <tr><td>Predicate Pushdown</td><td>Mover filtros antes de JOIN</td><td>Medium (2-5x)</td></tr>
+          <tr><td>Materialization</td><td>CTE vs subquery inline</td><td>Medium (1.5-3x)</td></tr>
+          <tr><td>Aggregate Optimization</td><td>GROUP BY com índice</td><td>High (5-20x)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>RecommendationPrioritizer — Priorizar por ROI</h3>
+      <p>Nem todas as otimizações vale a pena implementar. Priorize por estratégia: ROI máximo, risco mínimo, categoria, ou combinada.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var prioritizer = new RecommendationPrioritizer(recommendations);
+
+// Estratégia 1: ROI máximo (padrão)
+var top5ByRoi = prioritizer.Prioritize(
+    strategy: PrioritizationStrategy.RoiAndPriority,
+    maxRecommendations: 5
+);
+
+// Estratégia 2: Top 3 por categoria (distribuir esforço)
+var topByCategory = prioritizer.PrioritizeByCategory(topPerCategory: 3);
+
+// Estratégia 3: Filtrar por risco e ROI
+var lowRiskHighRoi = prioritizer.FilterByRiskAndRoi(
+    maxRiskLevel: RiskLevel.Medium,    // Aceitar risco médio no máximo
+    minRoiEstimate: 0.5                 // Mínimo 50% de melhora
+);
+
+foreach (var rec in top5ByRoi)
+{
+    Console.WriteLine($"{rec.Title} (ROI: {rec.RoiEstimate:P0}, Risk: {rec.RiskLevel})");
+    Console.WriteLine($"  SQL sugerida:");
+    Console.WriteLine($"  {rec.OptimizedSqlSuggestion}");
+    Console.WriteLine();
+}</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Estratégias de Priorização</span>
+        <p><strong>RoiAndPriority</strong> (padrão): Ordena por ROI / Risk. <strong>LowestRisk</strong>: Aplicações já em produção. <strong>HighestImpact</strong>: Queries críticas. <strong>ByCategory</strong>: Esforço distribuído. <strong>CustomWeighting</strong>: Você define pesos.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 4: Error Handling & Debugging -->
+    <section class="doc-section" id="error-handling">
+      <h2>Error Handling & Debugging</h2>
+      <p>Entenda tipos de exceção, padrões de tratamento, debug de queries complexas e troubleshooting common.</p>
+
+      <h3>Tipos de Exceção</h3>
+      <p>O Dialect usa uma estratégia de exceções clara: 1 customizada + 6 .NET padrão, lançadas em pontos determinísticos com mensagens descritivas.</p>
+
+      <table>
+        <thead><tr><th>Exceção</th><th>Namespace</th><th>Quando lançada</th><th>Recuperação</th></tr></thead>
+        <tbody>
+          <tr><td><code>SqlCompilationException</code></td><td>dialect.Compilation</td><td>AST → SQL compilação falha (validação/renderização)</td><td>Revisar query builder, verificar feature support do dialeto</td></tr>
+          <tr><td><code>ArgumentNullException</code></td><td>System</td><td>Parâmetro obrigatório é null</td><td>Validar inputs antes de chamar builder</td></tr>
+          <tr><td><code>ArgumentException</code></td><td>System</td><td>Input inválido (string vazia, alias duplicado)</td><td>Validar formato/valores dos inputs</td></tr>
+          <tr><td><code>InvalidOperationException</code></td><td>System</td><td>Builder incompleto, DI não configurado, state violation</td><td>Completar builder, registrar DI, verificar order de chamadas</td></tr>
+          <tr><td><code>FileNotFoundException</code></td><td>System.IO</td><td>CLI não encontra arquivo de projeto</td><td>Verificar caminho, permissions de arquivo</td></tr>
+          <tr><td><code>NotImplementedException</code></td><td>System</td><td>Feature stub não implementada</td><td>Usar feature em dialeto suportado ou esperar release</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Try-Catch Patterns</h3>
+      <p>Tratamento recomendado por tipo de operação:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Padrão: Compilação com fallback</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">try
+{
+    var compiled = query.Compile();
+    Console.WriteLine($"SQL: {compiled.Sql}");
+}
+catch (SqlCompilationException ex)
+{
+    // Erro de compilação — feature não suportada ou query inválida
+    Console.WriteLine($"Erro de compilação: {ex.Message}");
+    Console.WriteLine($"Feature não suportada? {ex.InnerException?.Message}");
+    
+    // Fallback: usar Raw() para query manualmente construída
+    var fallback = SqlBuilder
+        .Select("*")
+        .FromRaw("...SQL manual...")
+        .Build();
+}
+catch (ArgumentException ex)
+{
+    // Erro de validação de input
+    Console.WriteLine($"Input inválido: {ex.Message}");
+    // Revisar builders
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Padrão: Batch processing com tolerância</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var queries = new[] { query1, query2, query3 };
+var results = new List<(string Sql, bool Success, string Error)>();
+
+foreach (var q in queries)
+{
+    try
+    {
+        var compiled = q.Compile();
+        results.Add((compiled.Sql, true, null));
+    }
+    catch (Exception ex) when (ex is SqlCompilationException || ex is ArgumentException)
+    {
+        // Falha tolerada — log e continue
+        results.Add((null, false, ex.Message));
+        Logger.LogWarning($"Query compilation failed: {ex.Message}");
+    }
+}
+
+// Report: X sucessos, Y falhas
+var successCount = results.Count(r => r.Success);
+Console.WriteLine($"Sucesso: {successCount}/{queries.Length}");</code></pre>
+      </div>
+
+      <h3>Debugging Queries Complexas</h3>
+      <p>Use <code>.ToDebugString()</code> para inspecionar AST e SQL intermediário sem executar.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var query = SqlBuilder
+    .Select("*")
+    .From("Users")
+    .Where("Email", Op.Equals, "test@example.com")
+    .Build();
+
+// Inspecionar AST
+Console.WriteLine("=== AST Debug ===");
+Console.WriteLine(query.ToDebugString());
+// Output:
+// SelectStatement {
+//   Columns: [ "*" ]
+//   FromClause: "Users"
+//   WhereClause: BinaryExpression { Left: "Email", Operator: Equals, Right: "test@example.com" }
+// }
+
+// Inspecionar SQL compilado
+Console.WriteLine("\n=== SQL Compilado ===");
+var compiled = query.Compile();
+Console.WriteLine($"SQL: {compiled.Sql}");
+Console.WriteLine($"Parâmetros: {string.Join(", ", compiled.Parameters.Keys)}");</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Troubleshooting Comum</span>
+        <p><strong>"Feature not supported"</strong> → Verifique se dialeto suporta (MySQL não tem FULL JOIN). <strong>"WHERE required before DELETE"</strong> → Use `.AllowFullTableOperation()` se intencional. <strong>"Invalid column reference"</strong> → Verifique alias de tabela em JOINs.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 5: Extending Dialect -->
+    <section class="doc-section" id="extending-dialect">
+      <h2>Extending Dialect</h2>
+      <p>O Dialect foi projetado para extensibilidade. Adicione suporte a novos dialetos, renderers customizados ou funções SQL específicas do seu banco.</p>
+
+      <h3>Implementando um Novo Dialeto</h3>
+      <p>Estenda <code>ISqlDialect</code> e implemente interfaces de renderização para criar suporte a um novo banco de dados.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Template: Novo Dialeto</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">public class MariaDbDialect : ISqlDialect
+{
+    public string IdentifierQuote => "`";
+    public string ParameterPrefix => "?";
+    public string Name => "MariaDB";
+    
+    public bool Supports(SqlFeature feature)
+    {
+        return feature switch
+        {
+            SqlFeature.WindowFunctions => true,
+            SqlFeature.CommonTableExpressions => true,
+            SqlFeature.FullOuterJoin => false,  // MariaDB não suporta
+            SqlFeature.JsonOperations => true,
+            _ => false
+        };
+    }
+    
+    public IQueryRenderer CreateQueryRenderer() 
+        => new MariaDbQueryRenderer(this);
+    
+    public IRoutineRenderer CreateRoutineRenderer() 
+        => new MariaDbRoutineRenderer(this);
+    
+    public IMigrationRenderer CreateMigrationRenderer() 
+        => new MariaDbMigrationRenderer(this);
+}</code></pre>
+      </div>
+
+      <h3>Custom SQL Functions</h3>
+      <p>Registre funções SQL personalizadas que não sejam nativas do dialeto (ex: UDFs).</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Registrar função custom na DI
+builder.Services.AddSqlServerFramework();
+builder.Services.AddScoped&lt;ICustomSqlFunctionRegistry&gt;(sp =>
+{
+    var registry = new CustomSqlFunctionRegistry();
+    
+    // Função: CalculateDiscount(amount, percentage)
+    registry.Register("CalculateDiscount", 
+        args =&gt; $"({args[0]} * (100 - {args[1]}) / 100)");
+    
+    // Função: FormatPhone(number)
+    registry.Register("FormatPhone",
+        args =&gt; $"CONCAT('(', SUBSTRING({args[0]}, 1, 3), ') ', SUBSTRING({args[0]}, 4, 3), '-', SUBSTRING({args[0]}, 7))");
+    
+    return registry;
+});
+
+// Usar no builder
+var query = SqlBuilder
+    .Select("Name")
+    .SelectRaw("CalculateDiscount(Price, Discount) AS FinalPrice")
+    .From("Products")
+    .Build();</code></pre>
+      </div>
+
+      <h3>Custom Query Renderers</h3>
+      <p>Customize a renderização de queries específicas para casos especiais que o builder não cobre.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Custom Renderer</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">public class CustomQueryRenderer : IQueryRenderer
+{
+    private readonly SqlServerDialect _dialect;
+    
+    public CustomQueryRenderer(SqlServerDialect dialect) => _dialect = dialect;
+    
+    public CompiledQuery Render(SelectStatement stmt)
+    {
+        // Customizar renderização (ex: adicionar hints, opções específicas)
+        var sql = new StringBuilder();
+        sql.Append("SELECT");
+        
+        // Adicionar hint customizado
+        if (stmt.RequiresNoLock)
+            sql.Append(" /*+ NO_LOCK */");
+        
+        // ... resto da renderização
+        return new CompiledQuery(sql.ToString(), stmt.Parameters);
+    }
+}</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Padrão de Extensão</span>
+        <p>Sempre implemente <code>ISqlDialect</code> + interfaces de renderer (<code>IQueryRenderer</code>, <code>IRoutineRenderer</code>, <code>IMigrationRenderer</code>). Registre via DI para que o framework injete automaticamente.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 6: Batch Operations & Bulk Processing -->
+    <section class="doc-section" id="batch-operations">
+      <h2>Batch Operations & Bulk Processing</h2>
+      <p>Otimize operações em lote com INSERT BULK, UPDATE multiple, e DELETE batch. Ideal para ETL, sincronização de dados e operações de altíssimo volume.</p>
+
+      <h3>Bulk INSERT</h3>
+      <p>Insira centenas de milhares de registros com performance otimizada. Use batch para aplicar transações e validações.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using (var connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    using (var txn = connection.BeginTransaction())
+    {
+        var batchSize = 1000;  // Processar em lotes de 1000
+        var inserted = 0;
+        
+        foreach (var batch in users.Batch(batchSize))
+        {
+            var insertBuilder = SqlBuilder.InsertInto("Users");
+            
+            foreach (var user in batch)
+            {
+                insertBuilder
+                    .Row()
+                    .Value("Name", user.Name)
+                    .Value("Email", user.Email)
+                    .Value("CreatedAt", DateTime.UtcNow);
+            }
+            
+            var compiled = insertBuilder.Build().Compile();
+            connection.Execute(compiled.Sql, compiled.Parameters, txn);
+            inserted += batch.Count();
+            
+            Console.WriteLine($"Inseridos: {inserted}/{users.Count}");
+        }
+        
+        txn.Commit();
+    }
+}</code></pre>
+      </div>
+
+      <h3>Bulk UPDATE</h3>
+      <p>Atualize milhares de registros condicionalmente, sem loop N+1.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Atualizar status de múltiplos pedidos
+var orderIds = new[] { 1, 2, 3, 4, 5 };
+var updated = SqlBuilder
+    .Update("Orders")
+    .Set("Status", "Completed")
+    .Set("CompletedAt", DateTime.UtcNow)
+    .Where("Id", Op.In, orderIds)
+    .Build();
+
+using (var connection = new SqlConnection(connectionString))
+{
+    var compiled = updated.Compile();
+    var rowsAffected = connection.Execute(compiled.Sql, compiled.Parameters);
+    Console.WriteLine($"Atualizados: {rowsAffected} registros");
+}</code></pre>
+      </div>
+
+      <h3>Bulk DELETE</h3>
+      <p>Delete múltiplos registros de uma vez com transação atômica.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var expiredTokens = SqlBuilder
+    .DeleteFrom("AuthTokens")
+    .Where("ExpiresAt", Op.LessThan, DateTime.UtcNow)
+    .Build();
+
+using (var connection = new SqlConnection(connectionString))
+{
+    var compiled = expiredTokens.Compile();
+    var deleted = connection.Execute(compiled.Sql, compiled.Parameters);
+    Console.WriteLine($"Deletados: {deleted} tokens expirados");
+}</code></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Performance Best Practices</span>
+        <p>Use <strong>transações explícitas</strong> para grupos de operações. <strong>Batch de 500-2000</strong> registros por operação (memória vs. rede). <strong>Índices desativados</strong> durante bulk insert em massa (depois reativar). <strong>Log de progresso</strong> para operações longas.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 7: Advanced Migrations & Versioning -->
+    <section class="doc-section" id="advanced-migrations">
+      <h2>Advanced Migrations & Versioning</h2>
+      <p>Versionamento de schema com estado persistido, validação e rollback seguro. Mantendo histórico de mudanças e rastreabilidade.</p>
+
+      <h3>Estrutura de Migration</h3>
+      <p>Migrations são versionadas por timestamp ou número sequencial. O framework rastreia estado em tabela de metadata.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Criar e aplicar Migration</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Definir migration
+public class Migration202409071000_AddUsersTable : IMigration
+{
+    public string Version => "202409071000";
+    public string Name => "Add Users Table";
+    
+    public string Up()
+    {
+        return @"
+            CREATE TABLE Users (
+                Id INT PRIMARY KEY IDENTITY(1,1),
+                Name NVARCHAR(100) NOT NULL,
+                Email NVARCHAR(100) NOT NULL UNIQUE,
+                CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+            )";
+    }
+    
+    public string Down()
+    {
+        return "DROP TABLE Users";
+    }
+}
+
+// Aplicar migration
+using (var connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    var migrator = new SchemaMigrator(connection, sqlDialect);
+    
+    // Aplicar apenas pending migrations
+    var result = migrator.MigrateUp();
+    Console.WriteLine($"Aplicadas: {result.AppliedCount} migrations");
+    Console.WriteLine($"Status: {result.Status}");  // "Success", "PartialFailure", "Failure"
+}</code></pre>
+      </div>
+
+      <h3>Rollback e Versionamento</h3>
+      <p>Revert migrations em ordem reversa, mantendo estado de schema sincronizado.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Rollback</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var migrator = new SchemaMigrator(connection, sqlDialect);
+
+// Voltar 1 step
+var rollback1 = migrator.RollbackOne();
+Console.WriteLine($"Rollback: {rollback1.RolledBackVersion}");
+
+// Voltar para versão específica
+var rollbackTo = migrator.RollbackTo("202409061500");
+Console.WriteLine($"Rolled back to: {rollbackTo.CurrentVersion}");
+
+// Ver histórico de aplicadas
+var history = migrator.GetAppliedMigrations();
+foreach (var migration in history)
+{
+    Console.WriteLine($"{migration.Version}: {migration.Name} ({migration.AppliedAt:g})");
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Operação</th><th>Descrição</th><th>Segurança</th><th>Tempo</th></tr></thead>
+        <tbody>
+          <tr><td>MigrateUp</td><td>Aplicar pending migrations</td><td>Alta (validação antes)</td><td>Varia com schema</td></tr>
+          <tr><td>RollbackOne</td><td>Reverter último step</td><td>Alta (usa Down)</td><td>Rápido</td></tr>
+          <tr><td>RollbackTo(version)</td><td>Voltar para versão</td><td>Alta (múltiplos Down)</td><td>Moderado</td></tr>
+          <tr><td>Validate</td><td>Validar estado atual</td><td>Info only</td><td>Rápido</td></tr>
+          <tr><td>Force(version)</td><td>Marcar como aplicada sem executar</td><td>Baixa — manual only</td><td>Instantâneo</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Boas Práticas</span>
+        <p><strong>Migrations idempotentes</strong> — use IF NOT EXISTS/IF EXISTS. <strong>Testes em staging primeiro</strong> — sempre. <strong>Backup antes de rollback</strong> — produção. <strong>Versionamento imutável</strong> — não edite migrations aplicadas, crie novas.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 8: CLI Advanced Usage & Troubleshooting -->
+    <section class="doc-section" id="cli-advanced">
+      <h2>CLI Advanced Usage & Troubleshooting</h2>
+      <p>Referência detalhada da CLI de conversão de projeto, limitações de parsing, troubleshooting de falhas de conversão.</p>
+
+      <h3>Conversão Avançada: Configuração</h3>
+      <p>A CLI suporta arquivo de configuração para padrões, exclusões e otimizações de conversão.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>dialect-config.json</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-json">{
+  "dialect": "SqlServer",
+  "targetDialect": "PostgreSql",
+  "options": {
+    "caseInsensitiveIdentifiers": false,
+    "preserveComments": true,
+    "includeRawEscapeHatch": true,
+    "throwOnUnsupported": false,
+    "detectCteRecursion": true
+  },
+  "exclusions": {
+    "filePatterns": ["*.Designer.cs", "obj/**"],
+    "classNamePatterns": [".*Repository"]
+  },
+  "conversions": {
+    "customFunctions": {
+      "GETDATE()": "CURRENT_TIMESTAMP",
+      "ISNULL(a,b)": "COALESCE(a, b)"
+    }
+  }
+}
+</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>PowerShell — Usar configuração</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-powershell">dialect convert "C:\Project" --config "dialect-config.json" --report conversion-report.md</code></pre>
+      </div>
+
+      <h3>Troubleshooting: Falhas de Conversão</h3>
+      <p>Comuns e como resolver:</p>
+
+      <table>
+        <thead><tr><th>Erro</th><th>Causa</th><th>Solução</th></tr></thead>
+        <tbody>
+          <tr><td>"SQL parsing failed"</td><td>SQL inválido ou syntax não suportada</td><td>Use Raw() ou .SelectRaw(), ou correça SQL manual</td></tr>
+          <tr><td>"Identifier ambiguous"</td><td>Coluna sem alias em JOIN</td><td>Adicione alias explícito (AS)</td></tr>
+          <tr><td>"Feature not supported"</td><td>Banco alvo não suporta (ex: FULL JOIN em MySQL)</td><td>Reescrever query, ou usar workaround (UNION)</td></tr>
+          <tr><td>"Parameter binding failed"</td><td>Parâmetro fora de escopo</td><td>Validar referência de parâmetro em código</td></tr>
+          <tr><td>"CTE depth limit"</td><td>Muitos níveis de CTEs aninhadas</td><td>Reduzir profundidade ou usar subqueries</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Melhor Prática</span>
+        <p>A CLI converte ~90% das queries com sucesso para queries simples-moderadas. Queries dinâmicas, EXEC(), e SQL não-standard podem falhar. <strong>Review manual recomendada</strong> para casos edge.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 9: Security Deep Dive -->
+    <section class="doc-section" id="security-deep-dive">
+      <h2>Security Deep Dive</h2>
+      <p>Proteção contra SQL injection, quando Raw() é seguro, boas práticas de binding, auditoria e validação.</p>
+
+      <h3>SQL Injection Protection via Parameterization</h3>
+      <p>O builder fluente por padrão é 100% seguro — tudo é parametrizado automaticamente.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Seguro por padrão</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// ✅ SEGURO — Parâmetro automático
+var userId = "1 OR 1=1";  // Tentativa de SQL injection
+var query = SqlBuilder
+    .Select("*")
+    .From("Users")
+    .Where("Id", Op.Equals, userId)  // Parametrizado internamente
+    .Build();
+
+var compiled = query.Compile();
+// SQL: SELECT * FROM Users WHERE Id = @UserId
+// Parâmetro: { "@UserId": "1 OR 1=1" } — tratado como valor literal, não SQL</code></pre>
+      </div>
+
+      <h3>Quando usar Raw() — e como fazer seguro</h3>
+      <p><code>Raw()</code> e <code>RawUnsafe()</code> contornam parameterização. Use apenas com dados confiáveis.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Raw() Seguro vs Inseguro</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// ✅ Raw() SEGURO — Ainda usa parâmetros
+var year = 2024;
+var query1 = SqlBuilder
+    .Select("*")
+    .FromRaw("SELECT * FROM Orders WHERE YEAR(CreatedAt) = {0}", year)
+    .Build();
+// Template {0} é substituído por parâmetro, não concatenação
+
+// ❌ Raw() INSEGURO — Concatenação direta (NUNCA FAÇA)
+var userInput = request.GetQueryParameter("column");
+var query2 = SqlBuilder
+    .Select(userInput)  // ❌ INJECTION RISK
+    .From("Users")
+    .Build();
+
+// ✅ Raw() com validação — ACEITO para valores fixos
+var validColumns = new[] { "Id", "Name", "Email" };
+var columnInput = request.GetQueryParameter("column");
+if (!validColumns.Contains(columnInput))
+    throw new ArgumentException("Coluna inválida");
+var query3 = SqlBuilder
+    .Select(columnInput)  // Agora seguro (whitelist)
+    .From("Users")
+    .Build();
+
+// ✅ RawUnsafe() — Explicitamente marcado para revisor
+var query4 = SqlBuilder
+    .SelectRaw("JSON_VALUE(data, '$.field') AS Field")  // Safe — string fixa
+    .From("Users")
+    .Build();</code></pre>
+      </div>
+
+      <h3>Input Validation & Constraints</h3>
+      <p>Valide schemas antes de compilar queries para evitar mismatches.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">// Validar schema antes de compilar
+var schema = new SchemaValidator(sqlDialect);
+var isValid = schema.Validate(query);
+
+if (!isValid)
+{
+    foreach (var error in schema.Errors)
+        Console.WriteLine($"Schema validation error: {error}");
+    return;
+}
+
+// Validar tipos de parâmetros
+var compiled = query.Compile();
+foreach (var param in compiled.Parameters)
+{
+    var expectedType = schema.GetColumnType(param.Key);
+    if (param.Value.GetType() != expectedType)
+        throw new InvalidCastException($"Parameter {param.Key} has wrong type");
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Técnica</th><th>Proteção</th><th>Overhead</th></tr></thead>
+        <tbody>
+          <tr><td>Parameterização automática</td><td>100% contra SQL injection via Values</td><td>Nenhum</td></tr>
+          <tr><td>Schema validation</td><td>Tipagem segura de parâmetros</td><td>Baixo (1x durante build)</td></tr>
+          <tr><td>Whitelist de colunas</td><td>100% contra injection via identificadores</td><td>Manual, depende de lógica</td></tr>
+          <tr><td>Escape hatch heurística</td><td>Detecta aspas desbalanceadas em Raw()</td><td>Nenhum</td></tr>
+          <tr><td>Audit logging</td><td>Rastreabilidade de queries sensíveis</td><td>Moderado (logging externo)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">⚠️ Regra de Ouro</span>
+        <p><strong>Nunca concatene user input diretamente em queries.</strong> Use sempre builder com parâmetros. Se precisar de Raw, valide contra whitelist. RawUnsafe() é explicitamente tóxico em code review para alertar revisor.</p>
+      </div>
+    </section>
+
+    <!-- NEW SECTION 10: Testing Strategies -->
+    <section class="doc-section" id="testing-strategies">
+      <h2>Testing Strategies</h2>
+      <p>Padrões recomendados para testar queries, validar comportamento cross-dialect, e garantir compatibilidade com schema.</p>
+
+      <h3>Unit Testing de Queries</h3>
+      <p>Teste queries sem executar contra BD — valide AST, SQL compilado, parâmetros.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Exemplo: xUnit</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">[Fact]
+public void SelectQuery_WithWhereClause_GeneratesCorrectSql()
+{
+    // Arrange
+    var query = SqlBuilder
+        .Select("Id", "Name", "Email")
+        .From("Users")
+        .Where("IsActive", Op.Equals, true)
+        .Build();
+
+    // Act
+    var compiled = query.Compile();
+
+    // Assert
+    Assert.NotNull(compiled);
+    Assert.Contains("SELECT Id, Name, Email FROM Users", compiled.Sql);
+    Assert.Contains("WHERE IsActive = @IsActive", compiled.Sql);
+    Assert.Equal(true, compiled.Parameters["@IsActive"]);
+}
+
+[Theory]
+[InlineData(typeof(SqlServerDialect))]
+[InlineData(typeof(PostgreSqlDialect))]
+[InlineData(typeof(MySqlDialect))]
+public void Query_CompilesOnAllDialects(Type dialectType)
+{
+    // Arrange
+    var dialect = (ISqlDialect)Activator.CreateInstance(dialectType);
+    var query = SqlBuilder.Select("*").From("Users").Build();
+
+    // Act
+    var compiled = dialect.Compile(query);
+
+    // Assert
+    Assert.NotNull(compiled.Sql);
+    Assert.False(string.IsNullOrWhiteSpace(compiled.Sql));
+}</code></pre>
+      </div>
+
+      <h3>Integration Testing com Banco</h3>
+      <p>Teste queries reais contra banco em-memória ou container Docker.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Exemplo: Testcontainers</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">[Fact]
+public async Task QueryExecution_WithJoin_ReturnsExpectedResults()
+{
+    // Arrange — Spin up container
+    await using var container = new MsSqlContainer();
+    await container.StartAsync();
+    
+    using var connection = new SqlConnection(container.GetConnectionString());
+    connection.Open();
+    
+    // Setup schema
+    connection.Execute(@"
+        CREATE TABLE Users (Id INT PRIMARY KEY, Name NVARCHAR(100));
+        CREATE TABLE Orders (Id INT PRIMARY KEY, UserId INT, Amount DECIMAL(10,2));
+        INSERT INTO Users VALUES (1, 'Alice'), (2, 'Bob');
+        INSERT INTO Orders VALUES (1, 1, 100), (2, 1, 200), (3, 2, 150);
+    ");
+
+    // Act
+    var query = SqlBuilder
+        .Select("Users.Name", "COUNT(Orders.Id) as OrderCount")
+        .From("Users")
+        .InnerJoin("Orders").On("Users.Id", Op.Equals, "Orders.UserId")
+        .GroupBy("Users.Name")
+        .Build();
+
+    var compiled = query.Compile();
+    var results = connection.Query&lt;(string Name, int OrderCount)&gt;(
+        compiled.Sql, 
+        compiled.Parameters
+    ).ToList();
+
+    // Assert
+    Assert.Equal(2, results.Count);
+    Assert.Contains(("Alice", 2), results);
+    Assert.Contains(("Bob", 1), results);
+}</code></pre>
+      </div>
+
+      <h3>Snapshot Testing</h3>
+      <p>Teste que SQL gerado permaneça consistente entre versões (regressão).</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C# — Exemplo: Verify</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">[Fact]
+public Task SelectQuery_SnapshotTest()
+{
+    var query = SqlBuilder
+        .Select("*")
+        .From("Orders")
+        .Where("Status", Op.Equals, "Completed")
+        .OrderBy("CreatedAt", ascending: false)
+        .Limit(100)
+        .Build();
+
+    var compiled = query.Compile();
+    
+    // Verify that compiled SQL is consistent
+    return Verify(new
+    {
+        Sql = compiled.Sql,
+        ParameterCount = compiled.Parameters.Count,
+        Parameters = compiled.Parameters
+    });
+    
+    // Generated snapshot file (Orders_SnapshotTest.verified.txt):
+    // {
+    //   Sql: "SELECT * FROM Orders WHERE Status = @Status ORDER BY CreatedAt DESC LIMIT 100"
+    //   ParameterCount: 1
+    //   Parameters: { "@Status": "Completed" }
+    // }
+}</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Tipo de Teste</th><th>Scope</th><th>Velocidade</th><th>Confiabilidade</th></tr></thead>
+        <tbody>
+          <tr><td>Unit (AST)</td><td>Query builder, AST</td><td>Muito rápido (&lt;1ms)</td><td>Alta (lógica pura)</td></tr>
+          <tr><td>Snapshot</td><td>SQL gerado</td><td>Rápido (~1ms)</td><td>Alta (regressão)</td></tr>
+          <tr><td>Integration</td><td>Query contra banco</td><td>Moderado (100-500ms)</td><td>Altíssima (real)</td></tr>
+          <tr><td>Performance</td><td>Execution time, throughput</td><td>Lento (segundos)</td><td>Moderada (hardware-dependent)</td></tr>
+          <tr><td>Cross-Dialect</td><td>Mesmo resultado 3 bancos</td><td>Lento (containers)</td><td>Altíssima (compatibilidade)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">Checklist de Cobertura</span>
+        <p>✅ Builders básicos (SELECT, INSERT, UPDATE, DELETE). ✅ Todas as operações Where/Join. ✅ Casos edge (empty results, NULL). ✅ Cross-dialect (3 bancos). ✅ Error paths (invalidos inputs). ✅ Performance (batch operations).</p>
+      </div>
+    </section>
+
+    <!-- ========== INSTALLATION GUIDE ========== -->
+    <section class="doc-section" id="installation">
+      <span class="eyebrow-badge">Guias · v1.0</span>
+      <h1>Guia de Instalação</h1>
+      <p class="lede">Passo a passo para instalar o Dialect em seu projeto .NET</p>
+
+      <h2 id="installation-requirements">Requisitos de Sistema</h2>
+      <h3>.NET Version</h3>
+      <p>Dialect requer <strong>.NET 6.0 ou superior</strong>. Testado com:</p>
+      <ul>
+        <li>✅ .NET 6.0</li>
+        <li>✅ .NET 7.0</li>
+        <li>✅ .NET 8.0 (recomendado para produção)</li>
+        <li>✅ .NET 9.0</li>
+        <li>✅ .NET 10.0</li>
+      </ul>
+      <p>Verifique sua versão: <code>dotnet --version</code></p>
+
+      <h3>Sistemas Operacionais</h3>
+      <ul>
+        <li>Windows (10+)</li>
+        <li>macOS (10.15+)</li>
+        <li>Linux (qualquer distribuição)</li>
+      </ul>
+
+      <h3>Hardware</h3>
+      <ul>
+        <li>Mínimo: 2GB RAM, 100MB espaço em disco</li>
+        <li>Recomendado: 4GB RAM, SSD</li>
+      </ul>
+
+      <h2 id="package-installation">Instalação de Pacotes</h2>
+      <p>Dialect é modular — instale apenas os dialetos que precisa. Sempre será necessário o pacote core, mais um ou mais dialetos:</p>
+
+      <table>
+        <thead><tr><th>Pacote</th><th>Propósito</th></tr></thead>
+        <tbody>
+          <tr><td><code>dialect</code></td><td>Framework core (obrigatório)</td></tr>
+          <tr><td><code>Dialect.SqlServer</code></td><td>Suporte SQL Server 2016+</td></tr>
+          <tr><td><code>Dialect.PostgreSql</code></td><td>Suporte PostgreSQL 9.6+</td></tr>
+          <tr><td><code>Dialect.MySql</code></td><td>Suporte MySQL 5.7+</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Via dotnet CLI</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">dotnet add package dialect
+dotnet add package Dialect.SqlServer</code></pre>
+      </div>
+
+      <h3>Via Package Manager Console (Visual Studio)</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>powershell</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-powershell">Install-Package dialect
+Install-Package Dialect.SqlServer</code></pre>
+      </div>
+
+      <h2 id="quick-verification">Verificação Rápida</h2>
+      <p>Após instalar, verifique se tudo funciona:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using dialect.Fluent;
+using Dialect.SqlServer;
+
+var query = SqlBuilder
+    .Select("id", "name", "email")
+    .From("users")
+    .Where("age > @minAge")
+    .Compile(SqlProvider.SqlServer);
+
+Console.WriteLine(query.Sql);
+// SELECT [id], [name], [email] FROM [users] WHERE age > @minAge</code></pre>
+      </div>
+
+      <h3>FAQ Instalação</h3>
+      <p><strong>P: Preciso instalar todos os pacotes de dialetos?</strong></p>
+      <p>R: Não. Instale apenas o que usa. Se usar apenas SQL Server: instale <code>dialect</code> e <code>Dialect.SqlServer</code>.</p>
+
+      <p><strong>P: Funciona com .NET Framework?</strong></p>
+      <p>R: Não. Dialect requer .NET 6.0+.</p>
+
+      <p><strong>P: Qual impacto de performance?</strong></p>
+      <p>R: Queries são compiladas e cacheadas, overhead é mínimo (&lt; 1ms por query).</p>
+    </section>
+
+    <!-- ========== SETUP & CONFIGURATION GUIDE ========== -->
+    <section class="doc-section" id="setup-guide">
+      <h1>Setup & Configuração</h1>
+      <p class="lede">Registre Dialect em Dependency Injection e configure suas bases de dados</p>
+
+      <h2 id="setup-di-registration">Registro em Dependency Injection</h2>
+      <p>Dialect se integra com <code>Microsoft.Extensions.DependencyInjection</code>, o container padrão do .NET:</p>
+
+      <h3>Registro Básico (Um Dialeto)</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using Microsoft.Extensions.DependencyInjection;
+using Dialect.SqlServer.DI;
+
+var services = new ServiceCollection();
+services.AddSqlServerFramework();
+
+var serviceProvider = services.BuildServiceProvider();
+
+var query = SqlBuilder
+    .Select("*")
+    .From("users")
+    .Compile(); // Usa SQL Server por padrão</code></pre>
+      </div>
+
+      <h3>Múltiplos Dialetos</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using Dialect.SqlServer.DI;
+using Dialect.PostgreSql.DI;
+using Dialect.MySql.DI;
+
+var services = new ServiceCollection();
+services.AddSqlServerFramework();
+services.AddPostgreSqlFramework();
+services.AddMySqlFramework();
+
+var builder = SqlBuilder.Select("*").From("users");
+var sqlServer = builder.Compile(SqlProvider.SqlServer);
+var postgres = builder.Compile(SqlProvider.PostgreSql);
+var mysql = builder.Compile(SqlProvider.MySql);</code></pre>
+      </div>
+
+      <h3>ASP.NET Core</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using Dialect.SqlServer.DI;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSqlServerFramework();
+builder.Services.AddControllers();
+
+var app = builder.Build();
+app.MapControllers();
+app.Run();</code></pre>
+      </div>
+
+      <h2 id="setup-cache-config">Configuração de Cache</h2>
+      <p>Configure o cache de queries compiladas:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using dialect.Compilation;
+
+services.AddSqlServerFramework(
+    cacheMaxEntries: 5000,
+    evictionStrategy: CacheEvictionStrategy.LruFifo,
+    cacheTtl: TimeSpan.FromHours(1)
+);</code></pre>
+      </div>
+
+      <table>
+        <thead><tr><th>Estratégia</th><th>Comportamento</th><th>Caso de Uso</th></tr></thead>
+        <tbody>
+          <tr><td><strong>None</strong></td><td>Ilimitado até 1000 entradas</td><td>Schemas estáticos</td></tr>
+          <tr><td><strong>LruFifo</strong></td><td>Remove mais antigos</td><td>Uso geral</td></tr>
+          <tr><td><strong>Random</strong></td><td>Remove aleatório</td><td>Testes</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="setup-appsettings">Configuração via appsettings.json</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>json</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-json">{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=MyApp;User Id=sa;Password=P@ssw0rd!;Encrypt=false;TrustServerCertificate=true;",
+    "PostgreSQL": "Host=localhost;Port=5432;Database=myapp;Username=postgres;Password=postgres;",
+    "MySQL": "Server=localhost;Port=3306;Database=myapp;User=root;Password=root;"
+  }
+}</code></pre>
+      </div>
+
+      <h3>Leitura de Configuração</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+var connString = configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"Conectando a: {connString}");</code></pre>
+      </div>
+
+      <h2 id="setup-env-vars">Variáveis de Ambiente</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash"># Windows (PowerShell)
+$env:SQLSERVER_CONNECTION_STRING = "Server=prod;Database=MyApp;..."
+
+# macOS/Linux
+export SQLSERVER_CONNECTION_STRING="Server=prod;Database=MyApp;..."</code></pre>
+      </div>
+    </section>
+
+    <!-- ========== DATABASE SETUP GUIDE ========== -->
+    <section class="doc-section" id="database-setup-guide">
+      <h1>Setup de Banco de Dados</h1>
+      <p class="lede">Configuração específica para SQL Server, PostgreSQL e MySQL</p>
+
+      <h2 id="sqlserver-setup">SQL Server</h2>
+      <h3>Requisitos</h3>
+      <ul>
+        <li><strong>Versão:</strong> 2016 ou superior</li>
+        <li><strong>Porta:</strong> 1433 (padrão)</li>
+        <li><strong>Autenticação:</strong> Windows ou SQL Server</li>
+      </ul>
+
+      <h3>String de Conexão</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>Desenvolvimento Local</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost;Database=MyApp;User Id=sa;Password=P@ssw0rd!;Encrypt=false;TrustServerCertificate=true;</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>Docker</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost,1433;Database=DialectSamples;User Id=sa;Password=P@ssw0rd!;Encrypt=false;TrustServerCertificate=true;</code></pre>
+      </div>
+
+      <h3>Registro</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using Dialect.SqlServer.DI;
+
+var services = new ServiceCollection();
+services.AddSqlServerFramework();</code></pre>
+      </div>
+
+      <h3>Features Específicas</h3>
+      <p><strong>Quoting:</strong> SQL Server usa <code>[...]</code> para identificadores</p>
+      <p><strong>Parâmetros:</strong> Usa prefixo <code>@</code></p>
+      <p><strong>Paginação:</strong> Suporta <code>TOP/OFFSET FETCH</code></p>
+      <p><strong>Window Functions:</strong> Completo suporte</p>
+
+      <h2 id="postgresql-setup">PostgreSQL</h2>
+      <h3>Requisitos</h3>
+      <ul>
+        <li><strong>Versão:</strong> 9.6 ou superior (11+ recomendado)</li>
+        <li><strong>Porta:</strong> 5432 (padrão)</li>
+        <li><strong>Autenticação:</strong> MD5 ou SCRAM-SHA-256</li>
+      </ul>
+
+      <h3>String de Conexão</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>Desenvolvimento Local</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Host=localhost;Port=5432;Database=myapp;Username=postgres;Password=postgres;</code></pre>
+      </div>
+
+      <h3>Registro</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using Dialect.PostgreSql.DI;
+
+var services = new ServiceCollection();
+services.AddPostgreSqlFramework();</code></pre>
+      </div>
+
+      <h3>Features Específicas</h3>
+      <p><strong>Quoting:</strong> Usa <code>"..."</code> para identificadores</p>
+      <p><strong>Parâmetros:</strong> Usa <code>$1, $2, ...</code></p>
+      <p><strong>Paginação:</strong> <code>LIMIT/OFFSET</code></p>
+      <p><strong>JSON:</strong> Suporte nativo com operadores</p>
+      <p><strong>CTEs:</strong> Suporte completo</p>
+
+      <h2 id="mysql-setup">MySQL</h2>
+      <h3>Requisitos</h3>
+      <ul>
+        <li><strong>Versão:</strong> 5.7 ou superior (8.0+ recomendado)</li>
+        <li><strong>Porta:</strong> 3306 (padrão)</li>
+      </ul>
+
+      <h3>String de Conexão</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>Desenvolvimento Local</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost;Port=3306;Database=myapp;User=root;Password=root;</code></pre>
+      </div>
+
+      <h3>Registro</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">using Dialect.MySql.DI;
+
+var services = new ServiceCollection();
+services.AddMySqlFramework();</code></pre>
+      </div>
+
+      <h3>Features Específicas</h3>
+      <p><strong>Quoting:</strong> Usa `` ` `` para identificadores</p>
+      <p><strong>Parâmetros:</strong> Usa <code>?</code></p>
+      <p><strong>Paginação:</strong> <code>LIMIT</code></p>
+      <p><strong>JSON:</strong> Suporte nativo</p>
+      <p><strong>Full-Text Search:</strong> Suportado</p>
+    </section>
+
+    <!-- ========== DOCKER SETUP GUIDE ========== -->
+    <section class="doc-section" id="docker-guide">
+      <h1>Setup com Docker</h1>
+      <p class="lede">Execute todas as bases de dados localmente com Docker Compose</p>
+
+      <h2 id="docker-quick-start">Início Rápido</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">cd docker
+docker-compose up -d
+
+# Verificar status
+docker-compose ps</code></pre>
+      </div>
+
+      <h2 id="docker-containers">Containers Disponíveis</h2>
+      <table>
+        <thead><tr><th>Banco</th><th>Porta</th><th>User</th><th>Senha</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SQL Server 2022</strong></td><td>1433</td><td>sa</td><td>P@ssw0rd!</td></tr>
+          <tr><td><strong>PostgreSQL 15</strong></td><td>5432</td><td>postgres</td><td>postgres</td></tr>
+          <tr><td><strong>MySQL 8.0</strong></td><td>3306</td><td>root</td><td>root</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="docker-connection-strings">Strings de Conexão</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>SQL Server</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost,1433;Database=DialectSamples;User Id=sa;Password=P@ssw0rd!;Encrypt=false;TrustServerCertificate=true;</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>PostgreSQL</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Host=localhost;Port=5432;Database=dialect_samples;Username=postgres;Password=postgres;</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>MySQL</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">Server=localhost;Port=3306;Database=dialect_samples;User=root;Password=root;</code></pre>
+      </div>
+
+      <h2 id="docker-operations">Operações Comuns</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash"># Parar containers (mantém dados)
+docker-compose stop
+
+# Iniciar novamente
+docker-compose start
+
+# Ver logs
+docker-compose logs -f sqlserver
+
+# Remover tudo
+docker-compose down -v</code></pre>
+      </div>
+    </section>
+
+    <!-- ========== TROUBLESHOOTING GUIDE ========== -->
+    <section class="doc-section" id="troubleshooting-guide">
+      <h1>Troubleshooting & FAQ</h1>
+      <p class="lede">Solução para problemas comuns e perguntas frequentes</p>
+
+      <h2 id="troubleshooting-installation">Problemas de Instalação</h2>
+      <h3>Pacote não encontrado</h3>
+      <p><strong>Erro:</strong> <code>error NU1101: Unable to find package 'dialect'</code></p>
+      <p><strong>Solução:</strong></p>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+dotnet restore</code></pre>
+      </div>
+
+      <h3>Versão .NET incorreta</h3>
+      <p><strong>Erro:</strong> <code>This framework is not supported</code></p>
+      <p><strong>Solução:</strong> Atualize seu arquivo `.csproj`:</p>
+      <div class="code-block">
+        <div class="code-block-head"><span>xml</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-xml"><PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+</PropertyGroup></code></pre>
+      </div>
+
+      <h2 id="troubleshooting-connection">Problemas de Conexão</h2>
+      <h3>Conexão recusada</h3>
+      <p><strong>Erro:</strong> <code>Cannot connect to server at localhost:1433</code></p>
+      <p><strong>Soluções:</strong></p>
+      <ul>
+        <li>Verifique se o container está rodando: <code>docker-compose ps</code></li>
+        <li>Verifique se a porta não está bloqueada pelo firewall</li>
+        <li>Teste conexão: <code>sqlcmd -S localhost,1433 -U sa -P "P@ssw0rd!"</code></li>
+      </ul>
+
+      <h3>Falha de autenticação</h3>
+      <p><strong>Erro:</strong> <code>Login failed for user 'sa'</code></p>
+      <p><strong>Solução:</strong> Verifique a senha no docker-compose.yml e na string de conexão</p>
+
+      <h2 id="troubleshooting-faq">FAQ</h2>
+      <p><strong>P: Como escolho entre SQL Server, PostgreSQL e MySQL?</strong></p>
+      <p>R: Todos são suportados igualmente. Escolha por infraestrutura, custo ou preferência pessoal.</p>
+
+      <p><strong>P: Posso trocar de banco de dados sem reescrever código?</strong></p>
+      <p>R: Sim! Use <code>.Compile(SqlProvider.PostgreSQL)</code> para trocar dialetos.</p>
+
+      <p><strong>P: Qual é o impacto de performance do Dialect?</strong></p>
+      <p>R: Minimal. Queries são compiladas uma vez e cacheadas. Overhead &lt; 1ms por query.</p>
+
+      <p><strong>P: Funciona com Entity Framework?</strong></p>
+      <p>R: Dialect é uma alternativa ao EF. Use Dialect ou EF, não ambos no mesmo projeto.</p>
+
+      <p><strong>P: Posso usar Dialect com Dapper?</strong></p>
+      <p>R: Sim! Perfeito. Dialect gera SQL pronto para Dapper.</p>
+    </section>
+
+    <!-- ========== CONTRIBUTING GUIDE ========== -->
+    <section class="doc-section" id="contributing-guide">
+      <h1>Guia de Contribuição</h1>
+      <p class="lede">Como contribuir para o projeto Dialect</p>
+
+      <h2 id="contributing-setup">Setup de Desenvolvimento</h2>
+      <p><strong>Pré-requisitos:</strong></p>
+      <ul>
+        <li>.NET SDK 8.0+</li>
+        <li>Git</li>
+        <li>Visual Studio Code ou Visual Studio 2022 (opcional)</li>
+      </ul>
+
+      <h3>Clone e Prepare</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash">git clone https://github.com/Daniel-iel/Dialect.git
+cd Dialect
+dotnet restore
+dotnet build -c Debug</code></pre>
+      </div>
+
+      <h2 id="contributing-tests">Executar Testes</h2>
+      <div class="code-block">
+        <div class="code-block-head"><span>bash</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-bash"># Todos os testes
+dotnet test
+
+# Testes específicos
+dotnet test --filter "SelectQueryTests"
+
+# Com cobertura
+dotnet test /p:CollectCoverage=true</code></pre>
+      </div>
+
+      <h2 id="contributing-code-style">Estilo de Código</h2>
+      <p><strong>Convenções:</strong></p>
+      <ul>
+        <li>Namespaces: <code>PascalCase</code></li>
+        <li>Classes/Métodos: <code>PascalCase</code></li>
+        <li>Variáveis locais: <code>camelCase</code></li>
+        <li>Constantes: <code>UPPER_CASE</code></li>
+        <li>Interfaces: prefixo <code>I</code> (ex: <code>ISqlDialect</code>)</li>
+      </ul>
+
+      <h3>Documentação</h3>
+      <p>Todo método público deve ter XML documentation:</p>
+      <div class="code-block">
+        <div class="code-block-head"><span>C#</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-csharp">/// <summary>
+/// Adiciona uma coluna à cláusula SELECT.
+/// </summary>
+/// <param name="columnName">Nome da coluna</param>
+/// <returns>Retorna a instância atual para method chaining</returns>
+public SelectBuilder Column(string columnName) { ... }</code></pre>
+      </div>
+
+      <h2 id="contributing-pr">Submeter Pull Request</h2>
+      <ol>
+        <li>Faça um fork do repositório</li>
+        <li>Crie uma branch: <code>git checkout -b feature/minha-feature</code></li>
+        <li>Faça commit com mensagens claras</li>
+        <li>Execute testes: <code>dotnet test</code></li>
+        <li>Envie para seu fork e abra um PR</li>
+      </ol>
+
+      <p><strong>Formato de commit:</strong></p>
+      <div class="code-block">
+        <div class="code-block-head"><span>plaintext</span><button class="copy-btn" data-copy>copiar</button></div>
+        <pre><code class="language-plaintext">feat: adiciona suporte para window functions
+fix: corrige bug em LEFT JOIN com NULL
+docs: atualiza guia de instalação
+test: adiciona testes para UPSERT</code></pre>
+      </div>
+
+      <h2 id="contributing-code-review">Processo de Review</h2>
+      <p>Todo PR passa por:</p>
+      <ul>
+        <li>✅ Build e testes devem passar</li>
+        <li>✅ Código segue o estilo do projeto</li>
+        <li>✅ Testes unitários adicionados/atualizados</li>
+        <li>✅ Documentação atualizada se necessário</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="roadmap">
+      <h2>Roadmap</h2>
+      <div class="pill-row">
+        <span class="pill">Fase 1 — Núcleo</span>
+        <span class="pill">Fase 2 — Robustez</span>
+        <span class="pill">Fase 3 — Diferenciais</span>
+        <span class="pill">Fase 4 — Ferramentas</span>
+        <span class="pill">Fase 5 — Avançado</span>
+      </div>
+
+      <h3 id="fase-1">Fase 1 — Núcleo (MVP)</h3>
+      <ul>
+        <li><code>SELECT</code> completo, <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code>, três dialetos.</li>
+        <li>Escape hatch <code>Raw()</code>, DI (<code>AddSqlFramework</code>), golden tests.</li>
+      </ul>
+      <h3 id="fase-2">Fase 2 — Robustez</h3>
+      <ul>
+        <li>CTEs/subqueries, cache thread-safe, proteção contra <code>DELETE</code> sem <code>WHERE</code>.</li>
+        <li><strong>Documentado agora:</strong> <a href="#ctes">CTEs (WITH clauses)</a>, validação de schema-aware.</li>
+      </ul>
+      <h3 id="fase-3">Fase 3 — Diferenciais</h3>
+      <ul>
+        <li>Window functions, procedures/functions, analyzer Roslyn de segurança, Index Advisor.</li>
+        <li><strong>Documentado agora:</strong> <a href="#window-functions">Window Functions</a>, <a href="#index-advisor">Index Advisor</a>, <a href="#upsert">UPSERT</a>.</li>
+      </ul>
+      <h3 id="fase-4">Fase 4 — Ferramentas auxiliares</h3>
+      <ul>
+        <li><code>Translate()</code>, CLI de conversão de projeto, Index Advisor agregado.</li>
+        <li><strong>Documentado agora:</strong> <a href="#query-rewrite">Query Rewrite & Optimization</a>, <a href="#execution-plan-analysis">Execution Plan Analysis</a>.</li>
+      </ul>
+      <h3 id="fase-5">Fase 5 — Avançado</h3>
+      <ul>
+        <li>Validação schema-aware, emulação de features ausentes, versionamento fino por engine.</li>
+        <li><strong>Documentado agora:</strong> <a href="#schema-validation">Schema Validation</a>, <a href="#migrations">Schema Migrations</a>, <a href="#version-detection">Version Detection</a>.</li>
+      </ul>
+    </section>
+
+    <footer class="doc-footer">
+      <span>Dialect — documentação de especificação</span>
+      <span>Escopo: geração de SQL. Execução via Dapper.</span>
+    </footer>
+
+  </main>
+
+  <aside id="page-contents">
+    <div class="contents-title">Contents</div>
+    <ul id="page-contents-list"></ul>
+  </aside>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+<script>
+(function(){
+  hljs.highlightAll();
+
+  /* ---------- Theme toggle ---------- */
+  var root = document.documentElement;
+  function setTheme(t){ root.setAttribute('data-theme', t); }
+  function currentTheme(){ return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+  function toggleTheme(){ setTheme(currentTheme() === 'dark' ? 'light' : 'dark'); }
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.getElementById('theme-toggle-mobile').addEventListener('click', toggleTheme);
+
+  /* ---------- Mobile drawer ---------- */
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('overlay');
+  function openDrawer(){ sidebar.classList.add('open'); overlay.classList.add('show'); }
+  function closeDrawer(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  document.getElementById('open-sidebar').addEventListener('click', openDrawer);
+  document.getElementById('close-sidebar').addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+  document.querySelectorAll('#sidebar .nav-items a').forEach(function(a){
+    a.addEventListener('click', closeDrawer);
+  });
+
+  /* ---------- Accordion groups ---------- */
+  document.querySelectorAll('.nav-group-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      btn.closest('.nav-group').classList.toggle('collapsed');
+    });
+  });
+
+  /* ---------- Search filter ---------- */
+  var searchInput = document.getElementById('nav-search');
+  searchInput.addEventListener('input', function(){
+    var q = searchInput.value.trim().toLowerCase();
+    document.querySelectorAll('.nav-group').forEach(function(group){
+      var items = group.querySelectorAll('.nav-items li');
+      var anyVisible = false;
+      items.forEach(function(li){
+        var a = li.querySelector('a');
+        var text = (a.textContent + ' ' + (a.dataset.label||'')).toLowerCase();
+        var match = q === '' || text.indexOf(q) !== -1;
+        li.classList.toggle('nav-hidden', !match);
+        if(match) anyVisible = true;
+      });
+      if(q !== ''){
+        group.classList.remove('collapsed');
+        group.classList.toggle('nav-hidden', !anyVisible);
+      } else {
+        group.classList.remove('nav-hidden');
+      }
+    });
+  });
+
+  /* ---------- Scrollspy + Contents (esquerda: subtópicos da seção ativa; direita: mapa da página inteira) ---------- */
+  var sidebarLinks = Array.prototype.slice.call(document.querySelectorAll('#sidebar .nav-items > li > a'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main .doc-section[id]'));
+  var contentsList = document.getElementById('contents-list');
+
+  var currentActiveSection = null;
+
+  function renderContents(sectionId){
+    contentsList.innerHTML = '';
+    var sectionEl = document.getElementById(sectionId);
+    if(!sectionEl) return;
+
+    var subHeadings = Array.prototype.slice.call(sectionEl.querySelectorAll('h3[id]'));
+
+    if(subHeadings.length === 0){
+      var empty = document.createElement('li');
+      empty.className = 'contents-empty';
+      empty.textContent = 'Sem subtópicos';
+      contentsList.appendChild(empty);
+      return;
+    }
+
+    subHeadings.forEach(function(h){
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      li.appendChild(a);
+      contentsList.appendChild(li);
+    });
+  }
+
+  /* ---------- Painel "Contents" à direita: tópicos do GRUPO ativo na sidebar esquerda ---------- */
+  var pageContentsList = document.getElementById('page-contents-list');
+  var currentActiveGroup = null;
+
+  function renderPageContents(groupEl){
+    pageContentsList.innerHTML = '';
+    if(!groupEl) return;
+
+    var links = Array.prototype.slice.call(groupEl.querySelectorAll('.nav-items > li > a'));
+    links.forEach(function(link){
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = link.getAttribute('href');
+      a.textContent = link.textContent;
+      li.appendChild(a);
+      pageContentsList.appendChild(li);
+    });
+  }
+
+  function setActiveSection(id){
+    if(id === currentActiveSection) return;
+    currentActiveSection = id;
+
+    var activeLink = null;
+    sidebarLinks.forEach(function(a){
+      var isActive = a.getAttribute('href') === '#'+id;
+      a.classList.toggle('active', isActive);
+      if(isActive){
+        activeLink = a;
+        var group = a.closest('.nav-group');
+        if(group) group.classList.remove('collapsed');
+      }
+    });
+
+    var newGroup = activeLink ? activeLink.closest('.nav-group') : null;
+    if(newGroup !== currentActiveGroup){
+      currentActiveGroup = newGroup;
+      renderPageContents(newGroup);
+    }
+
+    Array.prototype.slice.call(pageContentsList.querySelectorAll('a')).forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+id);
+    });
+
+    renderContents(id);
+  }
+
+  function setActiveSubHeading(id){
+    Array.prototype.slice.call(contentsList.querySelectorAll('a')).forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+id);
+    });
+  }
+
+  var sectionObserver = new IntersectionObserver(function(entries){
+    var visible = entries.filter(function(e){ return e.isIntersecting; });
+    if(visible.length > 0){
+      visible.sort(function(a,b){ return a.boundingClientRect.top - b.boundingClientRect.top; });
+      setActiveSection(visible[0].target.id);
+    }
+  }, { rootMargin: '-10% 0px -70% 0px', threshold: [0, 1] });
+  sections.forEach(function(s){ sectionObserver.observe(s); });
+
+  var subHeadingEls = Array.prototype.slice.call(document.querySelectorAll('main h3[id]'));
+  var subHeadingObserver = new IntersectionObserver(function(entries){
+    var visible = entries.filter(function(e){ return e.isIntersecting; });
+    if(visible.length > 0){
+      visible.sort(function(a,b){ return a.boundingClientRect.top - b.boundingClientRect.top; });
+      setActiveSubHeading(visible[0].target.id);
+    }
+  }, { rootMargin: '-10% 0px -75% 0px', threshold: [0, 1] });
+  subHeadingEls.forEach(function(h){ subHeadingObserver.observe(h); });
+
+  // estado inicial: primeira seção
+  if(sections.length > 0) setActiveSection(sections[0].id);
+
+  /* ---------- Reading progress bar ---------- */
+  var progress = document.getElementById('progress');
+  window.addEventListener('scroll', function(){
+    var h = document.documentElement;
+    var scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    progress.style.width = scrolled + '%';
+  });
+
+  /* ---------- Copy code buttons ---------- */
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var codeEl = btn.closest('.code-block').querySelector('code');
+      navigator.clipboard.writeText(codeEl.textContent).then(function(){
+        var original = btn.textContent;
+        btn.textContent = 'copiado ✓';
+        setTimeout(function(){ btn.textContent = original; }, 1600);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

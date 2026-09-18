@@ -1,0 +1,27 @@
+root = true
+
+# All C# files
+[*.cs]
+
+# Roslynator - Dead Code Detection
+# RCS1074: Remove unused parameter
+roslynator_analyzers.enabled = true
+dotnet_diagnostic.RCS1074.severity = warning
+
+# RCS1110: Discard return value (for methods called but return value ignored)
+dotnet_diagnostic.RCS1110.severity = suggestion
+
+# RCS1163: Unused parameter
+dotnet_diagnostic.RCS1163.severity = warning
+
+# RCS1213: Remove unused (empty) method
+dotnet_diagnostic.RCS1213.severity = warning
+
+# RCS1211: Remove unreachable code
+dotnet_diagnostic.RCS1211.severity = warning
+
+# RCS1235: Optimize method call
+dotnet_diagnostic.RCS1235.severity = suggestion
+
+# Style rules for Samples project
+dotnet_diagnostic.RCS1102.severity = suggestion
